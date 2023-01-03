@@ -17,9 +17,4 @@
 package org.http4s
 package syntax
 
-trait AllSyntax
-    extends AnyRef
-    with KleisliSyntax
-    with StringSyntax
-    with LiteralsSyntax
-    with HeaderSyntax
+trait AllSyntax extends AnyRef with KleisliSyntax with StringSyntax with LiteralsSyntax with HeaderSyntax

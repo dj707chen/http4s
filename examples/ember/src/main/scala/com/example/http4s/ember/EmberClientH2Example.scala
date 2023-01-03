@@ -28,21 +28,14 @@ import org.http4s.implicits._
 object EmberClientH2Example extends IOApp {
 
   object ClientTest {
-    def printPushPromiseSupport[F[_]: Async]
-        : (Request[fs2.Pure], F[Response[F]]) => F[Outcome[F, Throwable, Unit]] = {
-      case (req, fResp) =>
-        Sync[F].delay(println(s"Push Promise: $req")) >>
-          fResp
-            .flatMap(resp =>
-              resp.bodyText.compile.string.flatMap(_ =>
-                Sync[F].delay(println(s"Push Promise Resp:($req, $resp)"))
-              )
-            )
-            .as(Outcome.succeeded(Applicative[F].unit))
+    def printPushPromiseSupport[F[_]: Async]: (Request[fs2.Pure], F[Response[F]]) => F[Outcome[F, Throwable, Unit]] = { case (req, fResp) =>
+      Sync[F].delay(println(s"Push Promise: $req")) >>
+        fResp
+          .flatMap(resp => resp.bodyText.compile.string.flatMap(_ => Sync[F].delay(println(s"Push Promise Resp:($req, $resp)"))))
+          .as(Outcome.succeeded(Applicative[F].unit))
     }
 
-    def noopPushPromiseSupport[F[_]: Applicative]
-        : (Request[fs2.Pure], F[Response[F]]) => F[Outcome[F, Throwable, Unit]] = { case (_, _) =>
+    def noopPushPromiseSupport[F[_]: Applicative]: (Request[fs2.Pure], F[Response[F]]) => F[Outcome[F, Throwable, Unit]] = { case (_, _) =>
       Applicative[F].pure(Outcome.succeeded(Applicative[F].unit))
     }
 

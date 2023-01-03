@@ -60,7 +60,7 @@ object Forwarded extends ForwardedRenderers {
       case object Unknown extends Name
 
       @deprecated("Use Name.Ipv4(Ipv4Address.fromInet4Address(address))", "0.23.5")
-      def ofInet4Address(address: Inet4Address): Name =
+      def ofInet4Address(address: Inet4Address):             Name =
         Ipv4(Ipv4Address.fromInet4Address(address))
       def ofIpv4Address(a: Byte, b: Byte, c: Byte, d: Byte): Name = Ipv4(
         Ipv4Address.fromBytes(a.toInt, b.toInt, c.toInt, d.toInt)
@@ -190,7 +190,7 @@ object Forwarded extends ForwardedRenderers {
       */
     private[http4s] def fromHostAndMaybePort(
         uriHost: Uri.Host,
-        port: Option[Int],
+        port:    Option[Int],
     ): ParseResult[Host] =
       port.fold(ofHost(uriHost).asRight[ParseFailure])(fromHostAndPort(uriHost, _))
 
@@ -235,14 +235,14 @@ object Forwarded extends ForwardedRenderers {
   val Proto: Uri.Scheme.type = Uri.Scheme
 
   sealed trait Element extends Renderable { self: Product =>
-    def maybeBy: Option[Node]
-    def maybeFor: Option[Node]
-    def maybeHost: Option[Host]
+    def maybeBy:    Option[Node]
+    def maybeFor:   Option[Node]
+    def maybeHost:  Option[Host]
     def maybeProto: Option[Proto]
 
-    def withBy(value: Node): Element
-    def withFor(value: Node): Element
-    def withHost(value: Host): Element
+    def withBy(value:    Node):  Element
+    def withFor(value:   Node):  Element
+    def withHost(value:  Host):  Element
     def withProto(value: Proto): Element
 
     override def render(writer: Writer): writer.type = renderElement(writer, this)
@@ -261,23 +261,23 @@ object Forwarded extends ForwardedRenderers {
     // Since at least one of the fields must be set to `Some`,
     // the `Element` trait implementation is hidden.
     private[this] final case class C(
-        maybeBy: Option[Node] = None,
-        maybeFor: Option[Node] = None,
-        maybeHost: Option[Host] = None,
+        maybeBy:    Option[Node] = None,
+        maybeFor:   Option[Node] = None,
+        maybeHost:  Option[Host] = None,
         maybeProto: Option[Proto] = None,
     ) extends Element {
 
-      def withBy(value: Node): Element = copy(maybeBy = Some(value))
-      def withFor(value: Node): Element = copy(maybeFor = Some(value))
-      def withHost(value: Host): Element = copy(maybeHost = Some(value))
+      def withBy(value: Node):     Element = copy(maybeBy = Some(value))
+      def withFor(value: Node):    Element = copy(maybeFor = Some(value))
+      def withHost(value: Host):   Element = copy(maybeHost = Some(value))
       def withProto(value: Proto): Element = copy(maybeProto = Some(value))
 
       override def productPrefix: String = "Element"
     }
 
-    def fromBy(value: Node): Element = C(maybeBy = Some(value))
-    def fromFor(value: Node): Element = C(maybeFor = Some(value))
-    def fromHost(value: Host): Element = C(maybeHost = Some(value))
+    def fromBy(value: Node):     Element = C(maybeBy = Some(value))
+    def fromFor(value: Node):    Element = C(maybeFor = Some(value))
+    def fromHost(value: Host):   Element = C(maybeHost = Some(value))
     def fromProto(value: Proto): Element = C(maybeProto = Some(value))
 
     def unapply(elem: Element): Option[(Option[Node], Option[Node], Option[Host], Option[Proto])] =
@@ -296,7 +296,7 @@ object Forwarded extends ForwardedRenderers {
   private object Failures {
     def invalidPortNum(num: Int): ParseFailure =
       ParseFailure("invalid port number", s"port $num is not in range $PortMin..$PortMax")
-    def missingHost(uri: Uri): ParseFailure =
+    def missingHost(uri: Uri):    ParseFailure =
       ParseFailure("missing host", s"no host defined in the URI '$uri'")
   }
 
@@ -314,7 +314,7 @@ object Forwarded extends ForwardedRenderers {
 
     object Pair {
       def apply(c: Element, m: Element => Element): Pair = new Pair {
-        override def create: Element = c
+        override def create:            Element = c
         override def merge(e: Element): Element = m(e)
       }
     }
@@ -339,24 +339,24 @@ object Forwarded extends ForwardedRenderers {
     // unescaping, MUST conform to the URI scheme name as defined in Section 3.1 in
     // [RFC3986]
 
-    val host = Host.parser
+    val host  = Host.parser
     val proto = Uri.Parser.scheme
-    val node = Node.parser
+    val node  = Node.parser
 
     val forwardedPair = P.oneOf(
       List(
         Rfc7230.token
           .flatMap(tok =>
             tok.toLowerCase(Locale.ROOT) match {
-              case "by" =>
+              case "by"    =>
                 P.char('=') *> quoted(node).map(n => Pair(Element.fromBy(n), _.withBy(n)))
-              case "for" =>
+              case "for"   =>
                 P.char('=') *> quoted(node).map(n => Pair(Element.fromFor(n), _.withFor(n)))
-              case "host" =>
+              case "host"  =>
                 P.char('=') *> quoted(host).map(h => Pair(Element.fromHost(h), _.withHost(h)))
               case "proto" =>
                 P.char('=') *> quoted(proto).map(p => Pair(Element.fromProto(p), _.withProto(p)))
-              case other =>
+              case other   =>
                 P.failWith(s"expected parameters: 'by', 'for', 'host' or 'proto', but got '$other'")
             }
           )

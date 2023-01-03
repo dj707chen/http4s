@@ -58,20 +58,20 @@ import scala.collection.immutable
 import scala.concurrent.duration._
 
 sealed class JettyBuilder[F[_]] private (
-    socketAddress: InetSocketAddress,
-    private val threadPool: ThreadPool,
-    threadPoolResourceOption: Option[Resource[F, ThreadPool]],
-    private val idleTimeout: Duration,
-    private val asyncTimeout: Duration,
-    shutdownTimeout: Duration,
-    private val servletIo: ServletIo[F],
-    sslConfig: SslConfig,
-    mounts: Vector[Mount[F]],
+    socketAddress:                   InetSocketAddress,
+    private val threadPool:          ThreadPool,
+    threadPoolResourceOption:        Option[Resource[F, ThreadPool]],
+    private val idleTimeout:         Duration,
+    private val asyncTimeout:        Duration,
+    shutdownTimeout:                 Duration,
+    private val servletIo:           ServletIo[F],
+    sslConfig:                       SslConfig,
+    mounts:                          Vector[Mount[F]],
     private val serviceErrorHandler: ServiceErrorHandler[F],
-    supportHttp2: Boolean,
-    banner: immutable.Seq[String],
-    jettyHttpConfiguration: HttpConfiguration,
-)(implicit protected val F: Async[F])
+    supportHttp2:                    Boolean,
+    banner:                          immutable.Seq[String],
+    jettyHttpConfiguration:          HttpConfiguration,
+)(implicit protected val F:          Async[F])
     extends ServletContainer[F]
     with ServerBuilder[F] {
   type Self = JettyBuilder[F]
@@ -79,19 +79,19 @@ sealed class JettyBuilder[F[_]] private (
   private[this] val logger = getLogger
 
   private def copy(
-      socketAddress: InetSocketAddress = socketAddress,
-      threadPool: ThreadPool = threadPool,
+      socketAddress:            InetSocketAddress = socketAddress,
+      threadPool:               ThreadPool = threadPool,
       threadPoolResourceOption: Option[Resource[F, ThreadPool]] = threadPoolResourceOption,
-      idleTimeout: Duration = idleTimeout,
-      asyncTimeout: Duration = asyncTimeout,
-      shutdownTimeout: Duration = shutdownTimeout,
-      servletIo: ServletIo[F] = servletIo,
-      sslConfig: SslConfig = sslConfig,
-      mounts: Vector[Mount[F]] = mounts,
-      serviceErrorHandler: ServiceErrorHandler[F] = serviceErrorHandler,
-      supportHttp2: Boolean = supportHttp2,
-      banner: immutable.Seq[String] = banner,
-      jettyHttpConfiguration: HttpConfiguration = jettyHttpConfiguration,
+      idleTimeout:              Duration = idleTimeout,
+      asyncTimeout:             Duration = asyncTimeout,
+      shutdownTimeout:          Duration = shutdownTimeout,
+      servletIo:                ServletIo[F] = servletIo,
+      sslConfig:                SslConfig = sslConfig,
+      mounts:                   Vector[Mount[F]] = mounts,
+      serviceErrorHandler:      ServiceErrorHandler[F] = serviceErrorHandler,
+      supportHttp2:             Boolean = supportHttp2,
+      banner:                   immutable.Seq[String] = banner,
+      jettyHttpConfiguration:   HttpConfiguration = jettyHttpConfiguration,
   ): Self =
     new JettyBuilder(
       socketAddress,
@@ -114,15 +114,13 @@ sealed class JettyBuilder[F[_]] private (
     "0.21.0-RC3",
   )
   def withSSL(
-      keyStore: StoreInfo,
+      keyStore:           StoreInfo,
       keyManagerPassword: String,
-      protocol: String = "TLS",
-      trustStore: Option[StoreInfo] = None,
-      clientAuth: SSLClientAuthMode = SSLClientAuthMode.NotRequested,
+      protocol:           String = "TLS",
+      trustStore:         Option[StoreInfo] = None,
+      clientAuth:         SSLClientAuthMode = SSLClientAuthMode.NotRequested,
   ): Self =
-    copy(sslConfig =
-      new KeyStoreBits(keyStore, keyManagerPassword, protocol, trustStore, clientAuth)
-    )
+    copy(sslConfig = new KeyStoreBits(keyStore, keyManagerPassword, protocol, trustStore, clientAuth))
 
   @deprecated(
     "Use `withSslContext` (note lowercase). To request client certificates, use `withSslContextAndParameters, calling either `.setWantClientAuth(true)` or `setNeedClientAuth(true)` on the `SSLParameters`.",
@@ -172,15 +170,15 @@ sealed class JettyBuilder[F[_]] private (
     */
   @deprecated(
     message = "Please use withThreadPoolResource instead and see JettyThreadPools.",
-    since = "0.21.23",
+    since   = "0.21.23",
   )
   def withThreadPool(threadPool: ThreadPool): JettyBuilder[F] =
     copy(threadPoolResourceOption = None, threadPool = new UndestroyableThreadPool(threadPool))
 
   override def mountServlet(
-      servlet: HttpServlet,
+      servlet:    HttpServlet,
       urlMapping: String,
-      name: Option[String] = None,
+      name:       Option[String] = None,
   ): Self =
     copy(mounts = mounts :+ Mount[F] { (context, index, _, _) =>
       val servletName = name.getOrElse(s"servlet-$index")
@@ -188,13 +186,13 @@ sealed class JettyBuilder[F[_]] private (
     })
 
   override def mountFilter(
-      filter: Filter,
+      filter:     Filter,
       urlMapping: String,
-      name: Option[String],
+      name:       Option[String],
       dispatches: util.EnumSet[DispatcherType],
   ): Self =
     copy(mounts = mounts :+ Mount[F] { (context, index, _, _) =>
-      val filterName = name.getOrElse(s"filter-$index")
+      val filterName   = name.getOrElse(s"filter-$index")
       val filterHolder = new FilterHolder(filter)
       filterHolder.setName(filterName)
       context.addFilter(filterHolder, urlMapping, dispatches)
@@ -205,15 +203,15 @@ sealed class JettyBuilder[F[_]] private (
 
   def mountHttpApp(service: HttpApp[F], prefix: String): Self =
     copy(mounts = mounts :+ Mount[F] { (context, index, builder, dispatcher) =>
-      val servlet = new AsyncHttp4sServlet(
-        service = service,
-        asyncTimeout = builder.asyncTimeout,
-        servletIo = builder.servletIo,
+      val servlet     = new AsyncHttp4sServlet(
+        service             = service,
+        asyncTimeout        = builder.asyncTimeout,
+        servletIo           = builder.servletIo,
         serviceErrorHandler = builder.serviceErrorHandler,
         dispatcher,
       )
       val servletName = s"servlet-$index"
-      val urlMapping = ServletContainer.prefixMapping(prefix)
+      val urlMapping  = ServletContainer.prefixMapping(prefix)
       context.addServlet(new ServletHolder(servletName, servlet), urlMapping)
     })
 
@@ -283,7 +281,7 @@ sealed class JettyBuilder[F[_]] private (
       JettyLifeCycle
         .lifeCycleAsResource[F, JServer](
           F.delay {
-            val jetty = new JServer(threadPool)
+            val jetty   = new JServer(threadPool)
             val context = new ServletContextHandler()
 
             context.setContextPath("/")
@@ -327,15 +325,15 @@ sealed class JettyBuilder[F[_]] private (
     for {
       dispatcher <- Dispatcher[F]
       threadPool <- threadPoolR
-      server <- serverR(threadPool, dispatcher)
-      _ <- Resource.eval(banner.traverse_(value => F.delay(logger.info(value))))
-      _ <- Resource.eval(
-        F.delay(
-          logger.info(
-            s"http4s v${BuildInfo.version} on Jetty v${JServer.getVersion} started at ${server.baseUri}"
-          )
-        )
-      )
+      server     <- serverR(threadPool, dispatcher)
+      _          <- Resource.eval(banner.traverse_(value => F.delay(logger.info(value))))
+      _          <- Resource.eval(
+                      F.delay(
+                        logger.info(
+                          s"http4s v${BuildInfo.version} on Jetty v${JServer.getVersion} started at ${server.baseUri}"
+                        )
+                      )
+                    )
     } yield server
   }
 }
@@ -343,34 +341,34 @@ sealed class JettyBuilder[F[_]] private (
 object JettyBuilder {
   def apply[F[_]: Async] =
     new JettyBuilder[F](
-      socketAddress = defaults.IPv4SocketAddress,
-      threadPool = LazyThreadPool.newLazyThreadPool,
+      socketAddress            = defaults.IPv4SocketAddress,
+      threadPool               = LazyThreadPool.newLazyThreadPool,
       threadPoolResourceOption = Some(
         JettyThreadPools.default[F]
       ),
-      idleTimeout = defaults.IdleTimeout,
-      asyncTimeout = defaults.ResponseTimeout,
-      shutdownTimeout = defaults.ShutdownTimeout,
-      servletIo = ServletContainer.DefaultServletIo,
-      sslConfig = NoSsl,
-      mounts = Vector.empty,
-      serviceErrorHandler = DefaultServiceErrorHandler,
-      supportHttp2 = false,
-      banner = defaults.Banner,
-      jettyHttpConfiguration = defaultJettyHttpConfiguration,
+      idleTimeout              = defaults.IdleTimeout,
+      asyncTimeout             = defaults.ResponseTimeout,
+      shutdownTimeout          = defaults.ShutdownTimeout,
+      servletIo                = ServletContainer.DefaultServletIo,
+      sslConfig                = NoSsl,
+      mounts                   = Vector.empty,
+      serviceErrorHandler      = DefaultServiceErrorHandler,
+      supportHttp2             = false,
+      banner                   = defaults.Banner,
+      jettyHttpConfiguration   = defaultJettyHttpConfiguration,
     )
 
   private sealed trait SslConfig {
     def makeSslContextFactory: Option[SslContextFactory.Server]
-    def isSecure: Boolean
+    def isSecure:              Boolean
   }
 
   private class KeyStoreBits(
-      keyStore: StoreInfo,
+      keyStore:           StoreInfo,
       keyManagerPassword: String,
-      protocol: String,
-      trustStore: Option[StoreInfo],
-      clientAuth: SSLClientAuthMode,
+      protocol:           String,
+      trustStore:         Option[StoreInfo],
+      clientAuth:         SSLClientAuthMode,
   ) extends SslConfig {
     def makeSslContextFactory: Option[SslContextFactory.Server] = {
       val sslContextFactory = new SslContextFactory.Server()
@@ -389,8 +387,7 @@ object JettyBuilder {
     def isSecure = true
   }
 
-  private class ContextWithClientAuth(sslContext: SSLContext, clientAuth: SSLClientAuthMode)
-      extends SslConfig {
+  private class ContextWithClientAuth(sslContext: SSLContext, clientAuth: SSLClientAuthMode) extends SslConfig {
     def makeSslContextFactory: Option[SslContextFactory.Server] = {
       val sslContextFactory = new SslContextFactory.Server()
       sslContextFactory.setSslContext(sslContext)
@@ -409,8 +406,7 @@ object JettyBuilder {
     def isSecure = true
   }
 
-  private class ContextWithParameters(sslContext: SSLContext, sslParameters: SSLParameters)
-      extends SslConfig {
+  private class ContextWithParameters(sslContext: SSLContext, sslParameters: SSLParameters) extends SslConfig {
     def makeSslContextFactory: Option[SslContextFactory.Server] = {
       val sslContextFactory = new SslContextFactory.Server()
       sslContextFactory.setSslContext(sslContext)
@@ -427,7 +423,7 @@ object JettyBuilder {
 
   private def updateClientAuth(
       sslContextFactory: SslContextFactory.Server,
-      clientAuthMode: SSLClientAuthMode,
+      clientAuthMode:    SSLClientAuthMode,
   ): Unit =
     clientAuthMode match {
       case SSLClientAuthMode.NotRequested =>

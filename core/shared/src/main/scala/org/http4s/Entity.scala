@@ -26,7 +26,7 @@ object Entity {
     new Monoid[Entity[F]] {
       def combine(a1: Entity[F], a2: Entity[F]): Entity[F] =
         Entity(a1.body ++ a2.body, (a1.length, a2.length).mapN(_ + _))
-      val empty: Entity[F] =
+      val empty:                                 Entity[F] =
         Entity.empty
     }
 

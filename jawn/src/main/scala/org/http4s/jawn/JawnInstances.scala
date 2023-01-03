@@ -31,7 +31,7 @@ trait JawnInstances {
 
   protected def jawnParseExceptionMessage: ParseException => DecodeFailure =
     JawnInstances.defaultJawnParseExceptionMessage
-  protected def jawnEmptyBodyMessage: DecodeFailure =
+  protected def jawnEmptyBodyMessage:      DecodeFailure                   =
     JawnInstances.defaultJawnEmptyBodyMessage
 
   // some decoders may reuse it and avoid extra content negotiation

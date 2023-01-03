@@ -39,21 +39,21 @@ private[internal] object StreamForking {
     * the outer stream from continuing if the max concurrency is reached, which has been
     * recovered here.
     */
-  def forking[F[_], O](streams: Stream[F, Stream[F, O]], maxConcurrency: Int = Int.MaxValue)(
-      implicit F: Concurrent[F]
+  def forking[F[_], O](streams: Stream[F, Stream[F, O]], maxConcurrency: Int = Int.MaxValue)(implicit
+      F:                        Concurrent[F]
   ): Stream[F, INothing] = {
     val fstream = for {
-      done <- SignallingRef[F, Option[Option[Throwable]]](None)
+      done      <- SignallingRef[F, Option[Option[Throwable]]](None)
       available <- Semaphore[F](maxConcurrency.toLong)
-      running <- SignallingRef[F, Long](1)
+      running   <- SignallingRef[F, Long](1)
     } yield {
-      val incrementRunning: F[Unit] = running.update(_ + 1)
-      val decrementRunning: F[Unit] = running.update(_ - 1)
+      val incrementRunning:  F[Unit] = running.update(_ + 1)
+      val decrementRunning:  F[Unit] = running.update(_ - 1)
       val awaitWhileRunning: F[Unit] = running.discrete.dropWhile(_ > 0).take(1).compile.drain
 
-      val stop: F[Unit] = done.update(_.orElse(Some(None)))
-      val stopSignal: Signal[F, Boolean] = done.map(_.nonEmpty)
-      def stopFailed(err: Throwable): F[Unit] =
+      val stop:                       F[Unit]            = done.update(_.orElse(Some(None)))
+      val stopSignal:                 Signal[F, Boolean] = done.map(_.nonEmpty)
+      def stopFailed(err: Throwable): F[Unit]            =
         done.update(_.orElse(Some(Some(err))))
 
       def runInner(inner: Stream[F, O]): F[Unit] = {
@@ -77,7 +77,7 @@ private[internal] object StreamForking {
       val signalResult: F[Unit] =
         done.get.flatMap {
           case Some(Some(err)) => F.raiseError(err)
-          case _ => F.unit
+          case _               => F.unit
         }
 
       Stream.bracket(F.start(runOuter))(_ => stop >> awaitWhileRunning >> signalResult) >>

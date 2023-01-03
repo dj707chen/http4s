@@ -47,8 +47,7 @@ object Credentials {
       writer << authScheme << ' ' << token
   }
 
-  final case class AuthParams(authScheme: AuthScheme, params: NonEmptyList[(String, String)])
-      extends Credentials {
+  final case class AuthParams(authScheme: AuthScheme, params: NonEmptyList[(String, String)]) extends Credentials {
     def render(writer: Writer): writer.type = {
       writer << authScheme
       writer << ' '
@@ -70,8 +69,8 @@ object Credentials {
   object AuthParams {
     def apply(
         authScheme: AuthScheme,
-        param: (String, String),
-        params: (String, String)*
+        param:      (String, String),
+        params:     (String, String)*
     ): AuthParams =
       apply(authScheme, NonEmptyList(param, params.toList))
   }
@@ -80,30 +79,30 @@ object Credentials {
 final case class BasicCredentials(
     username: String,
     password: String,
-    charset: JavaCharset = StandardCharsets.UTF_8,
+    charset:  JavaCharset = StandardCharsets.UTF_8,
 ) {
   lazy val token: String = {
     val userPass = username + ':' + password
-    val bytes = userPass.getBytes(charset)
+    val bytes    = userPass.getBytes(charset)
     Base64.getEncoder.encodeToString(bytes)
   }
 }
 
 object BasicCredentials {
 
-  private val utf8Charset = StandardCharsets.UTF_8
+  private val utf8Charset        = StandardCharsets.UTF_8
   private val utf8CharsetDecoder = utf8Charset.newDecoder
-  private val fallbackCharset = StandardCharsets.ISO_8859_1
+  private val fallbackCharset    = StandardCharsets.ISO_8859_1
 
   private def decode(bytes: Array[Byte], decoder: CharsetDecoder): Try[String] = {
     val byteByffer = ByteBuffer.wrap(bytes)
     Try(decoder.decode(byteByffer).toString)
   }
-  private def decode(bytes: Array[Byte], charset: JavaCharset): String =
+  private def decode(bytes: Array[Byte], charset: JavaCharset):    String      =
     new String(bytes, charset)
 
   def apply(token: String): BasicCredentials = {
-    val bytes = Base64.getDecoder.decode(token)
+    val bytes               = Base64.getDecoder.decode(token)
     val (userPass, charset) = decode(bytes, utf8CharsetDecoder)
       .fold(_ => (decode(bytes, fallbackCharset), fallbackCharset), up => (up, utf8Charset))
     userPass.indexOf(':') match {
@@ -117,7 +116,7 @@ object BasicCredentials {
       case Credentials.Token(AuthScheme.Basic, token) =>
         val basicCredentials = BasicCredentials(token)
         Some((basicCredentials.username, basicCredentials.password))
-      case _ =>
+      case _                                          =>
         None
     }
 }

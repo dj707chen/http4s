@@ -29,9 +29,8 @@ object Server extends HeaderCompanion[Server]("Server") {
     apply(id, tail.toList)
 
   private[http4s] val parser =
-    ProductIdOrComment.serverAgentParser.map {
-      case (product: ProductId, tokens: List[ProductIdOrComment]) =>
-        Server(product, tokens)
+    ProductIdOrComment.serverAgentParser.map { case (product: ProductId, tokens: List[ProductIdOrComment]) =>
+      Server(product, tokens)
     }
 
   implicit val headerInstance: Header[Server, Header.Single] =

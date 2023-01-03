@@ -43,15 +43,15 @@ import java.time.ZonedDateTime
   * attribute value.
   */
 final case class ResponseCookie(
-    name: String,
-    content: String,
-    expires: Option[HttpDate] = None,
-    maxAge: Option[Long] = None,
-    domain: Option[String] = None,
-    path: Option[String] = None,
-    sameSite: Option[SameSite] = None,
-    secure: Boolean = false,
-    httpOnly: Boolean = false,
+    name:      String,
+    content:   String,
+    expires:   Option[HttpDate] = None,
+    maxAge:    Option[Long] = None,
+    domain:    Option[String] = None,
+    path:      Option[String] = None,
+    sameSite:  Option[SameSite] = None,
+    secure:    Boolean = false,
+    httpOnly:  Boolean = false,
     extension: Option[String] = None,
 ) extends Renderable { self =>
   override lazy val renderString: String = super.renderString
@@ -122,8 +122,8 @@ object ResponseCookie {
     }
 
     /* expires-av        = "Expires=" sane-cookie-date */
-    val expiresAv = ignoreCase("Expires=").with1 *> saneCookieDate.map {
-      (expires: HttpDate) => (cookie: ResponseCookie) => cookie.withExpires(expires)
+    val expiresAv = ignoreCase("Expires=").with1 *> saneCookieDate.map { (expires: HttpDate) => (cookie: ResponseCookie) =>
+      cookie.withExpires(expires)
     }
 
     /* non-zero-digit    = %x31-39
@@ -136,8 +136,8 @@ object ResponseCookie {
      *                   ; are limited to dates representable by the
      *                   ; user agent.
      */
-    val maxAgeAv = ignoreCase("Max-Age=") *> (nonZeroDigit ~ digit.rep0).string.map {
-      (maxAge: String) => (cookie: ResponseCookie) => cookie.withMaxAge(maxAge.toLong)
+    val maxAgeAv = ignoreCase("Max-Age=") *> (nonZeroDigit ~ digit.rep0).string.map { (maxAge: String) => (cookie: ResponseCookie) =>
+      cookie.withMaxAge(maxAge.toLong)
     }
 
     /* domain-value      = <subdomain>
@@ -151,8 +151,8 @@ object ResponseCookie {
      * But https://datatracker.ietf.org/doc/html/rfc6265#section-5.2.3 mandates
      * a leading dot, which is invalid per domain-value.
      */
-    val domainAv = ignoreCase("Domain=") *> (char('.').? ~ domainValue).string.map {
-      (domain: String) => (cookie: ResponseCookie) => cookie.withDomain(domain)
+    val domainAv = ignoreCase("Domain=") *> (char('.').? ~ domainValue).string.map { (domain: String) => (cookie: ResponseCookie) =>
+      cookie.withDomain(domain)
     }
 
     /* av-octet = %x20-3A / %x3C-7E
@@ -198,8 +198,8 @@ object ResponseCookie {
     /* samesite-av       = "SameSite" BWS "=" BWS samesite-value
      * from https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-06
      */
-    val samesiteAv = ignoreCase("SameSite=") *> samesiteValue.map {
-      (sameSite: SameSite) => (cookie: ResponseCookie) => cookie.withSameSite(sameSite)
+    val samesiteAv = ignoreCase("SameSite=") *> samesiteValue.map { (sameSite: SameSite) => (cookie: ResponseCookie) =>
+      cookie.withSameSite(sameSite)
     }
 
     /* extension-av = *av-octet

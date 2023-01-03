@@ -30,7 +30,7 @@ sealed abstract class CharsetRange extends HasQValue with Renderable {
     */
   final def matches(charset: Charset): Boolean =
     this match {
-      case CharsetRange.`*`(_) => true
+      case CharsetRange.`*`(_)      => true
       case CharsetRange.Atom(cs, _) => charset == cs
     }
 }
@@ -44,8 +44,7 @@ object CharsetRange {
 
   object `*` extends `*`(QValue.One)
 
-  final case class Atom protected[http4s] (charset: Charset, qValue: QValue = QValue.One)
-      extends CharsetRange {
+  final case class Atom protected[http4s] (charset: Charset, qValue: QValue = QValue.One) extends CharsetRange {
     override def withQValue(q: QValue): CharsetRange.Atom = copy(qValue = q)
 
     def render(writer: Writer): writer.type = writer << charset << qValue
@@ -53,6 +52,6 @@ object CharsetRange {
 
   implicit def fromCharset(cs: Charset): CharsetRange.Atom = cs.toRange
 
-  implicit val http4sEqForCharsetRange: Eq[CharsetRange] = Eq.fromUniversalEquals
+  implicit val http4sEqForCharsetRange:   Eq[CharsetRange]   = Eq.fromUniversalEquals
   implicit val http4sShowForCharsetRange: Show[CharsetRange] = Show.fromToString
 }

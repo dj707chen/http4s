@@ -22,7 +22,7 @@ import cats.laws._
 import cats.syntax.all._
 
 trait EntityCodecLaws[F[_], A] extends EntityEncoderLaws[F, A] {
-  implicit def F: Concurrent[F]
+  implicit def F:       Concurrent[F]
   implicit def encoder: EntityEncoder[F, A]
   implicit def decoder: EntityDecoder[F, A]
 
@@ -30,18 +30,18 @@ trait EntityCodecLaws[F[_], A] extends EntityEncoderLaws[F, A] {
     (for {
       entity <- F.pure(encoder.toEntity(a))
       message = Request(body = entity.body, headers = encoder.headers)
-      a0 <- decoder.decode(message, strict = true).value
+      a0     <- decoder.decode(message, strict = true).value
     } yield a0) <-> F.pure(Right(a))
 }
 
 object EntityCodecLaws {
   def apply[F[_], A](implicit
-      F0: Concurrent[F],
+      F0:              Concurrent[F],
       entityEncoderFA: EntityEncoder[F, A],
       entityDecoderFA: EntityDecoder[F, A],
   ): EntityCodecLaws[F, A] =
     new EntityCodecLaws[F, A] {
-      val F: Concurrent[F] = F0
+      val F:       Concurrent[F]       = F0
       val encoder: EntityEncoder[F, A] = entityEncoderFA
       val decoder: EntityDecoder[F, A] = entityDecoderFA
     }

@@ -20,5 +20,5 @@ import fs2.Chunk
 
 package object core {
   private[ember] type Drain[F[_]] = F[Option[Array[Byte]]]
-  private[ember] type Read[F[_]] = F[Option[Chunk[Byte]]]
+  private[ember] type Read[F[_]]  = F[Option[Chunk[Byte]]]
 }

@@ -31,7 +31,7 @@ import cats.syntax.all._
   */
 object AutoSlash {
   def apply[F[_], G[_], B](
-      http: Kleisli[F, Request[G], B]
+      http:     Kleisli[F, Request[G], B]
   )(implicit F: MonoidK[F]): Kleisli[F, Request[G], B] =
     Kleisli { req =>
       http(req) <+> {

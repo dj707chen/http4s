@@ -21,8 +21,8 @@ import org.http4s.client.RequestKey
 import scala.collection.immutable
 
 trait BlazeClientState[F[_]] {
-  def isClosed: F[Boolean]
-  def allocated: F[immutable.Map[RequestKey, Int]]
+  def isClosed:       F[Boolean]
+  def allocated:      F[immutable.Map[RequestKey, Int]]
   def idleQueueDepth: F[immutable.Map[RequestKey, Int]]
   def waitQueueDepth: F[Int]
 }

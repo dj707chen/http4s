@@ -31,8 +31,8 @@ import org.typelevel.ci.CIString
 object Logger {
 
   def defaultLogHeaders[F[_], A <: Message[F]](message: A)(
-      logHeaders: Boolean,
-      redactHeadersWhen: CIString => Boolean = Headers.SensitiveHeaders.contains,
+      logHeaders:                                       Boolean,
+      redactHeadersWhen:                                CIString => Boolean = Headers.SensitiveHeaders.contains,
   ): String =
     if (logHeaders)
       message.headers.redactSensitive(redactHeadersWhen).headers.mkString("Headers(", ", ", ")")
@@ -40,12 +40,10 @@ object Logger {
 
   def defaultLogBody[F[_]: Concurrent, A <: Message[F]](
       message: A
-  )(logBody: Boolean): Option[F[String]] =
+  )(logBody:   Boolean): Option[F[String]] =
     if (logBody) {
-      val isBinary = message.contentType.exists(_.mediaType.binary)
-      val isJson = message.contentType.exists(mT =>
-        mT.mediaType == MediaType.application.json || mT.mediaType.subType.endsWith("+json")
-      )
+      val isBinary   = message.contentType.exists(_.mediaType.binary)
+      val isJson     = message.contentType.exists(mT => mT.mediaType == MediaType.application.json || mT.mediaType.subType.endsWith("+json"))
       val bodyStream = if (!isBinary || isJson) {
         message.bodyText(implicitly, message.charset.getOrElse(Charset.`UTF-8`))
       } else {
@@ -55,23 +53,23 @@ object Logger {
     } else None
 
   def logMessage[F[_], A <: Message[F]](message: A)(
-      logHeaders: Boolean,
-      logBody: Boolean,
-      redactHeadersWhen: CIString => Boolean = Headers.SensitiveHeaders.contains,
-  )(log: String => F[Unit])(implicit F: Concurrent[F]): F[Unit] = {
+      logHeaders:                                Boolean,
+      logBody:                                   Boolean,
+      redactHeadersWhen:                         CIString => Boolean = Headers.SensitiveHeaders.contains,
+  )(log:                                         String => F[Unit])(implicit F: Concurrent[F]): F[Unit] = {
     val logBodyText = (_: Stream[F, Byte]) => defaultLogBody[F, A](message)(logBody)
 
     logMessageWithBodyText[F, A](message)(logHeaders, logBodyText, redactHeadersWhen)(log)
   }
 
   def logMessageWithBodyText[F[_], A <: Message[F]](message: A)(
-      logHeaders: Boolean,
-      logBodyText: Stream[F, Byte] => Option[F[String]],
-      redactHeadersWhen: CIString => Boolean = Headers.SensitiveHeaders.contains,
-  )(log: String => F[Unit])(implicit F: Monad[F]): F[Unit] = {
+      logHeaders:                                            Boolean,
+      logBodyText:                                           Stream[F, Byte] => Option[F[String]],
+      redactHeadersWhen:                                     CIString => Boolean = Headers.SensitiveHeaders.contains,
+  )(log:                                                     String => F[Unit])(implicit F: Monad[F]): F[Unit] = {
     def prelude =
       message match {
-        case req: Request[_] => s"${req.httpVersion} ${req.method} ${req.uri}"
+        case req:  Request[_]  => s"${req.httpVersion} ${req.method} ${req.uri}"
         case resp: Response[_] => s"${resp.httpVersion} ${resp.status}"
       }
 
@@ -80,7 +78,7 @@ object Logger {
     val bodyText: F[String] =
       logBodyText(message.body) match {
         case Some(textF) => textF.map(text => s"""body="$text"""")
-        case None => F.pure("")
+        case None        => F.pure("")
       }
 
     def spaced(x: String): String = if (x.isEmpty) x else s" $x"

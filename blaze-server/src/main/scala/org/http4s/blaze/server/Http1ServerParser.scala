@@ -27,14 +27,14 @@ import scala.collection.mutable.ListBuffer
 import scala.util.Either
 
 private[http4s] final class Http1ServerParser[F[_]](
-    logger: Logger,
+    logger:         Logger,
     maxRequestLine: Int,
-    maxHeadersLen: Int,
-)(implicit F: Async[F])
+    maxHeadersLen:  Int,
+)(implicit F:       Async[F])
     extends blaze.http.parser.Http1ServerParser(maxRequestLine, maxHeadersLen, 2 * 1024) {
-  private var uri: String = _
+  private var uri:    String = _
   private var method: String = _
-  private var minor: Int = -1
+  private var minor:  Int    = -1
   private val headers = new ListBuffer[Header.ToRaw]
 
   def minorVersion(): Int = minor
@@ -46,10 +46,10 @@ private[http4s] final class Http1ServerParser[F[_]](
   def doParseContent(buff: ByteBuffer): Option[ByteBuffer] = Option(parseContent(buff))
 
   def collectMessage(
-      body: EntityBody[F],
+      body:  EntityBody[F],
       attrs: Vault,
   ): Either[(ParseFailure, HttpVersion), Request[F]] = {
-    val h = Headers(headers.result())
+    val h        = Headers(headers.result())
     headers.clear()
     val protocol = if (minorVersion() == 1) HttpVersion.`HTTP/1.1` else HttpVersion.`HTTP/1.0`
 
@@ -81,15 +81,15 @@ private[http4s] final class Http1ServerParser[F[_]](
 
   override def submitRequestLine(
       methodString: String,
-      uri: String,
-      scheme: String,
+      uri:          String,
+      scheme:       String,
       majorversion: Int,
       minorversion: Int,
   ): Boolean = {
     logger.trace(s"Received request($methodString $uri $scheme/$majorversion.$minorversion)")
-    this.uri = uri
+    this.uri    = uri
     this.method = methodString
-    this.minor = minorversion
+    this.minor  = minorversion
     false
   }
 
@@ -101,9 +101,9 @@ private[http4s] final class Http1ServerParser[F[_]](
   }
 
   override def reset(): Unit = {
-    uri = null
+    uri    = null
     method = null
-    minor = -1
+    minor  = -1
     headers.clear()
     super.reset()
   }

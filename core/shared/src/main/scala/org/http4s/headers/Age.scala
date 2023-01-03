@@ -23,7 +23,7 @@ import org.typelevel.ci._
 import scala.concurrent.duration._
 import scala.util.Try
 
-object Age {
+object Age                               {
   def fromLong(age: Long): ParseResult[Age] =
     if (age >= 0)
       ParseResult.success(apply(age))

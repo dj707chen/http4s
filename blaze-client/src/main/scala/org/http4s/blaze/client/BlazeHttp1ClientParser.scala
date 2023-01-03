@@ -26,9 +26,9 @@ import scala.collection.mutable.ListBuffer
 
 private[blaze] final class BlazeHttp1ClientParser(
     maxResponseLineSize: Int,
-    maxHeaderLength: Int,
-    maxChunkSize: Int,
-    parserMode: ParserMode,
+    maxHeaderLength:     Int,
+    maxChunkSize:        Int,
+    parserMode:          ParserMode,
 ) extends Http1ClientParser(
       maxResponseLineSize,
       maxHeaderLength,
@@ -37,12 +37,12 @@ private[blaze] final class BlazeHttp1ClientParser(
       parserMode == ParserMode.Lenient,
     ) {
   private val headers = new ListBuffer[Header.Raw]
-  private var status: Status = _
+  private var status:      Status      = _
   private var httpVersion: HttpVersion = _
 
   override def reset(): Unit = {
     headers.clear()
-    status = null
+    status      = null
     httpVersion = null
     super.reset()
   }
@@ -72,14 +72,14 @@ private[blaze] final class BlazeHttp1ClientParser(
     headersComplete() || parseHeaders(buffer)
 
   override protected def submitResponseLine(
-      code: Int,
-      reason: String,
-      scheme: String,
+      code:         Int,
+      reason:       String,
+      scheme:       String,
       majorversion: Int,
       minorversion: Int,
   ): Unit = {
     val _ = reason
-    status = Status.fromInt(code).valueOr(throw _)
+    status      = Status.fromInt(code).valueOr(throw _)
     httpVersion =
       if (majorversion == 1 && minorversion == 1) HttpVersion.`HTTP/1.1`
       else if (majorversion == 1 && minorversion == 0) HttpVersion.`HTTP/1.0`

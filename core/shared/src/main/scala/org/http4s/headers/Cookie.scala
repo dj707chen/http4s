@@ -35,9 +35,8 @@ object Cookie {
     import Parser.{char, string}
 
     /* cookie-string = cookie-pair *( ";" SP cookie-pair ) */
-    val cookieString = (RequestCookie.parser ~ (string("; ") *> RequestCookie.parser).rep0).map {
-      case (head, tail) =>
-        Cookie(NonEmptyList(head, tail))
+    val cookieString = (RequestCookie.parser ~ (string("; ") *> RequestCookie.parser).rep0).map { case (head, tail) =>
+      Cookie(NonEmptyList(head, tail))
     }
 
     /* We also see trailing semi-colons in the wild, and grudgingly tolerate them

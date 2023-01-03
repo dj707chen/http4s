@@ -49,9 +49,7 @@ trait MessageFailure extends RuntimeException {
   * @param details Contains any relevant details omitted from the sanitized
   *                version of the error.  This may freely echo a Request.
   */
-final case class ParseFailure(sanitized: String, details: String)
-    extends MessageFailure
-    with NoStackTrace {
+final case class ParseFailure(sanitized: String, details: String) extends MessageFailure with NoStackTrace {
   def message: String =
     if (sanitized.isEmpty) details
     else if (details.isEmpty) sanitized
@@ -82,7 +80,7 @@ object ParseResult {
     }
 
   private[http4s] def fromParser[A](parser: Parser0[A], errorMessage: => String)(
-      s: String
+      s:                                    String
   ): ParseResult[A] =
     try parser.parseAll(s).leftMap(e => ParseFailure(errorMessage, e.toString))
     catch { case p: ParseFailure => p.asLeft[A] }
@@ -104,8 +102,7 @@ object DecodeFailure {
 trait MessageBodyFailure extends DecodeFailure
 
 /** Indicates an syntactic error decoding the body of an HTTP [[Message]]. */
-final case class MalformedMessageBodyFailure(details: String, cause: Option[Throwable] = None)
-    extends MessageBodyFailure {
+final case class MalformedMessageBodyFailure(details: String, cause: Option[Throwable] = None) extends MessageBodyFailure {
   def message: String =
     s"Malformed message body: $details"
 
@@ -115,8 +112,7 @@ final case class MalformedMessageBodyFailure(details: String, cause: Option[Thro
 }
 
 /** Indicates a semantic error decoding the body of an HTTP [[Message]]. */
-final case class InvalidMessageBodyFailure(details: String, cause: Option[Throwable] = None)
-    extends MessageBodyFailure {
+final case class InvalidMessageBodyFailure(details: String, cause: Option[Throwable] = None) extends MessageBodyFailure {
   def message: String =
     s"Invalid message body: $details"
 
@@ -145,13 +141,12 @@ sealed abstract class UnsupportedMediaTypeFailure extends DecodeFailure with NoS
   */
 final case class MediaTypeMissing(expected: Set[MediaRange]) extends UnsupportedMediaTypeFailure {
   def sanitizedResponsePrefix: String = "No media type specified in Content-Type header"
-  def message: String = responseMsg
+  def message:                 String = responseMsg
 }
 
 /** Indicates that no [[EntityDecoder]] matches the [[MediaType]] of the [[Message]] being decoded */
-final case class MediaTypeMismatch(messageType: MediaType, expected: Set[MediaRange])
-    extends UnsupportedMediaTypeFailure {
+final case class MediaTypeMismatch(messageType: MediaType, expected: Set[MediaRange]) extends UnsupportedMediaTypeFailure {
   def sanitizedResponsePrefix: String =
     "Media type supplied in Content-Type header is not supported"
-  def message: String = s"${messageType.show} is not a supported media type. $expectedMsg"
+  def message:                 String = s"${messageType.show} is not a supported media type. $expectedMsg"
 }

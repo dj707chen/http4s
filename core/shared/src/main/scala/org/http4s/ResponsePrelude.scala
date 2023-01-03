@@ -29,13 +29,13 @@ import org.http4s.internal.reduceComparisons
   *       could not be used in a [[cats.data.NonEmptySet]].
   */
 sealed abstract class ResponsePrelude extends Product with Serializable {
-  def headers: Headers
+  def headers:     Headers
   def httpVersion: HttpVersion
-  def status: Status
+  def status:      Status
 
-  def withHeaders(value: Headers): ResponsePrelude
+  def withHeaders(value:     Headers):     ResponsePrelude
   def withHttpVersion(value: HttpVersion): ResponsePrelude
-  def withStatus(value: Status): ResponsePrelude
+  def withStatus(value:      Status):      ResponsePrelude
 
   // final //
 
@@ -54,9 +54,9 @@ sealed abstract class ResponsePrelude extends Product with Serializable {
 
 object ResponsePrelude {
   private[this] final case class ResponsePreludeImpl(
-      override final val headers: Headers,
+      override final val headers:     Headers,
       override final val httpVersion: HttpVersion,
-      override final val status: Status,
+      override final val status:      Status,
   ) extends ResponsePrelude {
     override final def withHeaders(value: Headers): ResponsePrelude =
       this.copy(headers = value)
@@ -69,9 +69,9 @@ object ResponsePrelude {
   }
 
   def apply(
-      headers: Headers,
+      headers:     Headers,
       httpVersion: HttpVersion,
-      status: Status,
+      status:      Status,
   ): ResponsePrelude =
     ResponsePreludeImpl(
       headers,
@@ -86,8 +86,7 @@ object ResponsePrelude {
       value.status,
     )
 
-  implicit val catsHashAndOrderForResponsePrelude
-      : Hash[ResponsePrelude] with Order[ResponsePrelude] =
+  implicit val catsHashAndOrderForResponsePrelude: Hash[ResponsePrelude] with Order[ResponsePrelude] =
     new Hash[ResponsePrelude] with Order[ResponsePrelude] {
       override def hash(x: ResponsePrelude): Int = x.hashCode
 

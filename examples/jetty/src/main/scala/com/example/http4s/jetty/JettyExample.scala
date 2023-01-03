@@ -32,8 +32,8 @@ object JettyExample extends IOApp {
 
 object JettyExampleApp {
   def builder[F[_]: Async]: JettyBuilder[F] = {
-    val metricsRegistry: MetricRegistry = new MetricRegistry
-    val metrics: HttpMiddleware[F] = Metrics[F](Dropwizard(metricsRegistry, "server"))
+    val metricsRegistry: MetricRegistry    = new MetricRegistry
+    val metrics:         HttpMiddleware[F] = Metrics[F](Dropwizard(metricsRegistry, "server"))
 
     JettyBuilder[F]
       .bindHttp(8080)

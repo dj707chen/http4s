@@ -51,12 +51,12 @@ import scodec.bits.ByteVector
 object BodyCache {
 
   def apply[G[_]: Concurrent, F[_]: Concurrent, R](
-      old: Kleisli[G, R, Response[F]]
+      old:  Kleisli[G, R, Response[F]]
   )(reqGet: R => Request[F], reqSet: R => Request[F] => R)(
       lift: F ~> G
   ): Kleisli[G, R, Response[F]] = Kleisli {
     case req if hasNoBody(reqGet(req)) => old(req)
-    case req => lift(compileBody(reqGet(req))).flatMap(reqSet(req).andThen(old.run))
+    case req                           => lift(compileBody(reqGet(req))).flatMap(reqSet(req).andThen(old.run))
   }
 
   def httpRoutes[F[_]: Concurrent](routes: HttpRoutes[F]): HttpRoutes[F] =
@@ -69,7 +69,7 @@ object BodyCache {
     apply(app)(identity, _ => identity)(FunctionK.id)
 
   private def compileBody[F[_]: Concurrent](req: Request[F]): F[Request[F]] = for {
-    body <- req.body.compile.to(ByteVector)
+    body     <- req.body.compile.to(ByteVector)
     cachedReq = req.withBodyStream(Stream.chunk(Chunk.byteVector(body)))
   } yield cachedReq
 

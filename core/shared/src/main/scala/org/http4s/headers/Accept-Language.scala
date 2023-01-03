@@ -21,7 +21,7 @@ import cats.data.NonEmptyList
 import cats.parse.Parser
 import org.typelevel.ci._
 
-object `Accept-Language` {
+object `Accept-Language`                                              {
   def apply(head: LanguageTag, tail: LanguageTag*): `Accept-Language` =
     apply(NonEmptyList(head, tail.toList))
 

@@ -37,8 +37,8 @@ object `Access-Control-Max-Age` {
     * @param age age of the response (in seconds)
     */
   final case class Cache private (age: Long) extends `Access-Control-Max-Age` { // scalafix:ok Http4sGeneralLinters.nonValidatingCopyConstructor; bincompat until 1.0
-    def duration: Option[FiniteDuration] = Try(age.seconds).toOption
-    def unsafeDuration: FiniteDuration = age.seconds
+    def duration:       Option[FiniteDuration] = Try(age.seconds).toOption
+    def unsafeDuration: FiniteDuration         = age.seconds
   }
 
   def fromLong(age: Long): ParseResult[`Access-Control-Max-Age`] =
@@ -69,7 +69,7 @@ object `Access-Control-Max-Age` {
       ci"Access-Control-Max-Age",
       {
         case Cache(age) => age
-        case NoCaching => -1
+        case NoCaching  => -1
       },
       parse,
     )

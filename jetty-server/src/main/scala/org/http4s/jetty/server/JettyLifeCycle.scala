@@ -36,7 +36,7 @@ private[jetty] object JettyLifeCycle {
     *       be invoked.
     */
   def lifeCycleAsResource[F[_], A <: LifeCycle](
-      fa: F[A]
+      fa:       F[A]
   )(implicit F: Async[F]): Resource[F, A] =
     Resource.make[F, A](
       fa.flatTap(startLifeCycle[F])
@@ -58,7 +58,7 @@ private[jetty] object JettyLifeCycle {
     F.async_[Unit] { cb =>
       lifeCycle.addLifeCycleListener(
         new LifeCycle.Listener {
-          override def lifeCycleStopped(a: LifeCycle): Unit =
+          override def lifeCycleStopped(a: LifeCycle):                   Unit =
             cb(Right(()))
           override def lifeCycleFailure(a: LifeCycle, error: Throwable): Unit =
             cb(Left(error))
@@ -98,7 +98,7 @@ private[jetty] object JettyLifeCycle {
     F.async_[Unit] { cb =>
       lifeCycle.addLifeCycleListener(
         new LifeCycle.Listener {
-          override def lifeCycleStarted(a: LifeCycle): Unit =
+          override def lifeCycleStarted(a: LifeCycle):                   Unit =
             cb(Right(()))
           override def lifeCycleFailure(a: LifeCycle, error: Throwable): Unit =
             cb(Left(error))

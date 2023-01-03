@@ -60,9 +60,9 @@ sealed trait Message[F[_]] extends Media[F] { self =>
 
   protected def change(
       httpVersion: HttpVersion = httpVersion,
-      body: EntityBody[F] = body,
-      headers: Headers = headers,
-      attributes: Vault = attributes,
+      body:        EntityBody[F] = body,
+      headers:     Headers = headers,
+      attributes:  Vault = attributes,
   ): Self
 
   def withHttpVersion(httpVersion: HttpVersion): Self =
@@ -88,7 +88,7 @@ sealed trait Message[F[_]] extends Media[F] { self =>
     */
   def withEntity[T](b: T)(implicit w: EntityEncoder[F, T]): Self = {
     val entity = w.toEntity(b)
-    val hs = entity.length match {
+    val hs     = entity.length match {
       case Some(l) =>
         `Content-Length`
           .fromLong(l)
@@ -245,8 +245,8 @@ sealed trait Message[F[_]] extends Media[F] { self =>
 object Message {
   private[http4s] val logger = getLogger
   object Keys {
-    private[this] val trailerHeaders: Key[Any] = Key.newKey[SyncIO, Any].unsafeRunSync()
-    def TrailerHeaders[F[_]]: Key[F[Headers]] = trailerHeaders.asInstanceOf[Key[F[Headers]]]
+    private[this] val trailerHeaders: Key[Any]        = Key.newKey[SyncIO, Any].unsafeRunSync()
+    def TrailerHeaders[F[_]]:         Key[F[Headers]] = trailerHeaders.asInstanceOf[Key[F[Headers]]]
   }
 }
 
@@ -263,12 +263,12 @@ object Message {
   * @param attributes Immutable Map used for carrying additional information in a type safe fashion
   */
 final class Request[F[_]] private (
-    val method: Method,
-    val uri: Uri,
+    val method:      Method,
+    val uri:         Uri,
     val httpVersion: HttpVersion,
-    val headers: Headers,
-    val body: EntityBody[F],
-    val attributes: Vault,
+    val headers:     Headers,
+    val body:        EntityBody[F],
+    val attributes:  Vault,
 ) extends Message[F]
     with Product
     with Serializable {
@@ -277,30 +277,30 @@ final class Request[F[_]] private (
   type SelfF[F0[_]] = Request[F0]
 
   private def copy(
-      method: Method = this.method,
-      uri: Uri = this.uri,
+      method:      Method = this.method,
+      uri:         Uri = this.uri,
       httpVersion: HttpVersion = this.httpVersion,
-      headers: Headers = this.headers,
-      body: EntityBody[F] = this.body,
-      attributes: Vault = this.attributes,
+      headers:     Headers = this.headers,
+      body:        EntityBody[F] = this.body,
+      attributes:  Vault = this.attributes,
   ): Request[F] =
     Request(
-      method = method,
-      uri = uri,
+      method      = method,
+      uri         = uri,
       httpVersion = httpVersion,
-      headers = headers,
-      body = body,
-      attributes = attributes,
+      headers     = headers,
+      body        = body,
+      attributes  = attributes,
     )
 
   def mapK[G[_]](f: F ~> G): Request[G] =
     Request[G](
-      method = method,
-      uri = uri,
+      method      = method,
+      uri         = uri,
       httpVersion = httpVersion,
-      headers = headers,
-      body = body.translate(f),
-      attributes = attributes,
+      headers     = headers,
+      body        = body.translate(f),
+      attributes  = attributes,
     )
 
   def withMethod(method: Method): Request[F] =
@@ -311,15 +311,15 @@ final class Request[F[_]] private (
 
   override protected def change(
       httpVersion: HttpVersion,
-      body: EntityBody[F],
-      headers: Headers,
-      attributes: Vault,
+      body:        EntityBody[F],
+      headers:     Headers,
+      attributes:  Vault,
   ): Request[F] =
     copy(
       httpVersion = httpVersion,
-      body = body,
-      headers = headers,
-      attributes = attributes,
+      body        = body,
+      headers     = headers,
+      attributes  = attributes,
     )
 
   lazy val (scriptName, pathInfo) = {
@@ -455,8 +455,8 @@ final class Request[F[_]] private (
     method.isIdempotent || headers.contains[`Idempotency-Key`]
 
   def decodeWith[A](decoder: EntityDecoder[F, A], strict: Boolean)(
-      f: A => F[Response[F]]
-  )(implicit F: Monad[F]): F[Response[F]] =
+      f:                     A => F[Response[F]]
+  )(implicit F:              Monad[F]): F[Response[F]] =
     decoder
       .decode(this, strict = strict)
       .fold(_.toHttpResponse[F](httpVersion).pure[F], f)
@@ -468,7 +468,7 @@ final class Request[F[_]] private (
     * If decoding fails, an `UnprocessableEntity` [[Response]] is generated.
     */
   def decode[A](
-      f: A => F[Response[F]]
+      f:        A => F[Response[F]]
   )(implicit F: Monad[F], decoder: EntityDecoder[F, A]): F[Response[F]] =
     decodeWith(decoder, strict = false)(f)
 
@@ -479,7 +479,7 @@ final class Request[F[_]] private (
     * [[MediaType]] of the [[Request]], a `UnsupportedMediaType` [[Response]] is generated instead.
     */
   def decodeStrict[A](
-      f: A => F[Response[F]]
+      f:        A => F[Response[F]]
   )(implicit F: Monad[F], decoder: EntityDecoder[F, A]): F[Response[F]] =
     decodeWith(decoder, strict = true)(f)
 
@@ -527,20 +527,20 @@ object Request {
     * @param attributes Immutable Map used for carrying additional information in a type safe fashion
     */
   def apply[F[_]](
-      method: Method = Method.GET,
-      uri: Uri = Uri(path = Uri.Path.Root),
+      method:      Method = Method.GET,
+      uri:         Uri = Uri(path = Uri.Path.Root),
       httpVersion: HttpVersion = HttpVersion.`HTTP/1.1`,
-      headers: Headers = Headers.empty,
-      body: EntityBody[F] = EmptyBody,
-      attributes: Vault = Vault.empty,
+      headers:     Headers = Headers.empty,
+      body:        EntityBody[F] = EmptyBody,
+      attributes:  Vault = Vault.empty,
   ): Request[F] =
     new Request[F](
-      method = method,
-      uri = uri,
+      method      = method,
+      uri         = uri,
       httpVersion = httpVersion,
-      headers = headers,
-      body = body,
-      attributes = attributes,
+      headers     = headers,
+      body        = body,
+      attributes  = attributes,
     )
 
   def unapply[F[_]](
@@ -558,16 +558,16 @@ object Request {
     )
 
   final case class Connection(
-      local: SocketAddress[IpAddress],
+      local:  SocketAddress[IpAddress],
       remote: SocketAddress[IpAddress],
       secure: Boolean,
   )
 
   object Keys {
-    val PathInfoCaret: Key[Int] = Key.newKey[SyncIO, Int].unsafeRunSync()
-    val PathTranslated: Key[File] = Key.newKey[SyncIO, File].unsafeRunSync()
-    val ConnectionInfo: Key[Connection] = Key.newKey[SyncIO, Connection].unsafeRunSync()
-    val ServerSoftware: Key[ServerSoftware] = Key.newKey[SyncIO, ServerSoftware].unsafeRunSync()
+    val PathInfoCaret:     Key[Int]               = Key.newKey[SyncIO, Int].unsafeRunSync()
+    val PathTranslated:    Key[File]              = Key.newKey[SyncIO, File].unsafeRunSync()
+    val ConnectionInfo:    Key[Connection]        = Key.newKey[SyncIO, Connection].unsafeRunSync()
+    val ServerSoftware:    Key[ServerSoftware]    = Key.newKey[SyncIO, ServerSoftware].unsafeRunSync()
     val UnixSocketAddress: Key[UnixSocketAddress] =
       Key.newKey[SyncIO, UnixSocketAddress].unsafeRunSync()
   }
@@ -583,11 +583,11 @@ object Request {
   *                   additional processing such as java.io.File object
   */
 final class Response[F[_]] private (
-    val status: Status,
+    val status:      Status,
     val httpVersion: HttpVersion,
-    val headers: Headers,
-    val body: EntityBody[F],
-    val attributes: Vault,
+    val headers:     Headers,
+    val body:        EntityBody[F],
+    val attributes:  Vault,
 ) extends Message[F]
     with Product
     with Serializable {
@@ -595,11 +595,11 @@ final class Response[F[_]] private (
 
   def mapK[G[_]](f: F ~> G): Response[G] =
     Response[G](
-      status = status,
+      status      = status,
       httpVersion = httpVersion,
-      headers = headers,
-      body = body.translate(f),
-      attributes = attributes,
+      headers     = headers,
+      body        = body.translate(f),
+      attributes  = attributes,
     )
 
   def withStatus(status: Status): Response[F] =
@@ -607,15 +607,15 @@ final class Response[F[_]] private (
 
   override protected def change(
       httpVersion: HttpVersion,
-      body: EntityBody[F],
-      headers: Headers,
-      attributes: Vault,
+      body:        EntityBody[F],
+      headers:     Headers,
+      attributes:  Vault,
   ): Response[F] =
     copy(
       httpVersion = httpVersion,
-      body = body,
-      headers = headers,
-      attributes = attributes,
+      body        = body,
+      headers     = headers,
+      attributes  = attributes,
     )
 
   /** Add a Set-Cookie header for the provided [[ResponseCookie]] */
@@ -646,18 +646,18 @@ final class Response[F[_]] private (
   override def hashCode(): Int = MurmurHash3.productHash(this)
 
   def copy(
-      status: Status = this.status,
+      status:      Status = this.status,
       httpVersion: HttpVersion = this.httpVersion,
-      headers: Headers = this.headers,
-      body: EntityBody[F] = this.body,
-      attributes: Vault = this.attributes,
+      headers:     Headers = this.headers,
+      body:        EntityBody[F] = this.body,
+      attributes:  Vault = this.attributes,
   ): Response[F] =
     Response[F](
-      status = status,
+      status      = status,
       httpVersion = httpVersion,
-      headers = headers,
-      body = body,
-      attributes = attributes,
+      headers     = headers,
+      body        = body,
+      attributes  = attributes,
     )
 
   def canEqual(that: Any): Boolean =
@@ -699,11 +699,11 @@ object Response extends KleisliSyntax {
     *                   additional processing such as java.io.File object
     */
   def apply[F[_]](
-      status: Status = Status.Ok,
+      status:      Status = Status.Ok,
       httpVersion: HttpVersion = HttpVersion.`HTTP/1.1`,
-      headers: Headers = Headers.empty,
-      body: EntityBody[F] = EmptyBody,
-      attributes: Vault = Vault.empty,
+      headers:     Headers = Headers.empty,
+      body:        EntityBody[F] = EmptyBody,
+      attributes:  Vault = Vault.empty,
   ): Response[F] =
     new Response(status, httpVersion, headers, body, attributes)
 
@@ -717,7 +717,7 @@ object Response extends KleisliSyntax {
   private[this] val pureNotFound: Response[Pure] =
     Response(
       Status.NotFound,
-      body = Stream("Not found").through(utf8.encode),
+      body    = Stream("Not found").through(utf8.encode),
       headers = Headers(
         `Content-Type`(MediaType.text.plain, Charset.`UTF-8`),
         `Content-Length`.unsafeFromLong(9L),

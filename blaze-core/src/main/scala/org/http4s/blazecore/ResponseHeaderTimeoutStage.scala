@@ -30,8 +30,8 @@ import scala.concurrent.duration.FiniteDuration
 
 private[http4s] final class ResponseHeaderTimeoutStage[A](
     timeout: FiniteDuration,
-    exec: TickWheelExecutor,
-    ec: ExecutionContext,
+    exec:    TickWheelExecutor,
+    ec:      ExecutionContext,
 ) extends MidStage[A, A] { stage =>
   @volatile private[this] var cb: Callback[TimeoutException] = null
 

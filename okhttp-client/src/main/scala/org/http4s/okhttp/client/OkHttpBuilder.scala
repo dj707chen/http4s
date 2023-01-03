@@ -51,12 +51,12 @@ import OkHttpBuilder._
   * @param okHttpClient the underlying OkHttp client.
   */
 sealed abstract class OkHttpBuilder[F[_]] private (
-    val okHttpClient: OkHttpClient
+    val okHttpClient:       OkHttpClient
 )(implicit protected val F: Async[F])
     extends BackendBuilder[F, Client[F]] {
 
-  private def invokeCallback(result: Result[F], cb: Result[F] => Unit, dispatcher: Dispatcher[F])(
-      implicit F: Async[F]
+  private def invokeCallback(result: Result[F], cb: Result[F] => Unit, dispatcher: Dispatcher[F])(implicit
+      F:                             Async[F]
   ): Unit = {
     val f = logTap(result).flatMap(r => F.delay(cb(r)))
     dispatcher.unsafeRunSync(f)
@@ -83,36 +83,36 @@ sealed abstract class OkHttpBuilder[F[_]] private (
     })
 
   private def handler(cb: Result[F] => Unit, dispatcher: Dispatcher[F])(implicit
-      F: Async[F]
+      F:                  Async[F]
   ): Callback =
     new Callback {
       override def onFailure(call: Call, e: IOException): Unit =
         invokeCallback(Left(e), cb, dispatcher)
 
       override def onResponse(call: Call, response: OKResponse): Unit = {
-        val protocol = response.protocol() match {
-          case Protocol.HTTP_2 => HttpVersion.`HTTP/2`
+        val protocol   = response.protocol() match {
+          case Protocol.HTTP_2   => HttpVersion.`HTTP/2`
           case Protocol.HTTP_1_1 => HttpVersion.`HTTP/1.1`
           case Protocol.HTTP_1_0 => HttpVersion.`HTTP/1.0`
-          case _ => HttpVersion.`HTTP/1.1`
+          case _                 => HttpVersion.`HTTP/1.1`
         }
-        val status = Status.fromInt(response.code())
+        val status     = Status.fromInt(response.code())
         val bodyStream = response.body.byteStream()
-        val body = readInputStream(F.pure(bodyStream), 1024, false)
-        val dispose = F.delay {
+        val body       = readInputStream(F.pure(bodyStream), 1024, false)
+        val dispose    = F.delay {
           bodyStream.close()
           ()
         }
-        val r = status
+        val r          = status
           .map { s =>
             Resource[F, Response[F]](
               F.pure(
                 (
                   Response[F](
-                    status = s,
-                    headers = getHeaders(response),
+                    status      = s,
+                    headers     = getHeaders(response),
                     httpVersion = protocol,
-                    body = body,
+                    body        = body,
                   ),
                   dispose,
                 )
@@ -134,7 +134,7 @@ sealed abstract class OkHttpBuilder[F[_]] private (
     })
 
   private def toOkHttpRequest(req: Request[F], dispatcher: Dispatcher[F])(implicit
-      F: Async[F]
+      F:                           Async[F]
   ): OKRequest = {
     val body = req match {
       case _ if req.isChunked || req.contentLength.isDefined =>
@@ -164,10 +164,10 @@ sealed abstract class OkHttpBuilder[F[_]] private (
       // if it's a GET or HEAD, okhttp wants us to pass null
       case _ if req.method == Method.GET || req.method == Method.HEAD => null
       // for anything else we can pass a body which produces no output
-      case _ =>
+      case _                                                 =>
         new RequestBody {
-          override def contentType(): OKMediaType = null
-          override def writeTo(sink: BufferedSink): Unit = ()
+          override def contentType():               OKMediaType = null
+          override def writeTo(sink: BufferedSink): Unit        = ()
         }
     }
 
@@ -224,10 +224,10 @@ object OkHttpBuilder {
   private type Result[F[_]] = Either[Throwable, Resource[F, Response[F]]]
 
   private def logTap[F[_]](
-      result: Result[F]
+      result:   Result[F]
   )(implicit F: Async[F]): F[Either[Throwable, Resource[F, Response[F]]]] =
     (result match {
-      case Left(e) => F.delay(logger.error(e)("Error in call back"))
+      case Left(e)  => F.delay(logger.error(e)("Error in call back"))
       case Right(_) => F.unit
     }).map(_ => result)
 }

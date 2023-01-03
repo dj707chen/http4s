@@ -30,7 +30,7 @@ trait HttpCodecTests[A] extends Laws {
 
   def httpCodec(implicit arbitraryA: Arbitrary[A], shrinkA: Shrink[A], eqA: Eq[A]): RuleSet =
     new DefaultRuleSet(
-      name = "HTTP codec",
+      name   = "HTTP codec",
       parent = None,
       "roundTrip" -> Prop.forAll { (a: A) =>
         laws.httpCodecRoundTrip(a)

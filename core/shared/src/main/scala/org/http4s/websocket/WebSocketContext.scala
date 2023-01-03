@@ -22,8 +22,8 @@ import cats.syntax.all._
 import cats.~>
 
 final case class WebSocketContext[F[_]](
-    webSocket: WebSocket[F],
-    headers: Headers,
+    webSocket:       WebSocket[F],
+    headers:         Headers,
     failureResponse: F[Response[F]],
 ) {
 

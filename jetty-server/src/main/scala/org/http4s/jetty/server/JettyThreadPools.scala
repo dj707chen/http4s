@@ -53,7 +53,7 @@ object JettyThreadPools {
       // I know, this is gross.
       case value: ThreadPool with LifeCycle =>
         JettyLifeCycle.lifeCycleAsResource[F, ThreadPool with LifeCycle](F.pure(value))
-      case value: ThreadPool =>
+      case value: ThreadPool                =>
         Resource.make(F.pure(value))(value => F.blocking(value.join()))
     }
 

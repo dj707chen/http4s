@@ -35,8 +35,8 @@ class BlazeMetricsExample extends IOApp {
 
 object BlazeMetricsExampleApp {
   def httpApp[F[_]: Async]: HttpApp[F] = {
-    val metricsRegistry: MetricRegistry = new MetricRegistry()
-    val metrics: HttpMiddleware[F] = Metrics[F](Dropwizard(metricsRegistry, "server"))
+    val metricsRegistry: MetricRegistry    = new MetricRegistry()
+    val metrics:         HttpMiddleware[F] = Metrics[F](Dropwizard(metricsRegistry, "server"))
     Router(
       "/http4s" -> metrics(ExampleService[F].routes),
       "/http4s/metrics" -> metricsService[F](metricsRegistry),

@@ -45,18 +45,18 @@ import scala.util.Failure
 import scala.util.Success
 
 private[http4s] class Http4sWSStage[F[_]](
-    ws: WebSocket[F],
-    sentClose: AtomicBoolean,
-    deadSignal: SignallingRef[F, Boolean],
+    ws:             WebSocket[F],
+    sentClose:      AtomicBoolean,
+    deadSignal:     SignallingRef[F, Boolean],
     writeSemaphore: Semaphore[F],
-    dispatcher: Dispatcher[F],
-)(implicit F: Async[F])
+    dispatcher:     Dispatcher[F],
+)(implicit F:       Async[F])
     extends TailStage[WebSocketFrame] {
 
   def name: String = "Http4s WebSocket Stage"
 
   // ////////////////////// Source and Sink generators ////////////////////////
-  val isClosed: F[Boolean] = F.delay(sentClose.get())
+  val isClosed:  F[Boolean] = F.delay(sentClose.get())
   val setClosed: F[Boolean] = F.delay(sentClose.compareAndSet(false, true))
 
   def evalFrame(frame: WebSocketFrame): F[Unit] = frame match {
@@ -71,7 +71,7 @@ private[http4s] class Http4sWSStage[F[_]](
       F.async_[Unit] { cb =>
         channelWrite(frame).onComplete {
           case Success(res) => cb(Right(res))
-          case Failure(t) => cb(Left(t))
+          case Failure(t)   => cb(Left(t))
         }(ec)
       }
     }
@@ -79,7 +79,7 @@ private[http4s] class Http4sWSStage[F[_]](
   private[this] def readFrameTrampoline: F[WebSocketFrame] =
     F.async_[WebSocketFrame] { cb =>
       channelRead().onComplete {
-        case Success(ws) => cb(Right(ws))
+        case Success(ws)        => cb(Right(ws))
         case Failure(exception) => cb(Left(exception))
       }(trampoline)
     }
@@ -110,10 +110,10 @@ private[http4s] class Http4sWSStage[F[_]](
         case t: ReservedOpcodeException =>
           F.delay(logger.error(t)("Decoded a websocket frame with a reserved opcode")) *>
             F.fromEither(Close(1003))
-        case t: UnknownOpcodeException =>
+        case t: UnknownOpcodeException  =>
           F.delay(logger.error(t)("Decoded a websocket frame with an unknown opcode")) *>
             F.fromEither(Close(1002))
-        case t: ProtocolException =>
+        case t: ProtocolException       =>
           F.delay(logger.error(t)("Websocket protocol violation")) *> F.fromEither(Close(1002))
       }
       .flatMap {
@@ -154,7 +154,7 @@ private[http4s] class Http4sWSStage[F[_]](
         case WebSocketSeparatePipe(send, receive, _) =>
           // We don't need to terminate if the send stream terminates.
           send.concurrently(receive(inputstream))
-        case WebSocketCombinedPipe(receiveSend, _) =>
+        case WebSocketCombinedPipe(receiveSend, _)   =>
           receiveSend(inputstream)
       }
 
@@ -173,7 +173,7 @@ private[http4s] class Http4sWSStage[F[_]](
     val result = F.handleErrorWith(wsStream) {
       case EOF =>
         F.delay(stageShutdown())
-      case t =>
+      case t   =>
         F.delay(logger.error(t)("Error closing Web Socket"))
     }
     dispatcher.unsafeRunAndForget(result)
@@ -193,10 +193,10 @@ object Http4sWSStage {
     TrunkBuilder(new SerializingStage[WebSocketFrame]).cap(stage)
 
   def apply[F[_]](
-      ws: WebSocket[F],
-      sentClose: AtomicBoolean,
+      ws:         WebSocket[F],
+      sentClose:  AtomicBoolean,
       deadSignal: SignallingRef[F, Boolean],
       dispatcher: Dispatcher[F],
-  )(implicit F: Async[F]): F[Http4sWSStage[F]] =
+  )(implicit F:   Async[F]): F[Http4sWSStage[F]] =
     Semaphore[F](1L).map(t => new Http4sWSStage(ws, sentClose, deadSignal, t, dispatcher))
 }

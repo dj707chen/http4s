@@ -34,7 +34,7 @@ object AuthedRoutes {
     * @return an [[AuthedRoutes]] that wraps `run`
     */
   def apply[T, F[_]](run: AuthedRequest[F, T] => OptionT[F, Response[F]])(implicit
-      F: Monad[F]
+      F:                  Monad[F]
   ): AuthedRoutes[T, F] =
     Kleisli(req => OptionT(F.unit >> run(req).value))
 
@@ -48,7 +48,7 @@ object AuthedRoutes {
     * wherever `pf` is defined, an `OptionT.none` wherever it is not
     */
   def of[T, F[_]](pf: PartialFunction[AuthedRequest[F, T], F[Response[F]]])(implicit
-      FA: Monad[F]
+      FA:             Monad[F]
   ): AuthedRoutes[T, F] =
     Kleisli(req => OptionT(FA.unit >> pf.lift(req).sequence))
 

@@ -88,23 +88,23 @@ import scala.concurrent.duration._
   * @param maxWebSocketBufferSize: The maximum Websocket buffer length. 'None' means unbounded.
   */
 class BlazeServerBuilder[F[_]] private (
-    socketAddress: InetSocketAddress,
+    socketAddress:          InetSocketAddress,
     executionContextConfig: ExecutionContextConfig,
-    responseHeaderTimeout: Duration,
-    idleTimeout: Duration,
-    connectorPoolSize: Int,
-    bufferSize: Int,
-    selectorThreadFactory: ThreadFactory,
-    sslConfig: SslConfig[F],
-    isHttp2Enabled: Boolean,
-    maxRequestLineLen: Int,
-    maxHeadersLen: Int,
-    chunkBufferMaxSize: Int,
-    httpApp: WebSocketBuilder2[F] => HttpApp[F],
-    serviceErrorHandler: ServiceErrorHandler[F],
-    banner: immutable.Seq[String],
-    maxConnections: Int,
-    val channelOptions: ChannelOptions,
+    responseHeaderTimeout:  Duration,
+    idleTimeout:            Duration,
+    connectorPoolSize:      Int,
+    bufferSize:             Int,
+    selectorThreadFactory:  ThreadFactory,
+    sslConfig:              SslConfig[F],
+    isHttp2Enabled:         Boolean,
+    maxRequestLineLen:      Int,
+    maxHeadersLen:          Int,
+    chunkBufferMaxSize:     Int,
+    httpApp:                WebSocketBuilder2[F] => HttpApp[F],
+    serviceErrorHandler:    ServiceErrorHandler[F],
+    banner:                 immutable.Seq[String],
+    maxConnections:         Int,
+    val channelOptions:     ChannelOptions,
     maxWebSocketBufferSize: Option[Int],
 )(implicit protected val F: Async[F])
     extends ServerBuilder[F]
@@ -114,23 +114,23 @@ class BlazeServerBuilder[F[_]] private (
   private[this] val logger = getLogger
 
   private def copy(
-      socketAddress: InetSocketAddress = socketAddress,
+      socketAddress:          InetSocketAddress = socketAddress,
       executionContextConfig: ExecutionContextConfig = executionContextConfig,
-      idleTimeout: Duration = idleTimeout,
-      responseHeaderTimeout: Duration = responseHeaderTimeout,
-      connectorPoolSize: Int = connectorPoolSize,
-      bufferSize: Int = bufferSize,
-      selectorThreadFactory: ThreadFactory = selectorThreadFactory,
-      sslConfig: SslConfig[F] = sslConfig,
-      http2Support: Boolean = isHttp2Enabled,
-      maxRequestLineLen: Int = maxRequestLineLen,
-      maxHeadersLen: Int = maxHeadersLen,
-      chunkBufferMaxSize: Int = chunkBufferMaxSize,
-      httpApp: WebSocketBuilder2[F] => HttpApp[F] = httpApp,
-      serviceErrorHandler: ServiceErrorHandler[F] = serviceErrorHandler,
-      banner: immutable.Seq[String] = banner,
-      maxConnections: Int = maxConnections,
-      channelOptions: ChannelOptions = channelOptions,
+      idleTimeout:            Duration = idleTimeout,
+      responseHeaderTimeout:  Duration = responseHeaderTimeout,
+      connectorPoolSize:      Int = connectorPoolSize,
+      bufferSize:             Int = bufferSize,
+      selectorThreadFactory:  ThreadFactory = selectorThreadFactory,
+      sslConfig:              SslConfig[F] = sslConfig,
+      http2Support:           Boolean = isHttp2Enabled,
+      maxRequestLineLen:      Int = maxRequestLineLen,
+      maxHeadersLen:          Int = maxHeadersLen,
+      chunkBufferMaxSize:     Int = chunkBufferMaxSize,
+      httpApp:                WebSocketBuilder2[F] => HttpApp[F] = httpApp,
+      serviceErrorHandler:    ServiceErrorHandler[F] = serviceErrorHandler,
+      banner:                 immutable.Seq[String] = banner,
+      maxConnections:         Int = maxConnections,
+      channelOptions:         ChannelOptions = channelOptions,
       maxWebSocketBufferSize: Option[Int] = maxWebSocketBufferSize,
   ): Self =
     new BlazeServerBuilder(
@@ -164,7 +164,7 @@ class BlazeServerBuilder[F[_]] private (
     */
   def withLengthLimits(
       maxRequestLineLen: Int = maxRequestLineLen,
-      maxHeadersLen: Int = maxHeadersLen,
+      maxHeadersLen:     Int = maxHeadersLen,
   ): Self =
     copy(maxRequestLineLen = maxRequestLineLen, maxHeadersLen = maxHeadersLen)
 
@@ -173,11 +173,11 @@ class BlazeServerBuilder[F[_]] private (
     "0.21.0-RC3",
   )
   def withSSL(
-      keyStore: StoreInfo,
+      keyStore:           StoreInfo,
       keyManagerPassword: String,
-      protocol: String = "TLS",
-      trustStore: Option[StoreInfo] = None,
-      clientAuth: SSLClientAuthMode = SSLClientAuthMode.NotRequested,
+      protocol:           String = "TLS",
+      trustStore:         Option[StoreInfo] = None,
+      clientAuth:         SSLClientAuthMode = SSLClientAuthMode.NotRequested,
   ): Self = {
     val bits = new KeyStoreBits[F](keyStore, keyManagerPassword, protocol, trustStore, clientAuth)
     copy(sslConfig = bits)
@@ -261,16 +261,16 @@ class BlazeServerBuilder[F[_]] private (
     copy(maxWebSocketBufferSize = maxWebSocketBufferSize)
 
   private def pipelineFactory(
-      scheduler: TickWheelExecutor,
+      scheduler:    TickWheelExecutor,
       engineConfig: Option[(SSLContext, SSLEngine => Unit)],
-      dispatcher: Dispatcher[F],
-  )(conn: SocketConnection): Future[LeafBuilder[ByteBuffer]] = {
+      dispatcher:   Dispatcher[F],
+  )(conn:           SocketConnection): Future[LeafBuilder[ByteBuffer]] = {
     def requestAttributes(secure: Boolean, optionalSslEngine: Option[SSLEngine]): () => Vault =
       (conn.local, conn.remote) match {
         case (local: InetSocketAddress, remote: InetSocketAddress) =>
           () => {
             val connection = Request.Connection(
-              local = SocketAddress(
+              local  = SocketAddress(
                 IpAddress.fromBytes(local.getAddress.getAddress).get,
                 Port.fromInt(local.getPort).get,
               ),
@@ -285,10 +285,10 @@ class BlazeServerBuilder[F[_]] private (
             // Here, each condition is checked inside a "flatMap" to handle possible "null" values
             def secureSession: Option[SecureSession] =
               for {
-                engine <- optionalSslEngine
+                engine  <- optionalSslEngine
                 session <- Option(engine.getSession)
-                hex <- Option(session.getId).map(ByteVector(_).toHex)
-                cipher <- Option(session.getCipherSuite)
+                hex     <- Option(session.getId).map(ByteVector(_).toHex)
+                cipher  <- Option(session.getCipherSuite)
               } yield SecureSession(hex, cipher, deduceKeyLength(cipher), getCertChain(session))
 
             Vault.empty
@@ -302,9 +302,9 @@ class BlazeServerBuilder[F[_]] private (
 
     def http1Stage(
         executionContext: ExecutionContext,
-        secure: Boolean,
-        engine: Option[SSLEngine],
-        webSocketKey: Key[WebSocketContext[F]],
+        secure:           Boolean,
+        engine:           Option[SSLEngine],
+        webSocketKey:     Key[WebSocketContext[F]],
     ) =
       Http1ServerStage(
         httpApp(WebSocketBuilder2(webSocketKey)),
@@ -324,8 +324,8 @@ class BlazeServerBuilder[F[_]] private (
 
     def http2Stage(
         executionContext: ExecutionContext,
-        engine: SSLEngine,
-        webSocketKey: Key[WebSocketContext[F]],
+        engine:           SSLEngine,
+        webSocketKey:     Key[WebSocketContext[F]],
     ): ALPNServerSelector =
       ProtocolSelector(
         engine,
@@ -376,24 +376,24 @@ class BlazeServerBuilder[F[_]] private (
     val mkFactory: Resource[F, ServerChannelGroup] = Resource.make(F.delay {
       NIO1SocketServerGroup
         .fixed(
-          workerThreads = connectorPoolSize,
-          bufferSize = bufferSize,
-          channelOptions = channelOptions,
+          workerThreads         = connectorPoolSize,
+          bufferSize            = bufferSize,
+          channelOptions        = channelOptions,
           selectorThreadFactory = selectorThreadFactory,
-          maxConnections = maxConnections,
+          maxConnections        = maxConnections,
         )
     })(factory => F.delay(factory.closeGroup()))
 
     def mkServerChannel(
-        factory: ServerChannelGroup,
-        scheduler: TickWheelExecutor,
+        factory:    ServerChannelGroup,
+        scheduler:  TickWheelExecutor,
         dispatcher: Dispatcher[F],
     ): Resource[F, ServerChannel] =
       Resource.make(
         for {
-          ctxOpt <- sslConfig.makeContext
+          ctxOpt   <- sslConfig.makeContext
           engineCfg = ctxOpt.map(ctx => (ctx, sslConfig.configureEngine _))
-          address = resolveAddress(socketAddress)
+          address   = resolveAddress(socketAddress)
         } yield factory.bind(address, pipelineFactory(scheduler, engineCfg, dispatcher)).get
       )(serverChannel => F.delay(serverChannel.close()))
 
@@ -413,21 +413,21 @@ class BlazeServerBuilder[F[_]] private (
       // blaze doesn't have graceful shutdowns, which means it may continue to submit effects,
       // ever after the server has acknowledged shutdown, so we just need to allocate
       dispatcher <- Resource.eval(Dispatcher[F].allocated.map(_._1))
-      scheduler <- tickWheelResource
+      scheduler  <- tickWheelResource
 
       _ <- Resource.eval(verifyTimeoutRelations())
 
-      factory <- mkFactory
+      factory       <- mkFactory
       serverChannel <- mkServerChannel(factory, scheduler, dispatcher)
-      server = new Server {
-        val address: InetSocketAddress =
-          serverChannel.socketAddress
+      server         = new Server {
+                         val address: InetSocketAddress =
+                           serverChannel.socketAddress
 
-        val isSecure = sslConfig.isSecure
+                         val isSecure = sslConfig.isSecure
 
-        override def toString: String =
-          s"BlazeServer($address)"
-      }
+                         override def toString: String =
+                           s"BlazeServer($address)"
+                       }
 
       _ <- logStart(server)
     } yield server
@@ -455,23 +455,23 @@ object BlazeServerBuilder {
 
   def apply[F[_]](implicit F: Async[F]): BlazeServerBuilder[F] =
     new BlazeServerBuilder(
-      socketAddress = defaults.IPv4SocketAddress,
+      socketAddress          = defaults.IPv4SocketAddress,
       executionContextConfig = ExecutionContextConfig.DefaultContext,
-      responseHeaderTimeout = defaults.ResponseTimeout,
-      idleTimeout = defaults.IdleTimeout,
-      connectorPoolSize = DefaultPoolSize,
-      bufferSize = 64 * 1024,
-      selectorThreadFactory = defaultThreadSelectorFactory,
-      sslConfig = new NoSsl[F](),
-      isHttp2Enabled = false,
-      maxRequestLineLen = 4 * 1024,
-      maxHeadersLen = defaults.MaxHeadersSize,
-      chunkBufferMaxSize = 1024 * 1024,
-      httpApp = _ => defaultApp[F],
-      serviceErrorHandler = DefaultServiceErrorHandler[F],
-      banner = defaults.Banner,
-      maxConnections = defaults.MaxConnections,
-      channelOptions = ChannelOptions(Vector.empty),
+      responseHeaderTimeout  = defaults.ResponseTimeout,
+      idleTimeout            = defaults.IdleTimeout,
+      connectorPoolSize      = DefaultPoolSize,
+      bufferSize             = 64 * 1024,
+      selectorThreadFactory  = defaultThreadSelectorFactory,
+      sslConfig              = new NoSsl[F](),
+      isHttp2Enabled         = false,
+      maxRequestLineLen      = 4 * 1024,
+      maxHeadersLen          = defaults.MaxHeadersSize,
+      chunkBufferMaxSize     = 1024 * 1024,
+      httpApp                = _ => defaultApp[F],
+      serviceErrorHandler    = DefaultServiceErrorHandler[F],
+      banner                 = defaults.Banner,
+      maxConnections         = defaults.MaxConnections,
+      channelOptions         = ChannelOptions(Vector.empty),
       maxWebSocketBufferSize = None,
     )
 
@@ -488,17 +488,17 @@ object BlazeServerBuilder {
   }
 
   private final class KeyStoreBits[F[_]](
-      keyStore: StoreInfo,
+      keyStore:           StoreInfo,
       keyManagerPassword: String,
-      protocol: String,
-      trustStore: Option[StoreInfo],
-      clientAuth: SSLClientAuthMode,
-  )(implicit F: Sync[F])
+      protocol:           String,
+      trustStore:         Option[StoreInfo],
+      clientAuth:         SSLClientAuthMode,
+  )(implicit F:           Sync[F])
       extends SslConfig[F] {
-    def makeContext: F[Option[SSLContext]] =
+    def makeContext:                        F[Option[SSLContext]] =
       F.delay {
         val ksStream = new FileInputStream(keyStore.path)
-        val ks = KeyStore.getInstance("JKS")
+        val ks       = KeyStore.getInstance("JKS")
         ks.load(ksStream, keyStore.password.toCharArray)
         ksStream.close()
 
@@ -526,54 +526,53 @@ object BlazeServerBuilder {
         context.init(kmf.getKeyManagers, tmf.orNull, null)
         context.some
       }
-    def configureEngine(engine: SSLEngine): Unit =
+    def configureEngine(engine: SSLEngine): Unit                  =
       configureEngineFromSslClientAuthMode(engine, clientAuth)
-    def isSecure: Boolean = true
+    def isSecure:                           Boolean               = true
   }
 
-  private class ContextOnly[F[_]](sslContext: SSLContext)(implicit F: Applicative[F])
-      extends SslConfig[F] {
-    def makeContext: F[Option[SSLContext]] = F.pure(sslContext.some)
-    def configureEngine(engine: SSLEngine): Unit = {
+  private class ContextOnly[F[_]](sslContext: SSLContext)(implicit F: Applicative[F]) extends SslConfig[F] {
+    def makeContext:                        F[Option[SSLContext]] = F.pure(sslContext.some)
+    def configureEngine(engine: SSLEngine): Unit                  = {
       val _ = engine
       ()
     }
-    def isSecure: Boolean = true
+    def isSecure:                           Boolean               = true
   }
 
-  private class ContextWithParameters[F[_]](sslContext: SSLContext, sslParameters: SSLParameters)(
-      implicit F: Applicative[F]
+  private class ContextWithParameters[F[_]](sslContext: SSLContext, sslParameters: SSLParameters)(implicit
+      F:                                                Applicative[F]
   ) extends SslConfig[F] {
-    def makeContext: F[Option[SSLContext]] = F.pure(sslContext.some)
-    def configureEngine(engine: SSLEngine): Unit = engine.setSSLParameters(sslParameters)
-    def isSecure: Boolean = true
+    def makeContext:                        F[Option[SSLContext]] = F.pure(sslContext.some)
+    def configureEngine(engine: SSLEngine): Unit                  = engine.setSSLParameters(sslParameters)
+    def isSecure:                           Boolean               = true
   }
 
-  private class ContextWithClientAuth[F[_]](sslContext: SSLContext, clientAuth: SSLClientAuthMode)(
-      implicit F: Applicative[F]
+  private class ContextWithClientAuth[F[_]](sslContext: SSLContext, clientAuth: SSLClientAuthMode)(implicit
+      F:                                                Applicative[F]
   ) extends SslConfig[F] {
-    def makeContext: F[Option[SSLContext]] = F.pure(sslContext.some)
-    def configureEngine(engine: SSLEngine): Unit =
+    def makeContext:                        F[Option[SSLContext]] = F.pure(sslContext.some)
+    def configureEngine(engine: SSLEngine): Unit                  =
       configureEngineFromSslClientAuthMode(engine, clientAuth)
-    def isSecure: Boolean = true
+    def isSecure:                           Boolean               = true
   }
 
   private class NoSsl[F[_]]()(implicit F: Applicative[F]) extends SslConfig[F] {
-    def makeContext: F[Option[SSLContext]] = F.pure(None)
-    def configureEngine(engine: SSLEngine): Unit = {
+    def makeContext:                        F[Option[SSLContext]] = F.pure(None)
+    def configureEngine(engine: SSLEngine): Unit                  = {
       val _ = engine
       ()
     }
-    def isSecure: Boolean = false
+    def isSecure:                           Boolean               = false
   }
 
   private def configureEngineFromSslClientAuthMode(
-      engine: SSLEngine,
+      engine:         SSLEngine,
       clientAuthMode: SSLClientAuthMode,
   ): Unit =
     clientAuthMode match {
-      case SSLClientAuthMode.Required => engine.setNeedClientAuth(true)
-      case SSLClientAuthMode.Requested => engine.setWantClientAuth(true)
+      case SSLClientAuthMode.Required     => engine.setNeedClientAuth(true)
+      case SSLClientAuthMode.Requested    => engine.setWantClientAuth(true)
       case SSLClientAuthMode.NotRequested => ()
     }
 }

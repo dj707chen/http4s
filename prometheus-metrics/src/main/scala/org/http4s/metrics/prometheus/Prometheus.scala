@@ -89,8 +89,8 @@ object Prometheus {
     * @param prefix a prefix that will be added to all metrics
     */
   def metricsOps[F[_]: Sync](
-      registry: CollectorRegistry,
-      prefix: String = "org_http4s_server",
+      registry:                                CollectorRegistry,
+      prefix:                                  String = "org_http4s_server",
       responseDurationSecondsHistogramBuckets: NonEmptyList[Double] = DefaultHistogramBuckets,
   ): Resource[F, MetricsOps[F]] =
     for {
@@ -98,7 +98,7 @@ object Prometheus {
     } yield createMetricsOps(metrics)
 
   private def createMetricsOps[F[_]](
-      metrics: MetricsCollection
+      metrics:  MetricsCollection
   )(implicit F: Sync[F]): MetricsOps[F] =
     new MetricsOps[F] {
       override def increaseActiveRequests(classifier: Option[String]): F[Unit] =
@@ -116,8 +116,8 @@ object Prometheus {
         }
 
       override def recordHeadersTime(
-          method: Method,
-          elapsed: Long,
+          method:     Method,
+          elapsed:    Long,
           classifier: Option[String],
       ): F[Unit] =
         F.delay {
@@ -127,9 +127,9 @@ object Prometheus {
         }
 
       override def recordTotalTime(
-          method: Method,
-          status: Status,
-          elapsed: Long,
+          method:     Method,
+          status:     Status,
+          elapsed:    Long,
           classifier: Option[String],
       ): F[Unit] =
         F.delay {
@@ -142,15 +142,15 @@ object Prometheus {
         }
 
       override def recordAbnormalTermination(
-          elapsed: Long,
+          elapsed:         Long,
           terminationType: TerminationType,
-          classifier: Option[String],
+          classifier:      Option[String],
       ): F[Unit] =
         terminationType match {
           case Abnormal(e) => recordAbnormal(elapsed, classifier, e)
-          case Error(e) => recordError(elapsed, classifier, e)
-          case Canceled => recordCanceled(elapsed, classifier)
-          case Timeout => recordTimeout(elapsed, classifier)
+          case Error(e)    => recordError(elapsed, classifier, e)
+          case Canceled    => recordCanceled(elapsed, classifier)
+          case Timeout     => recordTimeout(elapsed, classifier)
         }
 
       private def recordCanceled(elapsed: Long, classifier: Option[String]): F[Unit] =
@@ -165,9 +165,9 @@ object Prometheus {
         }
 
       private def recordAbnormal(
-          elapsed: Long,
+          elapsed:    Long,
           classifier: Option[String],
-          cause: Throwable,
+          cause:      Throwable,
       ): F[Unit] =
         F.delay {
           metrics.abnormalTerminations
@@ -180,9 +180,9 @@ object Prometheus {
         }
 
       private def recordError(
-          elapsed: Long,
+          elapsed:    Long,
           classifier: Option[String],
-          cause: Throwable,
+          cause:      Throwable,
       ): F[Unit] =
         F.delay {
           metrics.abnormalTerminations
@@ -209,31 +209,31 @@ object Prometheus {
 
       private def reportStatus(status: Status): String =
         status.code match {
-          case hundreds if hundreds < 200 => "1xx"
-          case twohundreds if twohundreds < 300 => "2xx"
+          case hundreds if hundreds < 200           => "1xx"
+          case twohundreds if twohundreds < 300     => "2xx"
           case threehundreds if threehundreds < 400 => "3xx"
-          case fourhundreds if fourhundreds < 500 => "4xx"
-          case _ => "5xx"
+          case fourhundreds if fourhundreds < 500   => "4xx"
+          case _                                    => "5xx"
         }
 
       private def reportMethod(m: Method): String =
         m match {
-          case Method.GET => "get"
-          case Method.PUT => "put"
-          case Method.POST => "post"
-          case Method.HEAD => "head"
-          case Method.MOVE => "move"
+          case Method.GET     => "get"
+          case Method.PUT     => "put"
+          case Method.POST    => "post"
+          case Method.HEAD    => "head"
+          case Method.MOVE    => "move"
           case Method.OPTIONS => "options"
-          case Method.TRACE => "trace"
+          case Method.TRACE   => "trace"
           case Method.CONNECT => "connect"
-          case Method.DELETE => "delete"
-          case _ => "other"
+          case Method.DELETE  => "delete"
+          case _              => "other"
         }
     }
 
   private def createMetricsCollection[F[_]: Sync](
-      registry: CollectorRegistry,
-      prefix: String,
+      registry:                                CollectorRegistry,
+      prefix:                                  String,
       responseDurationSecondsHistogramBuckets: NonEmptyList[Double],
   ): Resource[F, MetricsCollection] = {
     val responseDuration: Resource[F, Histogram] = registerCollector(
@@ -282,11 +282,9 @@ object Prometheus {
 
   private[prometheus] def registerCollector[F[_], C <: Collector](
       collector: C,
-      registry: CollectorRegistry,
-  )(implicit F: Sync[F]): Resource[F, C] =
-    Resource.make(F.blocking(collector.register[C](registry)))(c =>
-      F.blocking(registry.unregister(c))
-    )
+      registry:  CollectorRegistry,
+  )(implicit F:  Sync[F]): Resource[F, C] =
+    Resource.make(F.blocking(collector.register[C](registry)))(c => F.blocking(registry.unregister(c)))
 
   // https://github.com/prometheus/client_java/blob/parent-0.6.0/simpleclient/src/main/java/io/prometheus/client/Histogram.java#L73
   private val DefaultHistogramBuckets: NonEmptyList[Double] =
@@ -294,9 +292,9 @@ object Prometheus {
 }
 
 final case class MetricsCollection(
-    responseDuration: Histogram,
-    activeRequests: Gauge,
-    requests: Counter,
+    responseDuration:     Histogram,
+    activeRequests:       Gauge,
+    requests:             Counter,
     abnormalTerminations: Histogram,
 )
 
@@ -307,7 +305,7 @@ private object Phase {
   def report(s: Phase): String =
     s match {
       case Headers => "headers"
-      case Body => "body"
+      case Body    => "body"
     }
 }
 
@@ -320,8 +318,8 @@ private object AbnormalTermination {
   def report(t: AbnormalTermination): String =
     t match {
       case Abnormal => "abnormal"
-      case Timeout => "timeout"
-      case Error => "error"
+      case Timeout  => "timeout"
+      case Error    => "error"
       case Canceled => "cancel"
     }
 }

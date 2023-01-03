@@ -36,8 +36,7 @@ trait PlayInstances {
       decoder
         .reads(json)
         .fold(
-          _ =>
-            DecodeResult.failureT(InvalidMessageBodyFailure(s"Could not decode JSON: $json", None)),
+          _ => DecodeResult.failureT(InvalidMessageBodyFailure(s"Could not decode JSON: $json", None)),
           DecodeResult.successT(_),
         )
     }

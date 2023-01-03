@@ -52,7 +52,7 @@ object ~ {
     */
   def unapply(path: Path): Option[(Path, String)] =
     path match {
-      case Root => None
+      case Root          => None
       case parent / last =>
         unapply(last).map { case (base, ext) =>
           (parent / Path.Segment(base), ext)
@@ -67,7 +67,7 @@ object ~ {
     */
   def unapply(fileName: String): Option[(String, String)] =
     fileName.lastIndexOf('.') match {
-      case -1 => Some((fileName, ""))
+      case -1    => Some((fileName, ""))
       case index => Some((fileName.substring(0, index), fileName.substring(index + 1)))
     }
 }
@@ -83,9 +83,9 @@ object / {
             Some(Root -> last.decoded())
           else
             Some(empty -> last.decoded())
-        case allButLast :+ last =>
+        case allButLast :+ last                       =>
           Some(Path(allButLast, absolute = path.absolute) -> last.decoded())
-        case _ => None
+        case _                                        => None
       }
 }
 
@@ -126,7 +126,7 @@ object ->> {
               Applicative[F].pure {
                 if (allMethods.contains(method)) {
                   Response(
-                    status = Status.MethodNotAllowed,
+                    status  = Status.MethodNotAllowed,
                     headers = Headers(Allow(allMethods.filter(pf.isDefinedAt))),
                   )
                 } else { Response(status = Status.NotImplemented) }
@@ -162,7 +162,7 @@ object /: {
   def unapply(path: Path): Option[(String, Path)] =
     path.segments match {
       case head +: tail => Some(head.decoded() -> Path(tail))
-      case _ => None
+      case _            => None
     }
 }
 
@@ -256,7 +256,7 @@ abstract class MatrixVar[F[_]: Foldable](name: String, domain: F[String]) {
     }
 
   private def toAssocListElem(str: String, position: Int, end: Int): Option[(String, String)] = {
-    val delimSplit = str.indexOf('=', position)
+    val delimSplit     = str.indexOf('=', position)
     val nextDelimSplit = str.indexOf('=', delimSplit + 1)
     // if the segment does not contain an = inside then it is invalid
     if (delimSplit < 0 || delimSplit === position || delimSplit >= end) None
@@ -299,9 +299,7 @@ abstract class QueryParamDecoderMatcher[T: QueryParamDecoder](name: String) {
   def unapplySeq(params: Map[String, collection.Seq[String]]): Option[collection.Seq[T]] =
     params
       .get(name)
-      .flatMap(values =>
-        values.toList.traverse(s => QueryParamDecoder[T].decode(QueryParameterValue(s)).toOption)
-      )
+      .flatMap(values => values.toList.traverse(s => QueryParamDecoder[T].decode(QueryParameterValue(s)).toOption))
 
   def unapply(params: Map[String, collection.Seq[String]]): Option[T] =
     params
@@ -322,8 +320,7 @@ abstract class QueryParamDecoderMatcher[T: QueryParamDecoder](name: String) {
   *     case GET -> Root / "closest" :? FooMatcher(2) => ...
   * }}}
   */
-abstract class QueryParamMatcher[T: QueryParamDecoder: QueryParam]
-    extends QueryParamDecoderMatcher[T](QueryParam[T].key.value)
+abstract class QueryParamMatcher[T: QueryParamDecoder: QueryParam] extends QueryParamDecoderMatcher[T](QueryParam[T].key.value)
 
 abstract class OptionalQueryParamDecoderMatcher[T: QueryParamDecoder](name: String) {
   def unapply(params: Map[String, collection.Seq[String]]): Option[Option[T]] =
@@ -383,7 +380,7 @@ abstract class OptionalMultiQueryParamDecoderMatcher[T: QueryParamDecoder](name:
     params.get(name) match {
       case Some(values) =>
         Some(values.toList.traverse(s => QueryParamDecoder[T].decode(QueryParameterValue(s))))
-      case None => Some(Valid(Nil)) // absent
+      case None         => Some(Valid(Nil)) // absent
     }
 }
 
@@ -441,9 +438,8 @@ abstract class OptionalValidatingQueryParamDecoderMatcher[T: QueryParamDecoder](
       params: Map[String, collection.Seq[String]]
   ): Some[Option[ValidatedNel[ParseFailure, T]]] =
     Some {
-      params.get(name).flatMap(_.headOption).fold[Option[ValidatedNel[ParseFailure, T]]](None) {
-        s =>
-          Some(QueryParamDecoder[T].decode(QueryParameterValue(s)))
+      params.get(name).flatMap(_.headOption).fold[Option[ValidatedNel[ParseFailure, T]]](None) { s =>
+        Some(QueryParamDecoder[T].decode(QueryParameterValue(s)))
       }
     }
 }

@@ -53,11 +53,11 @@ object FileService {
     * @param bufferSize buffer size to use for internal read buffers
     */
   final class Config[F[_]](
-      val systemPath: String,
+      val systemPath:       String,
       val fs2PathCollector: Fs2PathCollector[F],
-      val pathPrefix: String,
-      val cacheStrategy: CacheStrategy[F],
-      val bufferSize: Int,
+      val pathPrefix:       String,
+      val cacheStrategy:    CacheStrategy[F],
+      val bufferSize:       Int,
   ) extends Product
       with Serializable
       with Equals {
@@ -71,10 +71,10 @@ object FileService {
       */
     @deprecated("use the constructor with fs2PathCollector", "0.23.8")
     def this(
-        systemPath: String,
+        systemPath:    String,
         pathCollector: PathCollector[F],
-        pathPrefix: String,
-        bufferSize: Int,
+        pathPrefix:    String,
+        bufferSize:    Int,
         cacheStrategy: CacheStrategy[F],
     ) =
       this(
@@ -106,11 +106,11 @@ object FileService {
       "0.23.8",
     )
     def copy(
-        systemPath: String = this.systemPath,
+        systemPath:            String = this.systemPath,
         @nowarn pathCollector: PathCollector[F] = this.pathCollector,
-        pathPrefix: String = this.pathPrefix,
-        bufferSize: Int = this.bufferSize,
-        cacheStrategy: CacheStrategy[F] = this.cacheStrategy,
+        pathPrefix:            String = this.pathPrefix,
+        bufferSize:            Int = this.bufferSize,
+        cacheStrategy:         CacheStrategy[F] = this.cacheStrategy,
     ): Config[F] = new Config[F](
       systemPath,
       fs2PathCollector,
@@ -141,7 +141,7 @@ object FileService {
       "Config is no longer a case class. The _1 method is provided for binary compatibility.",
       "0.23.8",
     )
-    def _1: String = systemPath
+    def _1: String                = systemPath
     @deprecated(
       "Config is no longer a case class. The _2 method is provided for binary compatibility.",
       "0.23.8",
@@ -152,17 +152,17 @@ object FileService {
       "Config is no longer a case class. The _3 method is provided for binary compatibility.",
       "0.23.8",
     )
-    def _3: String = pathPrefix
+    def _3: String                = pathPrefix
     @deprecated(
       "Config is no longer a case class. The _4 method is provided for binary compatibility.",
       "0.23.8",
     )
-    def _4: Int = bufferSize
+    def _4: Int                   = bufferSize
     @deprecated(
       "Config is no longer a case class. The _5 method is provided for binary compatibility.",
       "0.23.8",
     )
-    def _5: CacheStrategy[F] = cacheStrategy
+    def _5: CacheStrategy[F]      = cacheStrategy
 
     override def canEqual(that: Any): Boolean = that match {
       case _: Config[_] => true
@@ -171,11 +171,11 @@ object FileService {
 
     override def equals(other: Any): Boolean = other match {
       case that: Config[_] =>
-        systemPath == that.systemPath &&
+        systemPath       == that.systemPath &&
         fs2PathCollector == that.fs2PathCollector &&
-        pathPrefix == that.pathPrefix &&
-        cacheStrategy == that.cacheStrategy &&
-        bufferSize == that.bufferSize
+        pathPrefix       == that.pathPrefix &&
+        cacheStrategy    == that.cacheStrategy &&
+        bufferSize       == that.bufferSize
       case _ => false
     }
 
@@ -200,11 +200,11 @@ object FileService {
       * @param bufferSize buffer size to use for internal read buffers
       */
     def apply[F[_]](
-        systemPath: String,
+        systemPath:       String,
         fs2PathCollector: Fs2PathCollector[F],
-        pathPrefix: String,
-        cacheStrategy: CacheStrategy[F],
-        bufferSize: Int,
+        pathPrefix:       String,
+        cacheStrategy:    CacheStrategy[F],
+        bufferSize:       Int,
     ): Config[F] =
       new Config[F](systemPath, fs2PathCollector, pathPrefix, cacheStrategy, bufferSize)
 
@@ -222,10 +222,10 @@ object FileService {
       "0.23.8",
     )
     def apply[F[_]](
-        systemPath: String,
+        systemPath:    String,
         pathCollector: PathCollector[F],
-        pathPrefix: String,
-        bufferSize: Int,
+        pathPrefix:    String,
+        bufferSize:    Int,
         cacheStrategy: CacheStrategy[F],
     ): Config[F] = new Config[F](
       systemPath,
@@ -236,9 +236,9 @@ object FileService {
     )
 
     def apply[F[_]: Async](
-        systemPath: String,
-        pathPrefix: String = "",
-        bufferSize: Int = 50 * 1024,
+        systemPath:    String,
+        pathPrefix:    String = "",
+        bufferSize:    Int = 50 * 1024,
         cacheStrategy: CacheStrategy[F] = NoopCacheStrategy[F],
     ): Config[F] = {
       val pathCollector: Fs2PathCollector[F] = (f, c, r) => filesOnly(f, c, r)
@@ -257,14 +257,14 @@ object FileService {
           F.catchNonFatal {
             segments.foldLeft(rootPath) {
               case (_, "" | "." | "..") => throw BadTraversal
-              case (path, segment) => path.resolve(segment)
+              case (path, segment)      => path.resolve(segment)
             }
           }
         }
 
       val matchingPath: F[Option[Path]] =
         for {
-          path <- resolvePath
+          path       <- resolvePath
           existsPath <- Files[F].exists(path, false)
         } yield
           if (existsPath && path.startsWith(rootPath))
@@ -277,8 +277,8 @@ object FileService {
         .recoverWith { case BadTraversal => OptionT.some(Response(Status.BadRequest)) }
     }
 
-    val readPath: F[Path] = Files[F].realPath(Path(config.systemPath))
-    val inner: F[HttpRoutes[F]] = readPath.attempt.map {
+    val readPath: F[Path]          = Files[F].realPath(Path(config.systemPath))
+    val inner:    F[HttpRoutes[F]] = readPath.attempt.map {
       case Right(rootPath) =>
         TranslateUri(config.pathPrefix)(Kleisli(withPath(rootPath)))
 
@@ -299,7 +299,7 @@ object FileService {
   }
 
   private def filesOnly[F[_]](path: Path, config: Config[F], req: Request[F])(implicit
-      F: Async[F]
+      F:                            Async[F]
   ): OptionT[F, Response[F]] =
     OptionT(Files[F].getBasicFileAttributes(path).flatMap { attr =>
       if (attr.isDirectory)
@@ -320,18 +320,18 @@ object FileService {
   private def validRange(start: Long, end: Option[Long], fileLength: Long): Boolean =
     start < fileLength && (end match {
       case Some(end) => start >= 0 && start <= end
-      case None => start >= 0 || fileLength + start - 1 >= 0
+      case None      => start >= 0 || fileLength + start - 1 >= 0
     })
 
   // Attempt to find a Range header and collect only the subrange of content requested
   private def getPartialContentFile[F[_]](file: Path, config: Config[F], req: Request[F])(implicit
-      F: Async[F]
+      F:                                        Async[F]
   ): F[Option[Response[F]]] =
     Files[F].getBasicFileAttributes(file).flatMap { attr =>
       def nope: F[Option[Response[F]]] =
         Some(
           Response[F](
-            status = Status.RangeNotSatisfiable,
+            status  = Status.RangeNotSatisfiable,
             headers = Headers
               .apply(
                 AcceptRangeHeader,
@@ -343,9 +343,9 @@ object FileService {
       req.headers.get[Range] match {
         case Some(Range(RangeUnit.Bytes, NonEmptyList(SubRange(s, e), Nil))) =>
           if (validRange(s, e, attr.size)) {
-            val size = attr.size
+            val size  = attr.size
             val start = if (s >= 0) s else math.max(0, size + s)
-            val end = math.min(size - 1, e.getOrElse(size - 1)) // end is inclusive
+            val end   = math.min(size - 1, e.getOrElse(size - 1)) // end is inclusive
 
             StaticFile
               .fromPath(
@@ -363,12 +363,12 @@ object FileService {
               }
               .value
           } else nope
-        case _ =>
+        case _                                                               =>
           req.headers.get(ci"Range") match {
             case Some(_) =>
               // It exists, but it didn't parse
               nope
-            case None =>
+            case None    =>
               F.pure(None)
           }
       }

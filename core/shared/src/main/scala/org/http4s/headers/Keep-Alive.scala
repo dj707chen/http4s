@@ -48,8 +48,8 @@ keep-alive-extension = token [ "=" ( token / quoted-string ) ]
 
   def apply(
       timeoutSeconds: Option[Long],
-      max: Option[Long],
-      extension: List[(String, Option[String])],
+      max:            Option[Long],
+      extension:      List[(String, Option[String])],
   ): ParseResult[`Keep-Alive`] =
     if (timeoutSeconds.isDefined || max.isDefined || extension.nonEmpty) {
       val reservedTokens = List("token", "max")
@@ -60,7 +60,7 @@ keep-alive-extension = token [ "=" ( token / quoted-string ) ]
         )
       } else {
         val validatedTimeoutSeconds = timeoutSeconds.traverse(t => nonNegativeLong(t, "timeout"))
-        val validatedMax = max.traverse(m => nonNegativeLong(m, "max"))
+        val validatedMax            = max.traverse(m => nonNegativeLong(m, "max"))
         (validatedTimeoutSeconds, validatedMax).mapN((t, m) => impl(t, m, extension))
       }
     } else {
@@ -69,8 +69,8 @@ keep-alive-extension = token [ "=" ( token / quoted-string ) ]
 
   def unsafeApply(
       timeoutSeconds: Option[Long],
-      max: Option[Long],
-      extension: List[(String, Option[String])],
+      max:            Option[Long],
+      extension:      List[(String, Option[String])],
   ): `Keep-Alive` =
     apply(timeoutSeconds, max, extension).fold(throw _, identity)
 
@@ -85,12 +85,12 @@ keep-alive-extension = token [ "=" ( token / quoted-string ) ]
         s"$fieldName which was $l must be greater than or equal to 0 seconds",
       )
 
-  private def safeToLong(s: String): Option[Long] =
+  private def safeToLong(s: String): Option[Long]         =
     try Some(s.toLong)
     catch {
       case _: NumberFormatException => None
     }
-  private val parser: Parser[`Keep-Alive`] = {
+  private val parser:                Parser[`Keep-Alive`] = {
     import Rfc7230.{headerRep1, quotedString, token}
     import Numbers.digits
 
@@ -114,13 +114,13 @@ keep-alive-extension = token [ "=" ( token / quoted-string ) ]
     val keepAliveInfo: Parser[Parameter] = timeout.orElse(max).orElse(keepAliveExtension)
 
     headerRep1(keepAliveInfo).map { nel =>
-      var timeoutSeconds: Option[Long] = None
-      var max: Option[Long] = None
-      val extension: ListBuffer[(String, Option[String])] = ListBuffer.empty
+      var timeoutSeconds: Option[Long]                         = None
+      var max:            Option[Long]                         = None
+      val extension:      ListBuffer[(String, Option[String])] = ListBuffer.empty
       nel.foldLeft(()) { (_, ka) =>
         ka match {
-          case Timeout(n) => if (timeoutSeconds.isEmpty) timeoutSeconds = Some(n) else ()
-          case Max(n) => if (max.isEmpty) max = Some(n) else ()
+          case Timeout(n)   => if (timeoutSeconds.isEmpty) timeoutSeconds = Some(n) else ()
+          case Max(n)       => if (max.isEmpty) max = Some(n) else ()
           case Extension(p) => extension.append(p)
         }
       }
@@ -130,8 +130,8 @@ keep-alive-extension = token [ "=" ( token / quoted-string ) ]
 
   private def impl(
       timeoutSeconds: Option[Long],
-      max: Option[Long],
-      extension: List[(String, Option[String])],
+      max:            Option[Long],
+      extension:      List[(String, Option[String])],
   ) =
     new `Keep-Alive`(timeoutSeconds, max, extension) {}
 
@@ -181,8 +181,8 @@ keep-alive-extension = token [ "=" ( token / quoted-string ) ]
 
 sealed abstract case class `Keep-Alive` private (
     timeoutSeconds: Option[Long],
-    max: Option[Long],
-    extension: List[(String, Option[String])],
+    max:            Option[Long],
+    extension:      List[(String, Option[String])],
 ) {
   def toTimeoutDuration: Option[FiniteDuration] =
     timeoutSeconds.map(FiniteDuration(_, TimeUnit.SECONDS))

@@ -29,18 +29,18 @@ import scala.annotation.tailrec
 private[internal] trait ClientHelpersPlatform {
 
   private[internal] def mkTLSParameters(
-      address: Option[SocketAddress[Host]],
+      address:                  Option[SocketAddress[Host]],
       enableEndpointValidation: Boolean,
   ): TLSParameters =
     TLSParameters(
-      serverNames = address.map(a => List(extractHostname(a.host))),
+      serverNames                     = address.map(a => List(extractHostname(a.host))),
       endpointIdentificationAlgorithm = if (enableEndpointValidation) Some("HTTPS") else None,
     )
 
   @tailrec
   private def extractHostname(from: Host): SNIHostName = from match {
-    case hostname: Hostname => new SNIHostName(hostname.normalized.toString)
-    case address: IpAddress => new SNIHostName(address.toString)
-    case idn: IDN => extractHostname(idn.hostname)
+    case hostname: Hostname  => new SNIHostName(hostname.normalized.toString)
+    case address:  IpAddress => new SNIHostName(address.toString)
+    case idn:      IDN       => extractHostname(idn.hostname)
   }
 }

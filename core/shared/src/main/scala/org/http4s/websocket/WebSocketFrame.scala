@@ -23,8 +23,8 @@ import scala.util.hashing.MurmurHash3
 
 abstract class WebSocketFrame {
   def opcode: Int
-  def data: ByteVector
-  def last: Boolean
+  def data:   ByteVector
+  def last:   Boolean
 
   final def length: Int = data.length.toInt
 
@@ -32,8 +32,8 @@ abstract class WebSocketFrame {
     obj match {
       case wf: WebSocketFrame =>
         this.opcode == wf.opcode &&
-        this.last == wf.last &&
-        this.data == wf.data
+        this.last   == wf.last &&
+        this.data   == wf.data
       case _ => false
     }
 
@@ -69,31 +69,31 @@ object WebSocketFrame {
   }
 
   object Text {
-    def apply(str: String, last: Boolean = true): Text = new StringText(str, last)
-    def apply(data: ByteVector, last: Boolean): Text = new BinaryText(data, last)
-    def apply(data: ByteVector): Text = new BinaryText(data, true)
-    def unapply(txt: Text): Option[(String, Boolean)] = Some((txt.str, txt.last))
+    def apply(str: String, last: Boolean = true): Text                      = new StringText(str, last)
+    def apply(data: ByteVector, last: Boolean):   Text                      = new BinaryText(data, last)
+    def apply(data: ByteVector):                  Text                      = new BinaryText(data, true)
+    def unapply(txt: Text):                       Option[(String, Boolean)] = Some((txt.str, txt.last))
   }
 
   final case class Binary(data: ByteVector, last: Boolean = true) extends WebSocketFrame {
-    def opcode: Int = BINARY
+    def opcode:            Int    = BINARY
     override def toString: String = s"Binary(Array(${data.length}), last: $last)"
   }
 
   final case class Continuation(data: ByteVector, last: Boolean) extends WebSocketFrame {
-    def opcode: Int = CONTINUATION
+    def opcode:            Int    = CONTINUATION
     override def toString: String = s"Continuation(Array(${data.length}), last: $last)"
   }
 
   final case class Ping(data: ByteVector = ByteVector.empty) extends ControlFrame {
-    def opcode: Int = PING
+    def opcode:            Int    = PING
     override def toString: String =
       if (data.length > 0) s"Ping(Array(${data.length}))"
       else s"Ping"
   }
 
   final case class Pong(data: ByteVector = ByteVector.empty) extends ControlFrame {
-    def opcode: Int = PONG
+    def opcode:            Int    = PONG
     override def toString: String =
       if (data.length > 0) s"Pong(Array(${data.length}))"
       else s"Pong"
@@ -105,7 +105,7 @@ object WebSocketFrame {
     def closeCode: Int =
       if (data.length > 0)
         (data(0) << 8 & 0xff00) | (data(1) & 0xff) // 16-bit unsigned
-      else 1005 // No code present
+      else 1005                                    // No code present
 
     override def toString: String =
       if (data.length > 0) s"Close(Array(${data.length}))"

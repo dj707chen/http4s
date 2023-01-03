@@ -39,7 +39,7 @@ object DefaultHead {
     Kleisli { req =>
       req.method match {
         case HEAD => http(req) <+> http(req.withMethod(GET)).map(drainBody[G])
-        case _ => http(req)
+        case _    => http(req)
       }
     }
 

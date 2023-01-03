@@ -35,7 +35,7 @@ abstract class Server {
 
   def baseUri: Uri =
     Uri(
-      scheme = Some(if (isSecure) Uri.Scheme.https else Uri.Scheme.http),
+      scheme    = Some(if (isSecure) Uri.Scheme.https else Uri.Scheme.http),
       authority = Some(
         Uri.Authority(
           host = address.getAddress match {
@@ -50,6 +50,6 @@ abstract class Server {
           port = Some(address.getPort),
         )
       ),
-      path = Uri.Path.Root,
+      path      = Uri.Path.Root,
     )
 }

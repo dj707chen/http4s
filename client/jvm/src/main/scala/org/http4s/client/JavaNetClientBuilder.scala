@@ -51,24 +51,24 @@ import scala.concurrent.duration.FiniteDuration
   * are reclaimed by the JVM at its own leisure.
   */
 sealed abstract class JavaNetClientBuilder[F[_]] private (
-    val connectTimeout: Duration,
-    val readTimeout: Duration,
-    val proxy: Option[Proxy],
-    val hostnameVerifier: Option[HostnameVerifier],
-    val sslSocketFactory: Option[SSLSocketFactory],
+    val connectTimeout:     Duration,
+    val readTimeout:        Duration,
+    val proxy:              Option[Proxy],
+    val hostnameVerifier:   Option[HostnameVerifier],
+    val sslSocketFactory:   Option[SSLSocketFactory],
 )(implicit protected val F: Async[F])
     extends BackendBuilder[F, Client[F]] {
   private def copy(
-      connectTimeout: Duration = connectTimeout,
-      readTimeout: Duration = readTimeout,
-      proxy: Option[Proxy] = proxy,
+      connectTimeout:   Duration = connectTimeout,
+      readTimeout:      Duration = readTimeout,
+      proxy:            Option[Proxy] = proxy,
       hostnameVerifier: Option[HostnameVerifier] = hostnameVerifier,
       sslSocketFactory: Option[SSLSocketFactory] = sslSocketFactory,
   ): JavaNetClientBuilder[F] =
     new JavaNetClientBuilder[F](
-      connectTimeout = connectTimeout,
-      readTimeout = readTimeout,
-      proxy = proxy,
+      connectTimeout   = connectTimeout,
+      readTimeout      = readTimeout,
+      proxy            = proxy,
       hostnameVerifier = hostnameVerifier,
       sslSocketFactory = sslSocketFactory,
     ) {}
@@ -79,11 +79,11 @@ sealed abstract class JavaNetClientBuilder[F[_]] private (
   def withReadTimeout(readTimeout: Duration): JavaNetClientBuilder[F] =
     copy(readTimeout = readTimeout)
 
-  def withProxyOption(proxy: Option[Proxy]): JavaNetClientBuilder[F] =
+  def withProxyOption(proxy: Option[Proxy]):                    JavaNetClientBuilder[F] =
     copy(proxy = proxy)
-  def withProxy(proxy: Proxy): JavaNetClientBuilder[F] =
+  def withProxy(proxy: Proxy):                                  JavaNetClientBuilder[F] =
     withProxyOption(Some(proxy))
-  def withoutProxy: JavaNetClientBuilder[F] =
+  def withoutProxy:                                             JavaNetClientBuilder[F] =
     withProxyOption(None)
 
   def withHostnameVerifierOption(
@@ -92,7 +92,7 @@ sealed abstract class JavaNetClientBuilder[F[_]] private (
     copy(hostnameVerifier = hostnameVerifier)
   def withHostnameVerifier(hostnameVerifier: HostnameVerifier): JavaNetClientBuilder[F] =
     withHostnameVerifierOption(Some(hostnameVerifier))
-  def withoutHostnameVerifier: JavaNetClientBuilder[F] =
+  def withoutHostnameVerifier:                                  JavaNetClientBuilder[F] =
     withHostnameVerifierOption(None)
 
   def withSslSocketFactoryOption(
@@ -101,7 +101,7 @@ sealed abstract class JavaNetClientBuilder[F[_]] private (
     copy(sslSocketFactory = sslSocketFactory)
   def withSslSocketFactory(sslSocketFactory: SSLSocketFactory): JavaNetClientBuilder[F] =
     withSslSocketFactoryOption(Some(sslSocketFactory))
-  def withoutSslSocketFactory: JavaNetClientBuilder[F] =
+  def withoutSslSocketFactory:                                  JavaNetClientBuilder[F] =
     withSslSocketFactoryOption(None)
 
   /** Creates a [[Client]].
@@ -112,26 +112,26 @@ sealed abstract class JavaNetClientBuilder[F[_]] private (
     Client { (req: Request[F]) =>
       def respond(conn: HttpURLConnection): F[Response[F]] =
         for {
-          _ <- configureSsl(conn)
-          _ <- F.delay(conn.setConnectTimeout(timeoutMillis(connectTimeout)))
-          _ <- F.delay(conn.setReadTimeout(timeoutMillis(readTimeout)))
-          _ <- F.delay(conn.setRequestMethod(req.method.renderString))
-          _ <- F.delay(req.headers.foreach { case Header.Raw(name, value) =>
-            conn.setRequestProperty(name.toString, value)
-          })
-          _ <- F.delay(conn.setInstanceFollowRedirects(false))
-          _ <- F.delay(conn.setDoInput(true))
+          _    <- configureSsl(conn)
+          _    <- F.delay(conn.setConnectTimeout(timeoutMillis(connectTimeout)))
+          _    <- F.delay(conn.setReadTimeout(timeoutMillis(readTimeout)))
+          _    <- F.delay(conn.setRequestMethod(req.method.renderString))
+          _    <- F.delay(req.headers.foreach { case Header.Raw(name, value) =>
+                    conn.setRequestProperty(name.toString, value)
+                  })
+          _    <- F.delay(conn.setInstanceFollowRedirects(false))
+          _    <- F.delay(conn.setDoInput(true))
           // TODO: fix the blocking here
           resp <- fetchResponse(req, conn)
         } yield resp
 
       for {
-        url <- Resource.eval(F.delay(new URL(req.uri.toString)))
+        url  <- Resource.eval(F.delay(new URL(req.uri.toString)))
         conn <- Resource.make(openConnection(url)) { conn =>
-          F.delay(conn.getInputStream().close()).recoverWith { case _: IOException =>
-            F.delay(Option(conn.getErrorStream()).foreach(_.close()))
-          }
-        }
+                  F.delay(conn.getInputStream().close()).recoverWith { case _: IOException =>
+                    F.delay(Option(conn.getErrorStream()).foreach(_.close()))
+                  }
+                }
         resp <- Resource.eval(respond(conn))
       } yield resp
     }
@@ -141,17 +141,17 @@ sealed abstract class JavaNetClientBuilder[F[_]] private (
 
   private def fetchResponse(req: Request[F], conn: HttpURLConnection) =
     for {
-      _ <- writeBody(req, conn)
-      code <- F.blocking(conn.getResponseCode)
-      status <- F.fromEither(Status.fromInt(code))
+      _       <- writeBody(req, conn)
+      code    <- F.blocking(conn.getResponseCode)
+      status  <- F.fromEither(Status.fromInt(code))
       headers <- F.blocking(
-        Headers(
-          conn.getHeaderFields.asScala
-            .filter(_._1 != null)
-            .flatMap { case (k, vs) => vs.asScala.map(Header.Raw(CIString(k), _)) }
-            .toList
-        )
-      )
+                   Headers(
+                     conn.getHeaderFields.asScala
+                       .filter(_._1 != null)
+                       .flatMap { case (k, vs) => vs.asScala.map(Header.Raw(CIString(k), _)) }
+                       .toList
+                   )
+                 )
     } yield Response(status = status, headers = headers, body = readBody(conn))
 
   private def timeoutMillis(d: Duration): Int =
@@ -164,7 +164,7 @@ sealed abstract class JavaNetClientBuilder[F[_]] private (
     proxy match {
       case Some(p) =>
         F.delay(url.openConnection(p).asInstanceOf[HttpURLConnection])
-      case None =>
+      case None    =>
         F.delay(url.openConnection().asInstanceOf[HttpURLConnection])
     }
 
@@ -185,7 +185,7 @@ sealed abstract class JavaNetClientBuilder[F[_]] private (
               .through(writeOutputStream(F.delay(conn.getOutputStream), false))
               .compile
               .drain
-        case _ =>
+        case _                      =>
           F.delay(conn.setDoOutput(false))
       }
 
@@ -197,7 +197,7 @@ sealed abstract class JavaNetClientBuilder[F[_]] private (
       }
     Stream.eval(inputStream).flatMap {
       case Some(in) => readInputStream(F.pure(in), 4096, false)
-      case None => Stream.empty
+      case None     => Stream.empty
     }
   }
 
@@ -216,9 +216,9 @@ sealed abstract class JavaNetClientBuilder[F[_]] private (
 object JavaNetClientBuilder {
   def apply[F[_]: Async]: JavaNetClientBuilder[F] =
     new JavaNetClientBuilder[F](
-      connectTimeout = defaults.ConnectTimeout,
-      readTimeout = defaults.RequestTimeout,
-      proxy = None,
+      connectTimeout   = defaults.ConnectTimeout,
+      readTimeout      = defaults.RequestTimeout,
+      proxy            = None,
       hostnameVerifier = None,
       sslSocketFactory = None,
     ) {}

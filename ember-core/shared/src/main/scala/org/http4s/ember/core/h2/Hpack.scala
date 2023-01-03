@@ -29,36 +29,36 @@ import scala.collection.mutable.ListBuffer
 
 private[h2] trait Hpack[F[_]] {
   def encodeHeaders(headers: NonEmptyList[(String, String, Boolean)]): F[ByteVector]
-  def decodeHeaders(bv: ByteVector): F[NonEmptyList[(String, String)]]
+  def decodeHeaders(bv:      ByteVector):                              F[NonEmptyList[(String, String)]]
 }
 
 private[h2] object Hpack extends HpackPlatform {
   def create[F[_]: Async]: F[Hpack[F]] = for {
     eLock <- Semaphore[F](1)
     dLock <- Semaphore[F](1)
-    e <- Sync[F].delay(new Encoder(4096))
-    d <- Sync[F].delay(new Decoder(65536, 4096))
+    e     <- Sync[F].delay(new Encoder(4096))
+    d     <- Sync[F].delay(new Decoder(65536, 4096))
   } yield new Impl(eLock, e, dLock, d)
 
   private class Impl[F[_]: Async](
       encodeLock: Semaphore[F],
-      tEncoder: Encoder,
+      tEncoder:   Encoder,
       decodeLock: Semaphore[F],
-      tDecoder: Decoder,
+      tDecoder:   Decoder,
   ) extends Hpack[F] {
-    def encodeHeaders(headers: NonEmptyList[(String, String, Boolean)]): F[ByteVector] =
+    def encodeHeaders(headers: NonEmptyList[(String, String, Boolean)]): F[ByteVector]                     =
       encodeLock.permit.use(_ => Hpack.encodeHeaders[F](tEncoder, headers.toList))
-    def decodeHeaders(bv: ByteVector): F[NonEmptyList[(String, String)]] =
+    def decodeHeaders(bv: ByteVector):                                   F[NonEmptyList[(String, String)]] =
       decodeLock.permit.use(_ => Hpack.decodeHeaders[F](tDecoder, bv))
 
   }
 
   def decodeHeaders[F[_]: Sync](
       tDecoder: Decoder,
-      bv: ByteVector,
+      bv:       ByteVector,
   ): F[NonEmptyList[(String, String)]] = Sync[F].delay {
-    val buffer = new ListBuffer[(String, String)]
-    val is = new ByteArrayInputStream(bv.toArray)
+    val buffer   = new ListBuffer[(String, String)]
+    val is       = new ByteArrayInputStream(bv.toArray)
     val listener = new HeaderListener {
       def addHeader(name: Array[Byte], value: Array[Byte], sensitive: Boolean): Unit = {
         buffer.+=(
@@ -80,7 +80,7 @@ private[h2] object Hpack extends HpackPlatform {
 
   def encodeHeaders[F[_]: Sync](
       tEncoder: Encoder,
-      headers: List[(String, String, Boolean)],
+      headers:  List[(String, String, Boolean)],
   ): F[ByteVector] = Sync[F].delay {
     val os = new ByteArrayOutputStream(1024)
     headers.foreach { h =>

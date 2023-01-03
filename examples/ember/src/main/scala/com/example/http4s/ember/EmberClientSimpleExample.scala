@@ -33,9 +33,9 @@ import scala.concurrent.duration._
 
 object EmberClientSimpleExample extends IOApp {
 
-  val githubReq = Request[IO](Method.GET, uri"http://christopherdavenport.github.io/")
+  val githubReq  = Request[IO](Method.GET, uri"http://christopherdavenport.github.io/")
   val dadJokeReq = Request[IO](Method.GET, uri"https://icanhazdadjoke.com/")
-  val googleReq = Request[IO](Method.GET, uri"https://www.google.com/")
+  val googleReq  = Request[IO](Method.GET, uri"https://www.google.com/")
   val httpBinGet = Request[IO](Method.GET, uri"https://httpbin.org/get")
   val httpBinPng = Request[IO](Method.GET, uri"https://httpbin.org/image/png")
 

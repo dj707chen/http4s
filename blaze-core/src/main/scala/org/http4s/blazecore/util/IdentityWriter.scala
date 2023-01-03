@@ -28,7 +28,7 @@ import java.nio.ByteBuffer
 import scala.concurrent.Future
 
 private[http4s] class IdentityWriter[F[_]](size: Long, out: TailStage[ByteBuffer])(implicit
-    protected val F: Async[F]
+    protected val F:                             Async[F]
 ) extends Http1Writer[F] {
 
   private[this] val logger = getLogger
@@ -54,9 +54,7 @@ private[http4s] class IdentityWriter[F[_]](size: Long, out: TailStage[ByteBuffer
       logger.warn(msg)
 
       val reducedChunk = chunk.take((size - bodyBytesWritten).toInt)
-      writeBodyChunk(reducedChunk, flush = true).flatMap(_ =>
-        Future.failed(new IllegalArgumentException(msg))
-      )(parasitic)
+      writeBodyChunk(reducedChunk, flush = true).flatMap(_ => Future.failed(new IllegalArgumentException(msg)))(parasitic)
     } else {
       val b = chunk.toByteBuffer
 
@@ -81,9 +79,7 @@ private[http4s] class IdentityWriter[F[_]](size: Long, out: TailStage[ByteBuffer
 
       logger.warn(msg)
 
-      writeBodyChunk(chunk, flush = true).flatMap(_ =>
-        Future.failed(new IllegalStateException(msg))
-      )(parasitic)
+      writeBodyChunk(chunk, flush = true).flatMap(_ => Future.failed(new IllegalStateException(msg)))(parasitic)
     }
   }
 }

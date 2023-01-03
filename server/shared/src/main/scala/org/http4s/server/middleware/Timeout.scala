@@ -33,8 +33,8 @@ object Timeout {
     * @param timeout Finite duration to wait before returning the provided response
     */
   def apply[F[_], G[_], A](timeout: FiniteDuration, timeoutResponse: F[Response[G]])(
-      http: Kleisli[F, A, Response[G]]
-  )(implicit F: Temporal[F]): Kleisli[F, A, Response[G]] =
+      http:                         Kleisli[F, A, Response[G]]
+  )(implicit F:                     Temporal[F]): Kleisli[F, A, Response[G]] =
     http.mapF(F.timeoutTo(_, timeout, timeoutResponse))
 
   /** Transform the service to return a timeout response after the given
@@ -45,7 +45,7 @@ object Timeout {
     * a `503 Service Unavailable` response
     */
   def apply[F[_], G[_], A](timeout: FiniteDuration)(http: Kleisli[F, A, Response[G]])(implicit
-      F: Temporal[F]
+      F:                            Temporal[F]
   ): Kleisli[F, A, Response[G]] =
     apply(timeout, Response.timeout[G].pure[F])(http)
 }

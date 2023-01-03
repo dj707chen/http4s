@@ -42,7 +42,7 @@ object BlazeSslExampleApp {
 
   def resource[F[_]: Async]: Resource[F, Server] =
     for {
-      b <- Resource.eval(builder[F])
+      b      <- Resource.eval(builder[F])
       server <- b.withHttpApp(BlazeExampleApp.httpApp).resource
     } yield server
 }

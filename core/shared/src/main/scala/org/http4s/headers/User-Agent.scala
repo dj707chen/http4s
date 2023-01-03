@@ -34,9 +34,8 @@ object `User-Agent` {
     ParseResult.fromParser(parser, "Invalid User-Agent header")(s)
 
   private[http4s] val parser =
-    ProductIdOrComment.serverAgentParser.map {
-      case (product: ProductId, tokens: List[ProductIdOrComment]) =>
-        `User-Agent`(product, tokens)
+    ProductIdOrComment.serverAgentParser.map { case (product: ProductId, tokens: List[ProductIdOrComment]) =>
+      `User-Agent`(product, tokens)
     }
 
   implicit val headerInstance: Header[`User-Agent`, Header.Single] =

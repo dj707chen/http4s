@@ -32,15 +32,15 @@ import scala.concurrent.duration.FiniteDuration
   */
 object `Strict-Transport-Security` {
   private[headers] class StrictTransportSecurityImpl(
-      maxAge: Long,
+      maxAge:            Long,
       includeSubDomains: Boolean,
-      preload: Boolean,
+      preload:           Boolean,
   ) extends `Strict-Transport-Security`(maxAge, includeSubDomains, preload)
 
   def fromLong(
-      maxAge: Long,
+      maxAge:            Long,
       includeSubDomains: Boolean = true,
-      preload: Boolean = false,
+      preload:           Boolean = false,
   ): ParseResult[`Strict-Transport-Security`] =
     if (maxAge >= 0)
       ParseResult.success(new StrictTransportSecurityImpl(maxAge, includeSubDomains, preload))
@@ -51,16 +51,16 @@ object `Strict-Transport-Security` {
       )
 
   def unsafeFromDuration(
-      maxAge: FiniteDuration,
+      maxAge:            FiniteDuration,
       includeSubDomains: Boolean = true,
-      preload: Boolean = false,
+      preload:           Boolean = false,
   ): `Strict-Transport-Security` =
     fromLong(maxAge.toSeconds, includeSubDomains, preload).fold(throw _, identity)
 
   def unsafeFromLong(
-      maxAge: Long,
+      maxAge:            Long,
       includeSubDomains: Boolean = true,
-      preload: Boolean = false,
+      preload:           Boolean = false,
   ): `Strict-Transport-Security` =
     fromLong(maxAge, includeSubDomains, preload).fold(throw _, identity)
 
@@ -86,7 +86,7 @@ object `Strict-Transport-Security` {
     (maxAge ~ (Parser.string(";") *> ows *> stsAttributes).rep0).map { case (sts, attributes) =>
       attributes.foldLeft(sts) {
         case (sts, IncludeSubDomains) => sts.withIncludeSubDomains(true)
-        case (sts, Preload) => sts.withPreload(true)
+        case (sts, Preload)           => sts.withPreload(true)
       }
     }
   }
@@ -110,9 +110,9 @@ object `Strict-Transport-Security` {
 }
 
 sealed abstract case class `Strict-Transport-Security`(
-    maxAge: Long,
+    maxAge:            Long,
     includeSubDomains: Boolean = true,
-    preload: Boolean = false,
+    preload:           Boolean = false,
 ) {
   def withIncludeSubDomains(includeSubDomains: Boolean): `Strict-Transport-Security` =
     new `Strict-Transport-Security`.StrictTransportSecurityImpl(

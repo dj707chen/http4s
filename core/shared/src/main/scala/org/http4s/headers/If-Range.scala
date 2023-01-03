@@ -41,7 +41,7 @@ object `If-Range` {
       ci"If-Range",
       {
         case LastModified(date) => date
-        case ETag(tag) => tag
+        case ETag(tag)          => tag
       },
       parse,
     )

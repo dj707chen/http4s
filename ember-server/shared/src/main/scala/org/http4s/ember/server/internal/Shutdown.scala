@@ -25,9 +25,9 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.duration.FiniteDuration
 
 private[server] abstract class Shutdown[F[_]] {
-  def await: F[Unit]
-  def signal: F[Unit]
-  def newConnection: F[Unit]
+  def await:            F[Unit]
+  def signal:           F[Unit]
+  def newConnection:    F[Unit]
   def removeConnection: F[Unit]
 
   def trackConnection: Stream[F, Unit] =
@@ -47,9 +47,9 @@ private[server] object Shutdown {
     case class State(isShutdown: Boolean, active: Int)
 
     for {
-      unblockStart <- Deferred[F, Unit]
+      unblockStart  <- Deferred[F, Unit]
       unblockFinish <- Deferred[F, Unit]
-      state <- Ref.of[F, State](State(false, 0))
+      state         <- Ref.of[F, State](State(false, 0))
     } yield new Shutdown[F] {
       override val await: F[Unit] =
         unblockStart
@@ -96,11 +96,11 @@ private[server] object Shutdown {
   private def immediateShutdown[F[_]](implicit F: Concurrent[F]): F[Shutdown[F]] =
     Deferred[F, Unit].map { unblock =>
       new Shutdown[F] {
-        override val await: F[Unit] = unblock.complete(()).void
-        override val signal: F[Unit] = unblock.get
-        override val newConnection: F[Unit] = F.unit
-        override val removeConnection: F[Unit] = F.unit
-        override val trackConnection: Stream[F, Unit] = Stream.empty
+        override val await:            F[Unit]         = unblock.complete(()).void
+        override val signal:           F[Unit]         = unblock.get
+        override val newConnection:    F[Unit]         = F.unit
+        override val removeConnection: F[Unit]         = F.unit
+        override val trackConnection:  Stream[F, Unit] = Stream.empty
       }
     }
 

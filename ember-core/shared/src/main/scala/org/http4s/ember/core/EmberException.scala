@@ -25,13 +25,11 @@ import scala.util.control.NoStackTrace
 sealed trait EmberException extends RuntimeException with Product with Serializable
 
 object EmberException {
-  final case class Timeout(started: Instant, timedOut: Instant) extends EmberException {
+  final case class Timeout(started: Instant, timedOut: Instant) extends EmberException                           {
     override def getMessage: String =
       show"Timeout Occured - Started: ${started.toString}, Timed Out: ${timedOut.toString}"
   }
-  final case class IncompleteClientRequest(missing: String)
-      extends IllegalArgumentException
-      with EmberException {
+  final case class IncompleteClientRequest(missing: String) extends IllegalArgumentException with EmberException {
     override def getMessage: String = show"Incomplete Client Request: Mising $missing"
   }
 
@@ -59,9 +57,7 @@ object EmberException {
     override def getMessage: String = s"Read timeout after $duration"
   }
 
-  private[ember] final case class RequestHeadersTimeout(duration: Duration)
-      extends EmberException
-      with NoStackTrace {
+  private[ember] final case class RequestHeadersTimeout(duration: Duration) extends EmberException with NoStackTrace {
     override def getMessage: String = s"Timed out waiting for request headers after $duration"
   }
 

@@ -78,9 +78,9 @@ private[http4s] trait Http1Stage[F[_]] { self: TailStage[ByteBuffer] =>
 
   /** Get the proper body encoder based on the request */
   protected final def getEncoder(
-      req: Request[F],
-      rr: StringWriter,
-      minor: Int,
+      req:           Request[F],
+      rr:            StringWriter,
+      minor:         Int,
       closeOnFinish: Boolean,
   ): Http1Writer[F] = {
     val headers = req.headers
@@ -100,13 +100,13 @@ private[http4s] trait Http1Stage[F[_]] { self: TailStage[ByteBuffer] =>
     * adding the appropriate Connection and Transfer-Encoding headers along the way
     */
   protected final def getEncoder(
-      connectionHeader: Option[Connection],
-      bodyEncoding: Option[`Transfer-Encoding`],
-      lengthHeader: Option[`Content-Length`],
-      trailer: F[Headers],
-      rr: StringWriter,
-      minor: Int,
-      closeOnFinish: Boolean,
+      connectionHeader:       Option[Connection],
+      bodyEncoding:           Option[`Transfer-Encoding`],
+      lengthHeader:           Option[`Content-Length`],
+      trailer:                F[Headers],
+      rr:                     StringWriter,
+      minor:                  Int,
+      closeOnFinish:          Boolean,
       omitEmptyContentLength: Boolean,
   ): Http1Writer[F] =
     lengthHeader match {
@@ -141,7 +141,7 @@ private[http4s] trait Http1Stage[F[_]] { self: TailStage[ByteBuffer] =>
             logger.trace("Using static encoder without length")
             new CachingStaticWriter[F](
               this
-            ) // will cache for a bit, then signal close if the body is long
+            )      // will cache for a bit, then signal close if the body is long
           }
         else
           bodyEncoding match { // HTTP >= 1.1 request without length and/or with chunked encoder
@@ -172,7 +172,7 @@ private[http4s] trait Http1Stage[F[_]] { self: TailStage[ByteBuffer] =>
     *                     and `Command.EOF` as the end of the body while a server cannot.
     */
   protected final def collectBodyFromParser(
-      buffer: ByteBuffer,
+      buffer:       ByteBuffer,
       eofCondition: () => Either[Throwable, Option[Chunk[Byte]]],
   ): (EntityBody[F], () => Future[ByteBuffer]) =
     if (contentComplete())
@@ -199,7 +199,7 @@ private[http4s] trait Http1Stage[F[_]] { self: TailStage[ByteBuffer] =>
 
   // Streams the body off the wire
   private def streamingBody(
-      buffer: ByteBuffer,
+      buffer:       ByteBuffer,
       eofCondition: () => Either[Throwable, Option[Chunk[Byte]]],
   ): (EntityBody[F], () => Future[ByteBuffer]) = {
     @volatile var currentBuffer = buffer
@@ -283,14 +283,14 @@ object Http1Stage {
   private val CachedEmptyBody = EmptyBody -> CachedEmptyBufferThunk
 
   // Building the current Date header value each time is expensive, so we cache it for the current second
-  private var currentEpoch: Long = _
+  private var currentEpoch: Long   = _
   private var cachedString: String = _
 
   private val NoPayloadMethods: Set[Method] =
     Set(Method.GET, Method.DELETE, Method.CONNECT, Method.TRACE)
 
   private def currentDate: String = {
-    val now = Instant.now()
+    val now         = Instant.now()
     val epochSecond = now.getEpochSecond
     if (epochSecond != currentEpoch) {
       currentEpoch = epochSecond
@@ -314,7 +314,7 @@ object Http1Stage {
     */
   def encodeHeaders(headers: Iterable[Header.Raw], rr: Writer, isServer: Boolean): Unit = {
     var dateEncoded = false
-    val dateName = Header[Date].name
+    val dateName    = Header[Date].name
     headers.foreach { h =>
       if (h.name != `Transfer-Encoding`.name && h.name != `Content-Length`.name && h.isNameValid) {
         if (isServer && h.name == dateName) dateEncoded = true

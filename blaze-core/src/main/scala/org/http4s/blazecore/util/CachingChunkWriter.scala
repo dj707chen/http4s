@@ -30,20 +30,20 @@ import scala.collection.mutable.Buffer
 import scala.concurrent._
 
 private[http4s] class CachingChunkWriter[F[_]](
-    pipe: TailStage[ByteBuffer],
-    trailer: F[Headers],
-    bufferMaxSize: Int,
-    omitEmptyContentLength: Boolean,
+    pipe:                     TailStage[ByteBuffer],
+    trailer:                  F[Headers],
+    bufferMaxSize:            Int,
+    omitEmptyContentLength:   Boolean,
 )(implicit
-    protected val F: Async[F],
-    private val ec: ExecutionContext,
+    protected val F:          Async[F],
+    private val ec:           ExecutionContext,
     protected val dispatcher: Dispatcher[F],
 ) extends Http1Writer[F] {
   import ChunkWriter._
 
-  private[this] var pendingHeaders: StringWriter = _
-  private[this] val bodyBuffer: Buffer[Chunk[Byte]] = Buffer()
-  private[this] var size: Int = 0
+  private[this] var pendingHeaders: StringWriter        = _
+  private[this] val bodyBuffer:     Buffer[Chunk[Byte]] = Buffer()
+  private[this] var size:           Int                 = 0
 
   override def writeHeaders(headerWriter: StringWriter): Future[Unit] = {
     pendingHeaders = headerWriter

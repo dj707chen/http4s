@@ -28,12 +28,12 @@ import org.typelevel.ci._
 object JsonDebugErrorHandler {
   private[this] val messageFailureLogger =
     org.log4s.getLogger("org.http4s.circe.middleware.jsondebugerrorhandler.message-failures")
-  private[this] val serviceErrorLogger =
+  private[this] val serviceErrorLogger   =
     org.log4s.getLogger("org.http4s.circe.middleware.jsondebugerrorhandler.service-errors")
 
   // Can be parametric on my other PR is merged.
   def apply[F[_]: Concurrent, G[_]](
-      service: Kleisli[F, Request[G], Response[G]],
+      service:    Kleisli[F, Request[G], Response[G]],
       redactWhen: CIString => Boolean = Headers.SensitiveHeaders.contains,
   ): Kleisli[F, Request[G], Response[G]] =
     Kleisli { req =>
@@ -52,9 +52,9 @@ object JsonDebugErrorHandler {
             )
             val firstResp = mf.toHttpResponse[G](req.httpVersion)
             Response[G](
-              status = firstResp.status,
+              status      = firstResp.status,
               httpVersion = firstResp.httpVersion,
-              headers = firstResp.headers.redactSensitive(redactWhen),
+              headers     = firstResp.headers.redactSensitive(redactWhen),
             ).withEntity(JsonErrorHandlerResponse[G](req, mf)).pure[F]
           case t =>
             serviceErrorLogger.error(t)(
@@ -74,7 +74,7 @@ object JsonDebugErrorHandler {
     }
 
   private final case class JsonErrorHandlerResponse[F[_]](
-      req: Request[F],
+      req:    Request[F],
       caught: Throwable,
   )
   private object JsonErrorHandlerResponse {

@@ -25,7 +25,7 @@ import org.http4s.syntax.all._
 
 object ClientPostExample extends IOApp with Http4sClientDsl[IO] {
   def run(args: List[String]): IO[ExitCode] = {
-    val req = POST(UrlForm("q" -> "http4s"), uri"https://duckduckgo.com/")
+    val req          = POST(UrlForm("q" -> "http4s"), uri"https://duckduckgo.com/")
     val responseBody = BlazeClientBuilder[IO].resource.use(_.expect[String](req))
     responseBody.flatMap(resp => IO.println(resp)).as(ExitCode.Success)
   }

@@ -38,17 +38,17 @@ private[util] object ChunkWriter {
     ByteBuffer.wrap("0\r\n\r\n".getBytes(ISO_8859_1)).asReadOnlyBuffer()
   def ChunkEndBuffer: ByteBuffer = chunkEndBuffer.duplicate()
 
-  val TransferEncodingChunkedString = "Transfer-Encoding: chunked\r\n\r\n"
-  private[this] val TransferEncodingChunkedBytes =
+  val TransferEncodingChunkedString               = "Transfer-Encoding: chunked\r\n\r\n"
+  private[this] val TransferEncodingChunkedBytes  =
     "Transfer-Encoding: chunked\r\n\r\n".getBytes(ISO_8859_1)
   private[this] val transferEncodingChunkedBuffer =
     ByteBuffer.wrap(TransferEncodingChunkedBytes).asReadOnlyBuffer
   def TransferEncodingChunked: ByteBuffer = transferEncodingChunkedBuffer.duplicate()
 
   def writeTrailer[F[_]](pipe: TailStage[ByteBuffer], trailer: F[Headers])(implicit
-      F: Async[F],
-      ec: ExecutionContext,
-      dispatcher: Dispatcher[F],
+      F:                       Async[F],
+      ec:                      ExecutionContext,
+      dispatcher:              Dispatcher[F],
   ): Future[Boolean] = {
     val f = trailer.map { trailerHeaders =>
       if (!trailerHeaders.isEmpty) {
@@ -56,20 +56,20 @@ private[util] object ChunkWriter {
         rr << "0\r\n" // Last chunk
         trailerHeaders.foreach { h =>
           rr << h << "\r\n"; ()
-        } // trailers
-        rr << "\r\n" // end of chunks
+        }             // trailers
+        rr << "\r\n"  // end of chunks
         ByteBuffer.wrap(rr.result.getBytes(ISO_8859_1))
       } else ChunkEndBuffer
     }
     for {
       buffer <- dispatcher.unsafeToFuture(f)
-      _ <- pipe.channelWrite(buffer)
+      _      <- pipe.channelWrite(buffer)
     } yield false
   }
 
   def writeLength(length: Long): ByteBuffer = {
     val bytes = length.toHexString.getBytes(ISO_8859_1)
-    val b = ByteBuffer.allocate(bytes.length + 2)
+    val b     = ByteBuffer.allocate(bytes.length + 2)
     b.put(bytes).put(CRLFBytes).flip()
     b
   }

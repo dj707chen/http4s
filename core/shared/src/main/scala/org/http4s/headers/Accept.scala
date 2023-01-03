@@ -45,10 +45,9 @@ object Accept {
         (org.http4s.QValue.One, s.toList)
       })
 
-    val fullRange: Parser[MediaRangeAndQValue] = (MediaRange.parser ~ qAndExtension.?).map {
-      case (mr, params) =>
-        val (qValue, extensions) = params.getOrElse((QValue.One, Seq.empty))
-        mr.withExtensions(extensions.toMap).withQValue(qValue)
+    val fullRange: Parser[MediaRangeAndQValue] = (MediaRange.parser ~ qAndExtension.?).map { case (mr, params) =>
+      val (qValue, extensions) = params.getOrElse((QValue.One, Seq.empty))
+      mr.withExtensions(extensions.toMap).withQValue(qValue)
     }
 
     headerRep1(fullRange).map(xs => Accept(xs.head, xs.tail: _*))
@@ -65,8 +64,7 @@ object Accept {
     (a, b) => Accept(a.values.concatNel(b.values))
 }
 
-final case class MediaRangeAndQValue(mediaRange: MediaRange, qValue: QValue = QValue.One)
-    extends Renderable {
+final case class MediaRangeAndQValue(mediaRange: MediaRange, qValue: QValue = QValue.One) extends Renderable {
   def render(writer: Writer): writer.type = {
     writer << mediaRange.withExtensions(Map.empty) << qValue
     MediaRange.renderExtensions(writer, mediaRange)

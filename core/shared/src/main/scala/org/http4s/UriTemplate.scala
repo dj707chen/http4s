@@ -16,7 +16,7 @@
 
 package org.http4s
 
-import org.http4s.Uri.{Fragment => _, Path => _, apply => _, unapply => _, _}
+import org.http4s.Uri.{apply => _, unapply => _, Fragment => _, Path => _, _}
 import org.http4s.UriTemplate._
 import org.http4s.util.StringWriter
 
@@ -38,11 +38,11 @@ import scala.util.Try
   *  - Fragment expansion
   */
 final case class UriTemplate(
-    scheme: Option[Scheme] = None,
+    scheme:    Option[Scheme] = None,
     authority: Option[Authority] = None,
-    path: Path = Nil,
-    query: UriTemplate.Query = Nil,
-    fragment: Fragment = Nil,
+    path:      Path = Nil,
+    query:     UriTemplate.Query = Nil,
+    fragment:  Fragment = Nil,
 ) {
 
   /** Replaces any expansion type that matches the given `name`. If no matching
@@ -107,8 +107,8 @@ final case class UriTemplate(
 }
 
 object UriTemplate {
-  type Path = List[PathDef]
-  type Query = List[QueryDef]
+  type Path     = List[PathDef]
+  type Query    = List[QueryDef]
   type Fragment = List[FragmentDef]
 
   protected val unreserved: Set[Char] =
@@ -132,11 +132,11 @@ object UriTemplate {
         acc.append(PathElm(v.value))
       }
     path.foreach {
-      case p @ PathElm(_) => acc.append(p)
-      case p @ VarExp(collection.Seq(n)) =>
+      case p @ PathElm(_)                     => acc.append(p)
+      case p @ VarExp(collection.Seq(n))      =>
         if (n == name) appendValues()
         else acc.append(p)
-      case p @ VarExp(ns) =>
+      case p @ VarExp(ns)                     =>
         if (ns.contains(name)) {
           appendValues()
           acc.append(VarExp(ns.filterNot(_ == name)))
@@ -144,15 +144,15 @@ object UriTemplate {
       case p @ ReservedExp(collection.Seq(n)) =>
         if (n == name) appendValues()
         else acc.append(p)
-      case p @ ReservedExp(ns) =>
+      case p @ ReservedExp(ns)                =>
         if (ns.contains(name)) {
           appendValues()
           acc.append(VarExp(ns.filterNot(_ == name)))
         } else acc.append(p)
-      case p @ PathExp(collection.Seq(n)) =>
+      case p @ PathExp(collection.Seq(n))     =>
         if (n == name) appendValues()
         else acc.append(p)
-      case p @ PathExp(ns) =>
+      case p @ PathExp(ns)                    =>
         if (ns.contains(name)) {
           appendValues()
           acc.append(PathExp(ns.filterNot(_ == name)))
@@ -164,27 +164,27 @@ object UriTemplate {
   protected def expandQueryN(query: Query, name: String, values: List[String]): Query = {
     val acc = new ArrayBuffer[QueryDef]()
     query.foreach {
-      case p @ ParamElm(_, _) => acc.append(p)
-      case p @ ParamVarExp(r, List(n)) =>
+      case p @ ParamElm(_, _)                  => acc.append(p)
+      case p @ ParamVarExp(r, List(n))         =>
         if (n == name) acc.append(ParamElm(r, values))
         else acc.append(p)
-      case p @ ParamVarExp(r, ns) =>
+      case p @ ParamVarExp(r, ns)              =>
         if (ns.contains(name)) {
           acc.append(ParamElm(r, values))
           acc.append(ParamVarExp(r, ns.filterNot(_ == name)))
         } else acc.append(p)
-      case p @ ParamReservedExp(r, List(n)) =>
+      case p @ ParamReservedExp(r, List(n))    =>
         if (n == name) acc.append(ParamElm(r, values))
         else acc.append(p)
-      case p @ ParamReservedExp(r, ns) =>
+      case p @ ParamReservedExp(r, ns)         =>
         if (ns.contains(name)) {
           acc.append(ParamElm(r, values))
           acc.append(ParamReservedExp(r, ns.filterNot(_ == name)))
         } else acc.append(p)
-      case p @ ParamExp(collection.Seq(n)) =>
+      case p @ ParamExp(collection.Seq(n))     =>
         if (n == name) acc.append(ParamElm(name, values))
         else acc.append(p)
-      case p @ ParamExp(ns) =>
+      case p @ ParamExp(ns)                    =>
         if (ns.contains(name)) {
           acc.append(ParamElm(name, values))
           acc.append(ParamExp(ns.filterNot(_ == name)))
@@ -192,7 +192,7 @@ object UriTemplate {
       case p @ ParamContExp(collection.Seq(n)) =>
         if (n == name) acc.append(ParamElm(name, values))
         else acc.append(p)
-      case p @ ParamContExp(ns) =>
+      case p @ ParamContExp(ns)                =>
         if (ns.contains(name)) {
           acc.append(ParamElm(name, values))
           acc.append(ParamContExp(ns.filterNot(_ == name)))
@@ -204,12 +204,12 @@ object UriTemplate {
   protected def expandFragmentN(fragment: Fragment, name: String, value: String): Fragment = {
     val acc = new ArrayBuffer[FragmentDef]()
     fragment.foreach {
-      case p @ FragmentElm(_) => acc.append(p)
-      case p @ SimpleFragmentExp(n) =>
+      case p @ FragmentElm(_)                      => acc.append(p)
+      case p @ SimpleFragmentExp(n)                =>
         if (n == name) acc.append(FragmentElm(value)) else acc.append(p)
       case p @ MultiFragmentExp(collection.Seq(n)) =>
         if (n == name) acc.append(FragmentElm(value)) else acc.append(p)
-      case p @ MultiFragmentExp(ns) =>
+      case p @ MultiFragmentExp(ns)                =>
         if (ns.contains(name)) {
           acc.append(FragmentElm(value))
           acc.append(MultiFragmentExp(ns.filterNot(_ == name)))
@@ -220,17 +220,17 @@ object UriTemplate {
 
   protected def renderAuthority(a: Authority): String =
     a match {
-      case Authority(Some(u), h, None) => s"${renderUserInfo(u)}@${renderHost(h)}"
+      case Authority(Some(u), h, None)    => s"${renderUserInfo(u)}@${renderHost(h)}"
       case Authority(Some(u), h, Some(p)) => s"${renderUserInfo(u)}@${renderHost(h)}:${p}"
-      case Authority(None, h, Some(p)) => renderHost(h) + ":" + p
-      case Authority(_, h, _) => renderHost(h)
+      case Authority(None, h, Some(p))    => renderHost(h) + ":" + p
+      case Authority(_, h, _)             => renderHost(h)
     }
 
   protected def renderUserInfo(u: UserInfo): String =
     u match {
       case UserInfo(username, Some(password)) =>
         (new StringWriter << username << ":" << password).result
-      case UserInfo(username, None) => username
+      case UserInfo(username, None)           => username
     }
 
   protected def renderHost(h: Host): String =
@@ -245,45 +245,45 @@ object UriTemplate {
 
   protected def renderSchemeAndAuthority(t: UriTemplate): String =
     t match {
-      case UriTemplate(None, None, _, _, _) => ""
+      case UriTemplate(None, None, _, _, _)       => ""
       case UriTemplate(Some(s), Some(a), _, _, _) => renderScheme(s) + "//" + renderAuthority(a)
-      case UriTemplate(Some(s), None, _, _, _) => renderScheme(s)
-      case UriTemplate(None, Some(a), _, _, _) => renderAuthority(a)
+      case UriTemplate(Some(s), None, _, _, _)    => renderScheme(s)
+      case UriTemplate(None, Some(a), _, _, _)    => renderAuthority(a)
     }
 
   protected def renderQuery(ps: Query): String = {
-    val parted = ps.partition {
-      case ParamElm(_, _) => false
-      case ParamVarExp(_, _) => false
+    val parted    = ps.partition {
+      case ParamElm(_, _)         => false
+      case ParamVarExp(_, _)      => false
       case ParamReservedExp(_, _) => false
-      case ParamExp(_) => true
-      case ParamContExp(_) => true
+      case ParamExp(_)            => true
+      case ParamContExp(_)        => true
     }
-    val elements = new ArrayBuffer[String]()
+    val elements  = new ArrayBuffer[String]()
     parted._2.foreach {
-      case ParamElm(n, Nil) => elements.append(n)
-      case ParamElm(n, List(v)) => elements.append(n + "=" + v)
-      case ParamElm(n, vs) => vs.foreach(v => elements.append(n + "=" + v))
-      case ParamVarExp(n, vs) => elements.append(n + "=" + "{" + vs.mkString(",") + "}")
+      case ParamElm(n, Nil)        => elements.append(n)
+      case ParamElm(n, List(v))    => elements.append(n + "=" + v)
+      case ParamElm(n, vs)         => vs.foreach(v => elements.append(n + "=" + v))
+      case ParamVarExp(n, vs)      => elements.append(n + "=" + "{" + vs.mkString(",") + "}")
       case ParamReservedExp(n, vs) => elements.append(n + "=" + "{+" + vs.mkString(",") + "}")
-      case u => throw new IllegalStateException(s"type ${u.getClass.getName} not supported")
+      case u                       => throw new IllegalStateException(s"type ${u.getClass.getName} not supported")
     }
-    val exps = new ArrayBuffer[String]()
+    val exps      = new ArrayBuffer[String]()
     def separator = if (elements.isEmpty && exps.isEmpty) "?" else "&"
     parted._1.foreach {
-      case ParamExp(ns) => exps.append("{" + separator + ns.mkString(",") + "}")
+      case ParamExp(ns)     => exps.append("{" + separator + ns.mkString(",") + "}")
       case ParamContExp(ns) => exps.append("{" + separator + ns.mkString(",") + "}")
-      case u => throw new IllegalStateException(s"type ${u.getClass.getName} not supported")
+      case u                => throw new IllegalStateException(s"type ${u.getClass.getName} not supported")
     }
     if (elements.isEmpty) exps.mkString
     else "?" + elements.mkString("&") + exps.mkString
   }
 
   protected def renderFragment(f: Fragment): String = {
-    val elements = new mutable.ArrayBuffer[String]()
+    val elements   = new mutable.ArrayBuffer[String]()
     val expansions = new mutable.ArrayBuffer[String]()
     f.foreach {
-      case FragmentElm(v) => elements.append(v)
+      case FragmentElm(v)       => elements.append(v)
       case SimpleFragmentExp(n) => expansions.append(n)
       case MultiFragmentExp(ns) => expansions.append(ns.mkString(","))
     }
@@ -300,10 +300,10 @@ object UriTemplate {
   protected def renderFragmentIdentifier(f: Fragment): String = {
     val elements = new mutable.ArrayBuffer[String]()
     f.foreach {
-      case FragmentElm(v) => elements.append(v)
+      case FragmentElm(v)       => elements.append(v)
       case SimpleFragmentExp(_) =>
         throw new IllegalStateException("SimpleFragmentExp cannot be converted to a Uri")
-      case MultiFragmentExp(_) =>
+      case MultiFragmentExp(_)  =>
         throw new IllegalStateException("MultiFragmentExp cannot be converted to a Uri")
     }
     if (elements.isEmpty) ""
@@ -312,11 +312,11 @@ object UriTemplate {
 
   protected def buildQuery(q: Query): org.http4s.Query = {
     val vec = q.foldLeft(Vector.empty[(String, Option[String])]) {
-      case (elements, ParamElm(n, Nil)) => elements :+ (n -> None)
+      case (elements, ParamElm(n, Nil))     => elements :+ (n -> None)
       case (elements, ParamElm(n, List(v))) => elements :+ (n -> Some(v))
-      case (elements, ParamElm(n, vs)) =>
+      case (elements, ParamElm(n, vs))      =>
         vs.foldLeft(elements) { case (elements, v) => elements :+ (n -> Some(v)) }
-      case u =>
+      case u                                =>
         throw new IllegalStateException(s"${u.getClass.getName} cannot be converted to a Uri")
     }
 
@@ -326,93 +326,93 @@ object UriTemplate {
   protected def renderPath(p: Path): String =
     p match {
       case Nil => "/"
-      case ps =>
+      case ps  =>
         val elements = new ArrayBuffer[String]()
         ps.foreach {
-          case PathElm(n) => elements.append("/" + n)
-          case VarExp(ns) => elements.append("{" + ns.mkString(",") + "}")
+          case PathElm(n)      => elements.append("/" + n)
+          case VarExp(ns)      => elements.append("{" + ns.mkString(",") + "}")
           case ReservedExp(ns) => elements.append("{+" + ns.mkString(",") + "}")
-          case PathExp(ns) => elements.append("{/" + ns.mkString(",") + "}")
+          case PathExp(ns)     => elements.append("{/" + ns.mkString(",") + "}")
         }
         elements.mkString
     }
 
   protected def renderPathAndQueryAndFragment(t: UriTemplate): String =
     t match {
-      case UriTemplate(_, _, Nil, Nil, Nil) => "/"
-      case UriTemplate(_, _, Nil, Nil, f) => "/" + renderFragment(f)
-      case UriTemplate(_, _, Nil, query, Nil) => "/" + renderQuery(query)
-      case UriTemplate(_, _, Nil, query, f) => "/" + renderQuery(query) + renderFragment(f)
-      case UriTemplate(_, _, path, Nil, Nil) => renderPath(path)
+      case UriTemplate(_, _, Nil, Nil, Nil)    => "/"
+      case UriTemplate(_, _, Nil, Nil, f)      => "/" + renderFragment(f)
+      case UriTemplate(_, _, Nil, query, Nil)  => "/" + renderQuery(query)
+      case UriTemplate(_, _, Nil, query, f)    => "/" + renderQuery(query) + renderFragment(f)
+      case UriTemplate(_, _, path, Nil, Nil)   => renderPath(path)
       case UriTemplate(_, _, path, query, Nil) => renderPath(path) + renderQuery(query)
-      case UriTemplate(_, _, path, Nil, f) => renderPath(path) + renderFragment(f)
-      case UriTemplate(_, _, path, query, f) =>
+      case UriTemplate(_, _, path, Nil, f)     => renderPath(path) + renderFragment(f)
+      case UriTemplate(_, _, path, query, f)   =>
         renderPath(path) + renderQuery(query) + renderFragment(f)
     }
 
   protected def renderUriTemplate(t: UriTemplate): String =
     t match {
-      case UriTemplate(None, None, Nil, Nil, Nil) => "/"
-      case UriTemplate(Some(_), Some(_), Nil, Nil, Nil) => renderSchemeAndAuthority(t)
+      case UriTemplate(None, None, Nil, Nil, Nil)                                     => "/"
+      case UriTemplate(Some(_), Some(_), Nil, Nil, Nil)                               => renderSchemeAndAuthority(t)
       case UriTemplate(scheme @ _, authority @ _, path @ _, params @ _, fragment @ _) =>
         renderSchemeAndAuthority(t) + renderPathAndQueryAndFragment(t)
     }
 
   protected def fragmentExp(f: FragmentDef): Boolean =
     f match {
-      case FragmentElm(_) => false
+      case FragmentElm(_)       => false
       case SimpleFragmentExp(_) => true
-      case MultiFragmentExp(_) => true
+      case MultiFragmentExp(_)  => true
     }
 
   protected def pathExp(p: PathDef): Boolean =
     p match {
-      case PathElm(_) => false
-      case VarExp(_) => true
+      case PathElm(_)     => false
+      case VarExp(_)      => true
       case ReservedExp(_) => true
-      case PathExp(_) => true
+      case PathExp(_)     => true
     }
 
   protected def queryExp(q: QueryDef): Boolean =
     q match {
-      case ParamElm(_, _) => false
-      case ParamVarExp(_, _) => true
+      case ParamElm(_, _)         => false
+      case ParamVarExp(_, _)      => true
       case ParamReservedExp(_, _) => true
-      case ParamExp(_) => true
-      case ParamContExp(_) => true
+      case ParamExp(_)            => true
+      case ParamContExp(_)        => true
     }
 
   protected def containsExpansions(t: UriTemplate): Boolean =
     t match {
       case UriTemplate(_, _, Nil, Nil, Nil) => false
-      case UriTemplate(_, _, Nil, Nil, f) => f.exists(fragmentExp)
-      case UriTemplate(_, _, Nil, q, Nil) => q.exists(queryExp)
-      case UriTemplate(_, _, Nil, q, f) => (q.exists(queryExp)) || (f.exists(fragmentExp))
-      case UriTemplate(_, _, p, Nil, Nil) => p.exists(pathExp)
-      case UriTemplate(_, _, p, Nil, f) => (p.exists(pathExp)) || (f.exists(fragmentExp))
-      case UriTemplate(_, _, p, q, Nil) => (p.exists(pathExp)) || (q.exists(queryExp))
-      case UriTemplate(_, _, p, q, f) =>
+      case UriTemplate(_, _, Nil, Nil, f)   => f.exists(fragmentExp)
+      case UriTemplate(_, _, Nil, q, Nil)   => q.exists(queryExp)
+      case UriTemplate(_, _, Nil, q, f)     => (q.exists(queryExp)) || (f.exists(fragmentExp))
+      case UriTemplate(_, _, p, Nil, Nil)   => p.exists(pathExp)
+      case UriTemplate(_, _, p, Nil, f)     => (p.exists(pathExp)) || (f.exists(fragmentExp))
+      case UriTemplate(_, _, p, q, Nil)     => (p.exists(pathExp)) || (q.exists(queryExp))
+      case UriTemplate(_, _, p, q, f)       =>
         (p.exists(pathExp)) || (q.exists(queryExp)) || (f.exists(fragmentExp))
     }
 
   protected def toUri(t: UriTemplate): Uri =
     t match {
       case UriTemplate(s, a, Nil, Nil, Nil) => Uri(s, a)
-      case UriTemplate(s, a, Nil, Nil, f) => Uri(s, a, fragment = Some(renderFragmentIdentifier(f)))
-      case UriTemplate(s, a, Nil, q, Nil) => Uri(s, a, query = buildQuery(q))
-      case UriTemplate(s, a, Nil, q, f) =>
+      case UriTemplate(s, a, Nil, Nil, f)   => Uri(s, a, fragment = Some(renderFragmentIdentifier(f)))
+      case UriTemplate(s, a, Nil, q, Nil)   => Uri(s, a, query = buildQuery(q))
+      case UriTemplate(s, a, Nil, q, f)     =>
         Uri(s, a, query = buildQuery(q), fragment = Some(renderFragmentIdentifier(f)))
-      case UriTemplate(s, a, p, Nil, Nil) => Uri(s, a, Uri.Path.unsafeFromString(renderPath(p)))
-      case UriTemplate(s, a, p, q, Nil) =>
+      case UriTemplate(s, a, p, Nil, Nil)   => Uri(s, a, Uri.Path.unsafeFromString(renderPath(p)))
+      case UriTemplate(s, a, p, q, Nil)     =>
         Uri(s, a, Uri.Path.unsafeFromString(renderPath(p)), buildQuery(q))
-      case UriTemplate(s, a, p, Nil, f) =>
+      case UriTemplate(s, a, p, Nil, f)     =>
         Uri(
           s,
           a,
           Uri.Path.unsafeFromString(renderPath(p)),
           fragment = Some(renderFragmentIdentifier(f)),
         )
-      case UriTemplate(s, a, p, q, f) =>
+      case UriTemplate(s, a, p, q, f)       =>
         Uri(
           s,
           a,
@@ -434,7 +434,7 @@ object UriTemplate {
   /** Static query parameter element */
   final case class ParamElm(name: String, values: List[String]) extends QueryDef
   object ParamElm {
-    def apply(name: String): ParamElm = new ParamElm(name, Nil)
+    def apply(name: String):                  ParamElm = new ParamElm(name, Nil)
     def apply(name: String, values: String*): ParamElm = new ParamElm(name, values.toList)
   }
 
@@ -443,8 +443,8 @@ object UriTemplate {
   final case class ParamVarExp(name: String, variables: List[String]) extends QueryDef {
     require(variables.forall(isUnreserved), "all variables must consist of unreserved characters")
   }
-  object ParamVarExp {
-    def apply(name: String): ParamVarExp = new ParamVarExp(name, Nil)
+  object ParamVarExp                                                                   {
+    def apply(name: String):                     ParamVarExp = new ParamVarExp(name, Nil)
     def apply(name: String, variables: String*): ParamVarExp =
       new ParamVarExp(name, variables.toList)
   }
@@ -454,8 +454,8 @@ object UriTemplate {
   final case class ParamReservedExp(name: String, variables: List[String]) extends QueryDef {
     require(variables.forall(isUnreserved), "all variables must consist of unreserved characters")
   }
-  object ParamReservedExp {
-    def apply(name: String): ParamReservedExp = new ParamReservedExp(name, Nil)
+  object ParamReservedExp                                                                   {
+    def apply(name: String):                     ParamReservedExp = new ParamReservedExp(name, Nil)
     def apply(name: String, variables: String*): ParamReservedExp =
       new ParamReservedExp(name, variables.toList)
   }
@@ -505,7 +505,7 @@ object UriTemplate {
     require(names.nonEmpty, "at least one name must be set")
     require(names.forall(isUnreserved), "all names must consist of unreserved characters")
   }
-  object VarExp {
+  object VarExp                                                {
     def apply(names: String*): VarExp = new VarExp(names.toList)
   }
 
@@ -519,7 +519,7 @@ object UriTemplate {
     require(names.nonEmpty, "at least one name must be set")
     require(names.forall(isUnreserved), "all names must consist of unreserved characters")
   }
-  object ReservedExp {
+  object ReservedExp                                                {
     def apply(names: String*): ReservedExp = new ReservedExp(names.toList)
   }
 
@@ -530,7 +530,7 @@ object UriTemplate {
     require(names.nonEmpty, "at least one name must be set")
     require(names.forall(isUnreserved), "all names must consist of unreserved characters")
   }
-  object MultiFragmentExp {
+  object MultiFragmentExp                                                    {
     def apply(names: String*): MultiFragmentExp = new MultiFragmentExp(names.toList)
   }
 
@@ -541,7 +541,7 @@ object UriTemplate {
     require(names.nonEmpty, "at least one name must be set")
     require(names.forall(isUnreserved), "all names must consist of unreserved characters")
   }
-  object PathExp {
+  object PathExp                                                {
     def apply(names: String*): PathExp = new PathExp(names.toList)
   }
 
@@ -555,7 +555,7 @@ object UriTemplate {
       "all names must consist of unreserved characters or be encoded",
     )
   }
-  object ParamExp {
+  object ParamExp                                                 {
     def apply(names: String*): ParamExp = new ParamExp(names.toList)
   }
 
@@ -566,7 +566,7 @@ object UriTemplate {
     require(names.nonEmpty, "at least one name must be set")
     require(names.forall(isUnreserved), "all names must consist of unreserved characters")
   }
-  object ParamContExp {
+  object ParamContExp                                                 {
     def apply(names: String*): ParamContExp = new ParamContExp(names.toList)
   }
 }

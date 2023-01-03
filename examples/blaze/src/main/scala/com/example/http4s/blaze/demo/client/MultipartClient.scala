@@ -58,9 +58,9 @@ class MultipartHttpClient(implicit S: StreamUtils[IO]) extends IOApp with Http4s
   private val example =
     for {
       client <- Stream.resource(resources)
-      req <- Stream.eval(request)
-      value <- Stream.eval(client.expect[String](req))
-      _ <- S.putStrLn(value)
+      req    <- Stream.eval(request)
+      value  <- Stream.eval(client.expect[String](req))
+      _      <- S.putStrLn(value)
     } yield ()
 
   override def run(args: List[String]): IO[ExitCode] =

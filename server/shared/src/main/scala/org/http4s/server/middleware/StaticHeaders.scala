@@ -29,7 +29,7 @@ import org.http4s.headers.`Cache-Control`
 object StaticHeaders {
   def apply[F[_]: Functor, G[_], A](
       headers: Headers
-  )(http: Kleisli[F, A, Response[G]]): Kleisli[F, A, Response[G]] =
+  )(http:      Kleisli[F, A, Response[G]]): Kleisli[F, A, Response[G]] =
     Kleisli { req =>
       http(req).map(resp => resp.copy(headers = headers ++ resp.headers))
     }

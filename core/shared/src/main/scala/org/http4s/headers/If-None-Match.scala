@@ -55,7 +55,7 @@ object `If-None-Match` {
     Header.create(
       ci"If-None-Match",
       _.tags match {
-        case None => "*"
+        case None       => "*"
         case Some(tags) => tags.mkString_("", ",", "")
       },
       parse,

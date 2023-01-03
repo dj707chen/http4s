@@ -38,7 +38,7 @@ object ContextRouter {
     */
   def define[F[_]: Sync, A](
       mappings: (String, ContextRoutes[A, F])*
-  )(default: ContextRoutes[A, F]): ContextRoutes[A, F] =
+  )(default:    ContextRoutes[A, F]): ContextRoutes[A, F] =
     mappings.sortBy(_._1.length).foldLeft(default) { case (acc, (prefix, routes)) =>
       val prefixSegments = Uri.Path.unsafeFromString(prefix)
       if (prefixSegments.isEmpty) routes <+> acc
@@ -47,9 +47,7 @@ object ContextRouter {
           (
             if (req.req.pathInfo.startsWith(prefixSegments))
               routes
-                .local[ContextRequest[F, A]](r =>
-                  ContextRequest(r.context, Router.translate(prefixSegments)(r.req))
-                ) <+> acc
+                .local[ContextRequest[F, A]](r => ContextRequest(r.context, Router.translate(prefixSegments)(r.req))) <+> acc
             else
               acc
           )(req)

@@ -29,11 +29,11 @@ import org.typelevel.ci._
   */
 object `Proxy-Authorization` {
   // https://datatracker.ietf.org/doc/html/rfc7235#section-4.2
-  private[http4s] val parser: Parser[`Proxy-Authorization`] = {
+  private[http4s] val parser:         Parser[`Proxy-Authorization`] = {
     import org.http4s.internal.parsing.Rfc7235.credentials
     credentials.map(`Proxy-Authorization`(_))
   }
-  def apply(basic: BasicCredentials): Authorization =
+  def apply(basic: BasicCredentials): Authorization                 =
     Authorization(Credentials.Token(AuthScheme.Basic, basic.token))
 
   def parse(s: String): ParseResult[`Proxy-Authorization`] =

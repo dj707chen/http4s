@@ -26,13 +26,13 @@ import cats.syntax.all._
 object TranslateUri {
   def apply[F[_], G[_], B](
       prefix: String
-  )(http: Kleisli[F, Request[G], B])(implicit F: MonoidK[F]): Kleisli[F, Request[G], B] =
+  )(http:     Kleisli[F, Request[G], B])(implicit F: MonoidK[F]): Kleisli[F, Request[G], B] =
     if (prefix.isEmpty || prefix == "/") http
     else {
       val prefixAsPath = Uri.Path.unsafeFromString(prefix)
 
       Kleisli { (req: Request[G]) =>
-        val newCaret = req.pathInfo.findSplit(prefixAsPath)
+        val newCaret        = req.pathInfo.findSplit(prefixAsPath)
         val shouldTranslate = req.pathInfo.startsWith(prefixAsPath)
         if (shouldTranslate) http(setCaret(req, newCaret))
         else F.empty
@@ -44,7 +44,7 @@ object TranslateUri {
     val combined = oldCaret |+| newCaret
     combined match {
       case Some(value) => req.withAttribute(Request.Keys.PathInfoCaret, value)
-      case None => req
+      case None        => req
     }
   }
 }

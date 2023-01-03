@@ -26,7 +26,7 @@ import org.typelevel.ci._
 
 object ErrorHandling {
   def apply[F[_], G[_]](
-      k: Kleisli[F, Request[G], Response[G]]
+      k:        Kleisli[F, Request[G], Response[G]]
   )(implicit F: MonadThrow[F]): Kleisli[F, Request[G], Response[G]] =
     Kleisli { req =>
       val pf: PartialFunction[Throwable, F[Response[G]]] =
@@ -34,7 +34,7 @@ object ErrorHandling {
       k.run(req).handleErrorWith { e =>
         pf.lift(e) match {
           case Some(resp) => resp
-          case None => F.raiseError(e)
+          case None       => F.raiseError(e)
         }
       }
     }
@@ -48,7 +48,7 @@ object ErrorHandling {
   object Custom {
     def recoverWith[F[_]: MonadThrow, G[_], A](
         http: Kleisli[F, A, Response[G]]
-    )(pf: PartialFunction[Throwable, F[Response[G]]]): Kleisli[F, A, Response[G]] =
+    )(pf:     PartialFunction[Throwable, F[Response[G]]]): Kleisli[F, A, Response[G]] =
       Kleisli { (a: A) =>
         http.run(a).recoverWith(pf)
       }

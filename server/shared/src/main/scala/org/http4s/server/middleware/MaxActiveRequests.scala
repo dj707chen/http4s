@@ -27,33 +27,33 @@ object MaxActiveRequests {
 
   @deprecated(message = "Please use forHttpApp instead.", since = "0.21.14")
   def httpApp[F[_]: Async](
-      maxActive: Long,
+      maxActive:   Long,
       defaultResp: Response[F] = Response[F](status = Status.ServiceUnavailable),
   ): F[Kleisli[F, Request[F], Response[F]] => Kleisli[F, Request[F], Response[F]]] =
     forHttpApp[F](maxActive, defaultResp)
 
   @deprecated(message = "Please use forHttpApp2 instead.", since = "0.21.14")
   def inHttpApp[G[_], F[_]](
-      maxActive: Long,
+      maxActive:   Long,
       defaultResp: Response[F] = Response[F](status = Status.ServiceUnavailable),
   )(implicit
-      F: Async[F],
-      G: Sync[G],
+      F:           Async[F],
+      G:           Sync[G],
   ): G[Kleisli[F, Request[F], Response[F]] => Kleisli[F, Request[F], Response[F]]] =
     forHttpApp2[G, F](maxActive, defaultResp)
 
   def forHttpApp[F[_]: Async](
-      maxActive: Long,
+      maxActive:   Long,
       defaultResp: Response[F] = Response[F](status = Status.ServiceUnavailable),
   ): F[Kleisli[F, Request[F], Response[F]] => Kleisli[F, Request[F], Response[F]]] =
     forHttpApp2[F, F](maxActive, defaultResp)
 
   def forHttpApp2[G[_], F[_]](
-      maxActive: Long,
+      maxActive:   Long,
       defaultResp: Response[F] = Response[F](status = Status.ServiceUnavailable),
   )(implicit
-      F: Async[F],
-      G: Sync[G],
+      F:           Async[F],
+      G:           Sync[G],
   ): G[Kleisli[F, Request[F], Response[F]] => Kleisli[F, Request[F], Response[F]]] =
     ConcurrentRequests
       .app2[G, F](
@@ -66,7 +66,7 @@ object MaxActiveRequests {
               middleware(Kleisli {
                 case ContextRequest(concurrent, _) if concurrent > maxActive =>
                   defaultResp.pure[F]
-                case ContextRequest(_, req) =>
+                case ContextRequest(_, req)                                  =>
                   httpApp(req)
               })
         )
@@ -74,7 +74,7 @@ object MaxActiveRequests {
 
   @deprecated(message = "Please use forHttpRoutes instead.", since = "0.21.14")
   def httpRoutes[F[_]: Async](
-      maxActive: Long,
+      maxActive:   Long,
       defaultResp: Response[F] = Response[F](status = Status.ServiceUnavailable),
   ): F[Kleisli[OptionT[F, *], Request[F], Response[F]] => Kleisli[OptionT[F, *], Request[
     F
@@ -82,18 +82,18 @@ object MaxActiveRequests {
 
   @deprecated(message = "Please use forHttpRoutes2 instead.", since = "0.21.14")
   def inHttpRoutes[G[_], F[_]](
-      maxActive: Long,
+      maxActive:   Long,
       defaultResp: Response[F] = Response[F](status = Status.ServiceUnavailable),
   )(implicit
-      F: Async[F],
-      G: Sync[G],
+      F:           Async[F],
+      G:           Sync[G],
   ): G[Kleisli[OptionT[F, *], Request[F], Response[F]] => Kleisli[OptionT[F, *], Request[
     F
   ], Response[F]]] =
     forHttpRoutes2[G, F](maxActive, defaultResp)
 
   def forHttpRoutes[F[_]: Async](
-      maxActive: Long,
+      maxActive:   Long,
       defaultResp: Response[F] = Response[F](status = Status.ServiceUnavailable),
   ): F[Kleisli[OptionT[F, *], Request[F], Response[F]] => Kleisli[OptionT[F, *], Request[
     F
@@ -101,11 +101,11 @@ object MaxActiveRequests {
     forHttpRoutes2[F, F](maxActive, defaultResp)
 
   def forHttpRoutes2[G[_], F[_]](
-      maxActive: Long,
+      maxActive:   Long,
       defaultResp: Response[F] = Response[F](status = Status.ServiceUnavailable),
   )(implicit
-      F: Async[F],
-      G: Sync[G],
+      F:           Async[F],
+      G:           Sync[G],
   ): G[Kleisli[OptionT[F, *], Request[F], Response[F]] => Kleisli[OptionT[F, *], Request[
     F
   ], Response[F]]] =
@@ -120,7 +120,7 @@ object MaxActiveRequests {
               middleware(Kleisli {
                 case ContextRequest(concurrent, _) if concurrent > maxActive =>
                   defaultResp.pure[OptionT[F, *]]
-                case ContextRequest(_, req) =>
+                case ContextRequest(_, req)                                  =>
                   httpRoutes(req)
               })
         )

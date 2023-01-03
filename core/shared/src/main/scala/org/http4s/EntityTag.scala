@@ -28,7 +28,7 @@ import org.http4s.util.Writer
 final case class EntityTag(tag: String, weakness: Weakness = Strong) extends Renderable {
   override def toString(): String =
     weakness match {
-      case EntityTag.Weak => "W/\"" + tag + '"'
+      case EntityTag.Weak   => "W/\"" + tag + '"'
       case EntityTag.Strong => "\"" + tag + '"'
     }
 

@@ -34,11 +34,11 @@ object JettyClient {
   private val logger: Logger = getLogger
 
   def allocate[F[_]](client: HttpClient = defaultHttpClient())(implicit
-      F: Async[F]
+      F:                     Async[F]
   ): F[(Client[F], F[Unit])] = resource(client).allocated
 
   def resource[F[_]](
-      client: HttpClient = defaultHttpClient()
+      client:   HttpClient = defaultHttpClient()
   )(implicit F: Async[F]): Resource[F, Client[F]] = Dispatcher[F].flatMap { implicit D =>
     val acquire = F
       .pure(client)
@@ -49,9 +49,9 @@ object JettyClient {
             F.bracket(StreamRequestContentProvider()) { dcp =>
               (for {
                 jReq <- F.catchNonFatal(toJettyRequest(client, req, dcp))
-                rl <- ResponseListener(cb)
-                _ <- F.delay(jReq.send(rl))
-                _ <- dcp.write(req)
+                rl   <- ResponseListener(cb)
+                _    <- F.delay(jReq.send(rl))
+                _    <- dcp.write(req)
               } yield Option.empty[F[Unit]]).recover { case e =>
                 cb(Left(e))
                 Option.empty[F[Unit]]
@@ -70,22 +70,22 @@ object JettyClient {
   }
 
   def stream[F[_]](client: HttpClient = defaultHttpClient())(implicit
-      F: Async[F]
+      F:                   Async[F]
   ): Stream[F, Client[F]] =
     Stream.resource(resource(client))
 
   def defaultHttpClient(): HttpClient = {
     val sslCtxFactory = new SslContextFactory.Client();
-    val c = new HttpClient(sslCtxFactory)
+    val c             = new HttpClient(sslCtxFactory)
     c.setFollowRedirects(false)
     c.setDefaultRequestContentType(null)
     c
   }
 
   private def toJettyRequest[F[_]](
-      client: HttpClient,
+      client:  HttpClient,
       request: Request[F],
-      dcp: StreamRequestContentProvider[F],
+      dcp:     StreamRequestContentProvider[F],
   ): JettyRequest = {
     val jReq = client
       .newRequest(request.uri.toString)
@@ -93,9 +93,9 @@ object JettyClient {
       .version(
         request.httpVersion match {
           case HttpVersion.`HTTP/1.1` => JHttpVersion.HTTP_1_1
-          case HttpVersion.`HTTP/2` => JHttpVersion.HTTP_2
+          case HttpVersion.`HTTP/2`   => JHttpVersion.HTTP_2
           case HttpVersion.`HTTP/1.0` => JHttpVersion.HTTP_1_0
-          case _ => JHttpVersion.HTTP_1_1
+          case _                      => JHttpVersion.HTTP_1_1
         }
       )
 

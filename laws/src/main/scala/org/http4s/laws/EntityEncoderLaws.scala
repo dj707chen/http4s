@@ -30,9 +30,9 @@ trait EntityEncoderLaws[F[_], A] {
 
   def accurateContentLengthIfDefined(a: A): IsEq[F[Boolean]] =
     (for {
-      entity <- F.pure(encoder.toEntity(a))
-      body <- entity.body.compile.toVector
-      bodyLength = body.size.toLong
+      entity       <- F.pure(encoder.toEntity(a))
+      body         <- entity.body.compile.toVector
+      bodyLength    = body.size.toLong
       contentLength = entity.length
     } yield contentLength.fold(true)(_ === bodyLength)) <-> F.pure(true)
 
@@ -45,11 +45,11 @@ trait EntityEncoderLaws[F[_], A] {
 
 object EntityEncoderLaws {
   def apply[F[_], A](implicit
-      F0: Concurrent[F],
+      F0:              Concurrent[F],
       entityEncoderFA: EntityEncoder[F, A],
   ): EntityEncoderLaws[F, A] =
     new EntityEncoderLaws[F, A] {
-      val F: Concurrent[F] = F0
+      val F:       Concurrent[F]       = F0
       val encoder: EntityEncoder[F, A] = entityEncoderFA
     }
 }

@@ -57,17 +57,17 @@ object EmberParserBench {
   @State(Scope.Benchmark)
   class BenchState {
     val maxHeaderSize = 256 * 1024
-    var req: Request[IO] = _
-    var resp: Response[IO] = _
-    var reqBytes: Array[Byte] = _
-    var respBytes: Array[Byte] = _
+    var req:       Request[IO]  = _
+    var resp:      Response[IO] = _
+    var reqBytes:  Array[Byte]  = _
+    var respBytes: Array[Byte]  = _
     val read = IO.raiseError[Option[fs2.Chunk[Byte]]](new Throwable("Should Not Read in Bench"))
 
     @Setup(Level.Trial)
     def setup(): Unit = {
-      req = Request[IO]().withEntity("Hello Bench!")
-      resp = Response[IO]().withEntity("Hello Bench!")
-      reqBytes = org.http4s.ember.core.Encoder.reqToBytes(req).compile.to(Array).unsafeRunSync()
+      req       = Request[IO]().withEntity("Hello Bench!")
+      resp      = Response[IO]().withEntity("Hello Bench!")
+      reqBytes  = org.http4s.ember.core.Encoder.reqToBytes(req).compile.to(Array).unsafeRunSync()
       respBytes = org.http4s.ember.core.Encoder.respToBytes(resp).compile.to(Array).unsafeRunSync()
 
       println(s"Content-Length: ${req.contentLength}")

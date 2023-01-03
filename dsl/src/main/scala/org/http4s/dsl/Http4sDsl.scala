@@ -22,14 +22,14 @@ import org.http4s.Uri
 import org.http4s.dsl.impl._
 
 trait Http4sDsl2[F[_], G[_]] extends RequestDsl with Statuses with Responses[F, G] {
-  val Path: Uri.Path.type = Uri.Path
+  val Path: Uri.Path.type      = Uri.Path
   val Root: Uri.Path.Root.type = Uri.Path.Root
-  val / : impl./.type = impl./
-  val :? : impl.:?.type = impl.:?
-  val ~ : impl.~.type = impl.~
-  val -> : impl.->.type = impl.->
-  val /: : impl./:.type = impl./:
-  val +& : impl.+&.type = impl.+&
+  val /   : impl./.type        = impl./
+  val :?  : impl.:?.type       = impl.:?
+  val ~   : impl.~.type        = impl.~
+  val ->  : impl.->.type       = impl.->
+  val /:  : impl./:.type       = impl./:
+  val +&  : impl.+&.type       = impl.+&
 
   /** Alias for `->`.
     *
@@ -44,7 +44,7 @@ trait Http4sDsl2[F[_], G[_]] extends RequestDsl with Statuses with Responses[F, 
     */
   val → : impl.->.type = impl.->
 
-  val IntVar: impl.IntVar.type = impl.IntVar
+  val IntVar:  impl.IntVar.type  = impl.IntVar
   val LongVar: impl.LongVar.type = impl.LongVar
   val UUIDVar: impl.UUIDVar.type = impl.UUIDVar
 }

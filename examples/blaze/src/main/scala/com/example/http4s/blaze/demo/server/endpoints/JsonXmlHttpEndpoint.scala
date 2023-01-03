@@ -39,7 +39,7 @@ class JsonXmlHttpEndpoint[F[_]](implicit F: Async[F]) extends Http4sDsl[F] {
   private object Person {
     def fromXml(elem: Elem): Person = {
       val name = (elem \\ "name").text
-      val age = (elem \\ "age").text
+      val age  = (elem \\ "age").text
       Person(name, age.toInt)
     }
   }

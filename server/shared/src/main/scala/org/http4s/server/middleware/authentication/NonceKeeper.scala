@@ -37,12 +37,12 @@ private[authentication] object NonceKeeper {
   * @param bits The number of random bits a nonce should consist of.
   */
 private[authentication] class NonceKeeper(
-    staleTimeout: Long,
+    staleTimeout:         Long,
     nonceCleanupInterval: Long,
-    bits: Int,
+    bits:                 Int,
 ) {
   require(bits > 0, "Please supply a positive integer for bits.")
-  private val nonces = new LinkedHashMap[String, Nonce]
+  private val nonces      = new LinkedHashMap[String, Nonce]
   private var lastCleanup = System.currentTimeMillis()
 
   /** Removes nonces that are older than staleTimeout
@@ -73,7 +73,7 @@ private[authentication] class NonceKeeper(
     var n: Nonce = null
     nonces.synchronized {
       checkStale()
-      n = Nonce.gen(bits)
+      n                                    = Nonce.gen(bits)
       while (nonces.get(n.data) != null) n = Nonce.gen(bits)
       nonces.put(n.data, n)
     }

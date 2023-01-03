@@ -24,7 +24,7 @@ import org.http4s.CharsetRange.*
 import org.http4s.CharsetRange.Atom
 import org.typelevel.ci._
 
-object `Accept-Charset` {
+object `Accept-Charset`                                               {
   def apply(head: CharsetRange, tail: CharsetRange*): `Accept-Charset` =
     apply(NonEmptyList(head, tail.toList))
 

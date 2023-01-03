@@ -34,7 +34,7 @@ import scala.collection.mutable.ListBuffer
 
 object ChunkAggregator {
   def apply[F[_]: FlatMap, G[_]: Sync, A](
-      f: G ~> F
+      f:  G ~> F
   )(http: Kleisli[F, A, Response[G]]): Kleisli[F, A, Response[G]] =
     http.flatMapF { response =>
       f(
@@ -65,14 +65,14 @@ object ChunkAggregator {
             te.values.filterNot(_ === TransferCoding.chunked) match {
               case v :: vs =>
                 hh += `Transfer-Encoding`(NonEmptyList(v, vs))
-              case Nil =>
+              case Nil     =>
               // do nothing
             }
-          case Left(_) =>
+          case Left(_)   =>
             hh += h
         }
-      case Header.Raw(ci"Content-Length", _) => // do nothing
-      case header => hh += header
+      case Header.Raw(ci"Content-Length", _)            => // do nothing
+      case header                                       => hh += header
     }
     if (len > 0L)
       hh += `Content-Length`.unsafeFromLong(len)

@@ -26,14 +26,14 @@ object RequestCookieJar {
 @deprecated("Use the CookieJar middleware instead", "0.21.20")
 class RequestCookieJar private (val cookies: List[RequestCookie]) extends AnyVal {
   def iterator: Iterator[RequestCookie] = cookies.iterator
-  def empty: RequestCookieJar = RequestCookieJar.empty
+  def empty:    RequestCookieJar        = RequestCookieJar.empty
 
-  def get(key: String): Option[RequestCookie] = cookies.find(_.name == key)
-  def apply(key: String): RequestCookie = get(key).getOrElse(default(key))
-  def contains(key: String): Boolean = cookies.exists(_.name == key)
-  def getOrElse(key: String, default: => String): RequestCookie =
+  def get(key: String):                           Option[RequestCookie] = cookies.find(_.name == key)
+  def apply(key: String):                         RequestCookie         = get(key).getOrElse(default(key))
+  def contains(key: String):                      Boolean               = cookies.exists(_.name == key)
+  def getOrElse(key: String, default: => String): RequestCookie         =
     get(key).getOrElse(RequestCookie(key, default))
-  def default(key: String): RequestCookie =
+  def default(key: String):                       RequestCookie         =
     throw new NoSuchElementException("Can't find RequestCookie " + key)
 
   def keySet: Set[String] = cookies.map(_.name).toSet

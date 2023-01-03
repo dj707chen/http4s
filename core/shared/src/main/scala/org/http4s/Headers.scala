@@ -97,7 +97,7 @@ final class Headers(val headers: List[Header.Raw]) extends AnyVal {
     transform {
       _.map {
         case h if redactWhen(h.name) => Header.Raw(h.name, "<REDACTED>")
-        case h => h
+        case h                       => h
       }
     }
 
@@ -131,7 +131,7 @@ object Headers {
     Order.by(_.headers)
 
   implicit val headersMonoid: Monoid[Headers] = new Monoid[Headers] {
-    def empty: Headers = Headers.empty
+    def empty:                             Headers = Headers.empty
     def combine(xa: Headers, xb: Headers): Headers =
       xa ++ xb
   }

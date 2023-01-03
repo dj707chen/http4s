@@ -58,20 +58,20 @@ import scala.util.Try
 
 private[http4s] object Http1ServerStage {
   def apply[F[_]](
-      routes: HttpApp[F],
-      attributes: () => Vault,
-      executionContext: ExecutionContext,
-      wsKey: Key[WebSocketContext[F]],
-      maxRequestLineLen: Int,
-      maxHeadersLen: Int,
-      chunkBufferMaxSize: Int,
-      serviceErrorHandler: ServiceErrorHandler[F],
-      responseHeaderTimeout: Duration,
-      idleTimeout: Duration,
-      scheduler: TickWheelExecutor,
-      dispatcher: Dispatcher[F],
+      routes:                 HttpApp[F],
+      attributes:             () => Vault,
+      executionContext:       ExecutionContext,
+      wsKey:                  Key[WebSocketContext[F]],
+      maxRequestLineLen:      Int,
+      maxHeadersLen:          Int,
+      chunkBufferMaxSize:     Int,
+      serviceErrorHandler:    ServiceErrorHandler[F],
+      responseHeaderTimeout:  Duration,
+      idleTimeout:            Duration,
+      scheduler:              TickWheelExecutor,
+      dispatcher:             Dispatcher[F],
       maxWebSocketBufferSize: Option[Int],
-  )(implicit F: Async[F]): Http1ServerStage[F] =
+  )(implicit F:               Async[F]): Http1ServerStage[F] =
     new Http1ServerStage(
       routes,
       attributes,
@@ -91,25 +91,25 @@ private[http4s] object Http1ServerStage {
 }
 
 private[blaze] class Http1ServerStage[F[_]](
-    httpApp: HttpApp[F],
-    requestAttrs: () => Vault,
+    httpApp:                                 HttpApp[F],
+    requestAttrs:                            () => Vault,
     implicit protected val executionContext: ExecutionContext,
-    maxRequestLineLen: Int,
-    maxHeadersLen: Int,
-    override val chunkBufferMaxSize: Int,
-    serviceErrorHandler: ServiceErrorHandler[F],
-    responseHeaderTimeout: Duration,
-    idleTimeout: Duration,
-    scheduler: TickWheelExecutor,
-    val dispatcher: Dispatcher[F],
-)(implicit protected val F: Async[F])
+    maxRequestLineLen:                       Int,
+    maxHeadersLen:                           Int,
+    override val chunkBufferMaxSize:         Int,
+    serviceErrorHandler:                     ServiceErrorHandler[F],
+    responseHeaderTimeout:                   Duration,
+    idleTimeout:                             Duration,
+    scheduler:                               TickWheelExecutor,
+    val dispatcher:                          Dispatcher[F],
+)(implicit protected val F:                  Async[F])
     extends Http1Stage[F]
     with TailStage[ByteBuffer] {
   // micro-optimization: unwrap the routes and call its .run directly
   private[this] val runApp = httpApp.run
 
   // protected by synchronization on `parser`
-  private[this] val parser = new Http1ServerParser[F](logger, maxRequestLineLen, maxHeadersLen)
+  private[this] val parser   = new Http1ServerParser[F](logger, maxRequestLineLen, maxHeadersLen)
   private[this] var isClosed = false
   private[this] var cancelToken: Option[() => Future[Unit]] = None
 
@@ -138,7 +138,7 @@ private[blaze] class Http1ServerStage[F[_]](
     idleTimeout match {
       case f: FiniteDuration =>
         val cb: Callback[TimeoutException] = {
-          case Left(t) =>
+          case Left(t)  =>
             fatalError(t, "Error in idle timeout callback")
           case Right(_) =>
             logger.debug("Shutting down due to idle timeout")
@@ -151,9 +151,9 @@ private[blaze] class Http1ServerStage[F[_]](
     }
 
   private val handleReqRead: Try[ByteBuffer] => Unit = {
-    case Success(buff) => reqLoopCallback(buff)
+    case Success(buff)    => reqLoopCallback(buff)
     case Failure(Cmd.EOF) => closeConnection()
-    case Failure(t) => fatalError(t, "Error in requestLoop()")
+    case Failure(t)       => fatalError(t, "Error in requestLoop()")
   }
 
   private def requestLoop(): Unit = channelRead().onComplete(handleReqRead)(trampoline)
@@ -173,7 +173,7 @@ private[blaze] class Http1ServerStage[F[_]](
         catch {
           case t: BadMessage =>
             badMessage("Error parsing status or headers in requestLoop()", t, Request[F]())
-          case t: Throwable =>
+          case t: Throwable  =>
             internalServerError(
               "error in requestLoop()",
               t,
@@ -201,7 +201,7 @@ private[blaze] class Http1ServerStage[F[_]](
     )
 
     parser.collectMessage(body, requestAttrs()) match {
-      case Right(req) =>
+      case Right(req)          =>
         executionContext.execute(new Runnable {
           def run(): Unit = {
             val action = raceTimeout(req)
@@ -210,7 +210,7 @@ private[blaze] class Http1ServerStage[F[_]](
               .attempt
               .flatMap {
                 case Right(_) => F.unit
-                case Left(t) =>
+                case Left(t)  =>
                   F.delay(logger.error(t)(s"Error running request: $req")).attempt *> F.delay(
                     closeConnection()
                   )
@@ -231,8 +231,8 @@ private[blaze] class Http1ServerStage[F[_]](
   }
 
   protected def renderResponse(
-      req: Request[F],
-      resp: Response[F],
+      req:         Request[F],
+      resp:        Response[F],
       bodyCleanup: () => Future[ByteBuffer],
   ): Unit = {
     val rr = new StringWriter(512)
@@ -241,8 +241,8 @@ private[blaze] class Http1ServerStage[F[_]](
     Http1Stage.encodeHeaders(resp.headers.headers, rr, isServer = true)
 
     val respTransferCoding = resp.headers.get[`Transfer-Encoding`]
-    val lengthHeader = resp.headers.get[`Content-Length`]
-    val respConn = resp.headers.get[Connection]
+    val lengthHeader       = resp.headers.get[`Content-Length`]
+    val respConn           = resp.headers.get[Connection]
 
     // Need to decide which encoder and if to close on finish
     val closeOnFinish = respConn
@@ -272,8 +272,8 @@ private[blaze] class Http1ServerStage[F[_]](
           (parser.minorVersion(), respTransferCoding, lengthHeader) match {
             case (minor, Some(enc), _) if minor > 0 && enc.hasChunked =>
               rr << "Transfer-Encoding: chunked\r\n"
-            case (_, _, Some(len)) => rr << len << "\r\n"
-            case _ => // nop
+            case (_, _, Some(len))                                    => rr << len << "\r\n"
+            case _                                                    => // nop
           }
 
         // add KeepAlive to Http 1.0 responses if the header isn't already present
@@ -316,7 +316,7 @@ private[blaze] class Http1ServerStage[F[_]](
                 case Failure(t) => fatalError(t, "Failure in body cleanup")
               }(trampoline)
             }
-        case Left(t) =>
+        case Left(t)             =>
           logger.error(t)("Error writing body")
           F.delay(closeConnection())
       }
@@ -352,8 +352,8 @@ private[blaze] class Http1ServerStage[F[_]](
 
   protected final def badMessage(
       debugMessage: String,
-      t: ParserException,
-      req: Request[F],
+      t:            ParserException,
+      req:          Request[F],
   ): Unit = {
     logger.debug(t)(s"Bad Request: $debugMessage")
     val resp = Response[F](Status.BadRequest)
@@ -363,9 +363,9 @@ private[blaze] class Http1ServerStage[F[_]](
 
   // The error handler of last resort
   protected final def internalServerError(
-      errorMsg: String,
-      t: Throwable,
-      req: Request[F],
+      errorMsg:    String,
+      t:           Throwable,
+      req:         Request[F],
       bodyCleanup: () => Future[ByteBuffer],
   ): Unit = {
     logger.error(t)(errorMsg)

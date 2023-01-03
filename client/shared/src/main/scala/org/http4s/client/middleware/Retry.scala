@@ -39,47 +39,47 @@ object Retry {
   private[this] val logger = getLogger
 
   def apply[F[_]](
-      policy: RetryPolicy[F],
+      policy:           RetryPolicy[F],
       redactHeaderWhen: CIString => Boolean = Headers.SensitiveHeaders.contains,
-  )(client: Client[F])(implicit F: Temporal[F]): Client[F] =
+  )(client:             Client[F])(implicit F: Temporal[F]): Client[F] =
     create[F](policy, redactHeaderWhen)(client)
 
   def create[F[_]](
-      policy: RetryPolicy[F],
+      policy:           RetryPolicy[F],
       redactHeaderWhen: CIString => Boolean = Headers.SensitiveHeaders.contains,
-      logRetries: Boolean = true,
-  )(client: Client[F])(implicit F: Temporal[F]): Client[F] = {
+      logRetries:       Boolean = true,
+  )(client:             Client[F])(implicit F: Temporal[F]): Client[F] = {
     def showRequest(request: Request[F], redactWhen: CIString => Boolean): String = {
       val headers = request.headers.redactSensitive(redactWhen).headers.mkString(",")
-      val uri = request.uri.renderString
-      val method = request.method
+      val uri     = request.uri.renderString
+      val method  = request.method
       s"method=$method uri=$uri headers=$headers"
     }
 
     def nextAttempt(
-        req: Request[F],
-        attempts: Int,
-        duration: FiniteDuration,
+        req:         Request[F],
+        attempts:    Int,
+        duration:    FiniteDuration,
         retryHeader: Option[`Retry-After`],
-        hotswap: Hotswap[F, Either[Throwable, Response[F]]],
+        hotswap:     Hotswap[F, Either[Throwable, Response[F]]],
     ): F[Response[F]] = {
       val headerDuration =
         retryHeader
           .map { h =>
             h.retry match {
-              case Left(d) => Instant.now().until(d.toInstant, ChronoUnit.SECONDS)
+              case Left(d)     => Instant.now().until(d.toInstant, ChronoUnit.SECONDS)
               case Right(secs) => secs
             }
           }
           .getOrElse(0L)
-      val sleepDuration = headerDuration.seconds.max(duration)
+      val sleepDuration  = headerDuration.seconds.max(duration)
       F.sleep(sleepDuration) >> retryLoop(req, attempts + 1, hotswap)
     }
 
     def retryLoop(
-        req: Request[F],
+        req:      Request[F],
         attempts: Int,
-        hotswap: Hotswap[F, Either[Throwable, Response[F]]],
+        hotswap:  Hotswap[F, Either[Throwable, Response[F]]],
     ): F[Response[F]] =
       hotswap.clear *> // Release the prior connection before allocating the next, or we can deadlock the pool
         hotswap.swap(client.run(req).attempt).flatMap {
@@ -91,7 +91,7 @@ object Retry {
                     s"Request ${showRequest(req, redactHeaderWhen)} has failed on attempt #${attempts} with reason ${response.status}. Retrying after ${duration}."
                   )
                 nextAttempt(req, attempts, duration, response.headers.get[`Retry-After`], hotswap)
-              case None =>
+              case None           =>
                 F.pure(response)
             }
 
@@ -104,7 +104,7 @@ object Retry {
                     s"Request threw an exception on attempt #$attempts. Retrying after $duration"
                   )
                 nextAttempt(req, attempts, duration, None, hotswap)
-              case None =>
+              case None           =>
                 if (logRetries)
                   logger.info(e)(
                     s"Request ${showRequest(req, redactHeaderWhen)} threw an exception on attempt #$attempts. Giving up."
@@ -136,7 +136,7 @@ object RetryPolicy {
     * returned.  Defaults to `defaultRetriable`.
     */
   def apply[F[_]](
-      backoff: Int => Option[FiniteDuration],
+      backoff:   Int => Option[FiniteDuration],
       retriable: (Request[F], Either[Throwable, Response[F]]) => Boolean = defaultRetriable[F] _,
   ): RetryPolicy[F] = { (req, result, retries) =>
     if (retriable(req, result)) backoff(retries)
@@ -183,9 +183,9 @@ object RetryPolicy {
   /** Like `isErrorOrRetriableStatus` but allows the caller to specify which statuses are considered retriable */
   def isErrorOrStatus[F[_]](result: Either[Throwable, Response[F]], status: Set[Status]): Boolean =
     result match {
-      case Right(resp) => status(resp.status)
+      case Right(resp)                     => status(resp.status)
       case Left(WaitQueueTimeoutException) => false
-      case _ => true
+      case _                               => true
     }
 
   def exponentialBackoff(maxWait: Duration, maxRetry: Int): Int => Option[FiniteDuration] = {
@@ -194,7 +194,7 @@ object RetryPolicy {
   }
 
   private def expBackoff(k: Int, maxInMillis: Long): FiniteDuration = {
-    val millis = (pow(2.0, k.toDouble) - 1.0) * 1000.0
+    val millis   = (pow(2.0, k.toDouble) - 1.0) * 1000.0
     val interval = min(millis, maxInMillis.toDouble)
     FiniteDuration((random() * interval).toLong, MILLISECONDS)
   }

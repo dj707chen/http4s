@@ -29,12 +29,12 @@ import javax.servlet.http.HttpServletResponse
 import scala.concurrent.duration.Duration
 
 class AsyncHttp4sServlet[F[_]](
-    service: HttpApp[F],
-    asyncTimeout: Duration = Duration.Inf,
-    servletIo: ServletIo[F],
+    service:             HttpApp[F],
+    asyncTimeout:        Duration = Duration.Inf,
+    servletIo:           ServletIo[F],
     serviceErrorHandler: ServiceErrorHandler[F],
-    dispatcher: Dispatcher[F],
-)(implicit F: Async[F])
+    dispatcher:          Dispatcher[F],
+)(implicit F:            Async[F])
     extends Http4sServlet[F](service, servletIo, dispatcher) {
   private val asyncTimeoutMillis =
     if (asyncTimeout.isFinite) asyncTimeout.toMillis else -1 // -1 == Inf
@@ -46,22 +46,22 @@ class AsyncHttp4sServlet[F[_]](
 
   private def logServletIo(): Unit =
     logger.info(servletIo match {
-      case BlockingServletIo(chunkSize) =>
+      case BlockingServletIo(chunkSize)    =>
         s"Using blocking servlet I/O with chunk size $chunkSize"
       case NonBlockingServletIo(chunkSize) =>
         s"Using non-blocking servlet I/O with chunk size $chunkSize"
     })
 
   override def service(
-      servletRequest: HttpServletRequest,
+      servletRequest:  HttpServletRequest,
       servletResponse: HttpServletResponse,
   ): Unit =
     try {
-      val ctx = servletRequest.startAsync()
+      val ctx        = servletRequest.startAsync()
       ctx.setTimeout(asyncTimeoutMillis)
       // Must be done on the container thread for Tomcat's sake when using async I/O.
       val bodyWriter = servletIo.initWriter(servletResponse)
-      val result = F
+      val result     = F
         .attempt(
           toRequest(servletRequest).fold(
             onParseFailure(_, servletResponse, bodyWriter),
@@ -70,14 +70,14 @@ class AsyncHttp4sServlet[F[_]](
         )
         .flatMap {
           case Right(()) => F.delay(ctx.complete)
-          case Left(t) => errorHandler(servletRequest, servletResponse)(t)
+          case Left(t)   => errorHandler(servletRequest, servletResponse)(t)
         }
       dispatcher.unsafeRunAndForget(result)
     } catch errorHandler(servletRequest, servletResponse).andThen(dispatcher.unsafeRunSync _)
 
   private def handleRequest(
-      ctx: AsyncContext,
-      request: Request[F],
+      ctx:        AsyncContext,
+      request:    Request[F],
       bodyWriter: BodyWriter[F],
   ): F[Unit] =
     Deferred[F, Unit].flatMap { gate =>
@@ -85,11 +85,9 @@ class AsyncHttp4sServlet[F[_]](
       // already completed, so we must take care to add the listener
       // before the response can complete.
 
-      val timeout =
-        F.async[Response[F]](cb =>
-          gate.complete(ctx.addListener(new AsyncTimeoutHandler(cb))).as(Option.empty[F[Unit]])
-        )
-      val response =
+      val timeout         =
+        F.async[Response[F]](cb => gate.complete(ctx.addListener(new AsyncTimeoutHandler(cb))).as(Option.empty[F[Unit]]))
+      val response        =
         gate.get *>
           F.defer(serviceFn(request))
             .recoverWith(serviceErrorHandler(request))
@@ -98,7 +96,7 @@ class AsyncHttp4sServlet[F[_]](
     }
 
   private def errorHandler(
-      servletRequest: ServletRequest,
+      servletRequest:  ServletRequest,
       servletResponse: HttpServletResponse,
   ): PartialFunction[Throwable, F[Unit]] = {
     case t: Throwable if servletResponse.isCommitted =>
@@ -108,7 +106,7 @@ class AsyncHttp4sServlet[F[_]](
       val response = Response[F](Status.InternalServerError)
       // We don't know what I/O mode we're in here, and we're not rendering a body
       // anyway, so we use a NullBodyWriter.
-      val f = renderResponse(response, servletResponse, NullBodyWriter) *>
+      val f        = renderResponse(response, servletResponse, NullBodyWriter) *>
         F.delay(
           if (servletRequest.isAsyncStarted)
             servletRequest.getAsyncContext.complete()
@@ -117,7 +115,7 @@ class AsyncHttp4sServlet[F[_]](
         .attempt(f)
         .flatMap {
           case Right(()) => F.unit
-          case Left(e) => F.delay(logger.error(e)("Error in error handler"))
+          case Left(e)   => F.delay(logger.error(e)("Error in error handler"))
         }
   }
 
@@ -132,9 +130,9 @@ class AsyncHttp4sServlet[F[_]](
 
 object AsyncHttp4sServlet {
   def apply[F[_]: Async](
-      service: HttpApp[F],
+      service:      HttpApp[F],
       asyncTimeout: Duration = Duration.Inf,
-      dispatcher: Dispatcher[F],
+      dispatcher:   Dispatcher[F],
   ): AsyncHttp4sServlet[F] =
     new AsyncHttp4sServlet[F](
       service,

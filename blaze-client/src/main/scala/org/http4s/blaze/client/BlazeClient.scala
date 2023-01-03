@@ -42,14 +42,14 @@ import scala.concurrent.duration._
 /** Blaze client implementation */
 object BlazeClient {
   private[blaze] def makeClient[F[_], A <: BlazeConnection[F]](
-      manager: ConnectionManager[F, A],
+      manager:               ConnectionManager[F, A],
       responseHeaderTimeout: Duration,
-      requestTimeout: Duration,
-      scheduler: TickWheelExecutor,
-      ec: ExecutionContext,
-      retries: Int,
-      dispatcher: Dispatcher[F],
-  )(implicit F: Async[F]): Client[F] = {
+      requestTimeout:        Duration,
+      scheduler:             TickWheelExecutor,
+      ec:                    ExecutionContext,
+      retries:               Int,
+      dispatcher:            Dispatcher[F],
+  )(implicit F:              Async[F]): Client[F] = {
     val base = new BlazeClient[F, A](
       manager,
       responseHeaderTimeout,
@@ -68,35 +68,35 @@ object BlazeClient {
   private def retryPolicy[F[_]](retries: Int): RetryPolicy[F] = { (req, result, n) =>
     result match {
       case Left(_: SocketException) if n <= retries && req.isIdempotent => retryNow
-      case _ => None
+      case _                                                            => None
     }
   }
 }
 
 private class BlazeClient[F[_], A <: BlazeConnection[F]](
-    manager: ConnectionManager[F, A],
+    manager:               ConnectionManager[F, A],
     responseHeaderTimeout: Duration,
-    requestTimeout: Duration,
-    scheduler: TickWheelExecutor,
-    ec: ExecutionContext,
-    dispatcher: Dispatcher[F],
-)(implicit F: Async[F])
+    requestTimeout:        Duration,
+    scheduler:             TickWheelExecutor,
+    ec:                    ExecutionContext,
+    dispatcher:            Dispatcher[F],
+)(implicit F:              Async[F])
     extends DefaultClient[F] {
 
   override def run(req: Request[F]): Resource[F, Response[F]] = {
     val key = RequestKey.fromRequest(req)
     for {
-      requestTimeoutF <- scheduleRequestTimeout(key)
-      preparedConnection <- prepareConnection(key)
+      requestTimeoutF               <- scheduleRequestTimeout(key)
+      preparedConnection            <- prepareConnection(key)
       (conn, responseHeaderTimeoutF) = preparedConnection
-      timeout = responseHeaderTimeoutF.race(requestTimeoutF).map(_.merge)
-      responseResource <- Resource.eval(runRequest(conn, req, timeout))
-      response <- responseResource
+      timeout                        = responseHeaderTimeoutF.race(requestTimeoutF).map(_.merge)
+      responseResource              <- Resource.eval(runRequest(conn, req, timeout))
+      response                      <- responseResource
     } yield response
   }
 
   private def prepareConnection(key: RequestKey): Resource[F, (A, F[TimeoutException])] = for {
-    conn <- borrowConnection(key)
+    conn                   <- borrowConnection(key)
     responseHeaderTimeoutF <- addResponseHeaderTimeout(conn)
   } yield (conn, responseHeaderTimeoutF)
 
@@ -105,7 +105,7 @@ private class BlazeClient[F[_], A <: BlazeConnection[F]](
       case (conn, ExitCase.Canceled) =>
         // Currently we can't just release in case of cancellation, because cancellation clears the Write state of Http1Connection, so it might result in isRecycle=true even if there's a half-written request.
         manager.invalidate(conn)
-      case (conn, _) => manager.release(conn)
+      case (conn, _)                 => manager.release(conn)
     }
 
   private def addResponseHeaderTimeout(conn: A): Resource[F, F[TimeoutException]] =
@@ -143,8 +143,8 @@ private class BlazeClient[F[_], A <: BlazeConnection[F]](
     }
 
   private def runRequest(
-      conn: A,
-      req: Request[F],
+      conn:    A,
+      req:     Request[F],
       timeout: F[TimeoutException],
   ): F[Resource[F, Response[F]]] =
     conn

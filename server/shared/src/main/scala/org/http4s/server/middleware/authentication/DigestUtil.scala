@@ -43,20 +43,20 @@ private[authentication] object DigestUtil {
     * @return
     */
   def computeResponse[F[_]: Monad: Hash](
-      method: String,
+      method:   String,
       username: String,
-      realm: String,
+      realm:    String,
       password: String,
-      uri: String,
-      nonce: String,
-      nc: String,
-      cnonce: String,
-      qop: String,
+      uri:      String,
+      nonce:    String,
+      nc:       String,
+      cnonce:   String,
+      qop:      String,
   ): F[String] = for {
     ha1str <- (username + ":" + realm + ":" + password).pure[F]
-    ha1 <- md5(ha1str)
-    ha2str = method + ":" + uri
-    ha2 <- md5(ha2str)
+    ha1    <- md5(ha1str)
+    ha2str  = method + ":" + uri
+    ha2    <- md5(ha2str)
     respstr = ha1 + ":" + nonce + ":" + nc + ":" + cnonce + ":" + qop + ":" + ha2
     result <- md5(respstr)
   } yield result

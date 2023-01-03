@@ -37,7 +37,7 @@ class NioCharsetBench {
   private val javaCache: HashMap[String, NioCharset] = {
     val map = new HashMap[String, NioCharset]
     for {
-      cs <- NioCharset.availableCharsets.values.asScala
+      cs   <- NioCharset.availableCharsets.values.asScala
       name <- cs.name :: cs.aliases.asScala.toList
     } map.put(name.toLowerCase(Locale.ROOT), cs)
     map
@@ -49,12 +49,12 @@ class NioCharsetBench {
   def javaCached(name: String) =
     javaCache.get(name.toLowerCase(Locale.ROOT)) match {
       case null => Left(new UnsupportedCharsetException(name))
-      case cs => Right(cs)
+      case cs   => Right(cs)
     }
 
   def scalaCached(name: String) =
     scalaCache.get(name.toLowerCase(Locale.ROOT)) match {
-      case None => Left(new UnsupportedCharsetException(name))
+      case None     => Left(new UnsupportedCharsetException(name))
       case Some(cs) => Right(cs)
     }
 

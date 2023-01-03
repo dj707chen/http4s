@@ -36,9 +36,9 @@ object ClientMultipartPostExample extends IOApp with Http4sClientDsl[IO] {
   def go(client: Client[IO]): IO[String] = {
     // n.b. This service does not appear to gracefully handle chunked requests.
     val url = Uri(
-      scheme = Some(Scheme.http),
+      scheme    = Some(Scheme.http),
       authority = Some(Authority(host = RegName("ptscom"))),
-      path = path"/t/http4s/post",
+      path      = path"/t/http4s/post",
     )
 
     val multipart = Multipart[IO](

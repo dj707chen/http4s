@@ -154,12 +154,12 @@ object HttpDate {
     import Rfc5234.{digit, sp}
 
     def mkHttpDate(
-        year: Int,
+        year:  Int,
         month: Int,
-        day: Int,
-        hour: Int,
-        min: Int,
-        sec: Int,
+        day:   Int,
+        hour:  Int,
+        min:   Int,
+        sec:   Int,
     ): Option[HttpDate] =
       try {
         val dt = ZonedDateTime.of(year, month, day, hour, min, sec, 0, ZoneOffset.UTC)
@@ -236,7 +236,7 @@ object HttpDate {
     /* second       = 2DIGIT */
     val second = (digit ~ digit).string.map(_.toInt)
 
-    val colon = char(':')
+    val colon     = char(':')
     /* time-of-day  = hour ":" minute ":" second
      *              ; 00:00:00 - 23:59:60 (leap second)
      */

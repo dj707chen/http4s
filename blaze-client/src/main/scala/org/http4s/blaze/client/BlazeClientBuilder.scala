@@ -69,30 +69,30 @@ import scala.concurrent.duration._
   * idling in the pool for an extended period.
   */
 sealed abstract class BlazeClientBuilder[F[_]] private (
-    val responseHeaderTimeout: Duration,
-    val idleTimeout: Duration,
-    val requestTimeout: Duration,
-    val connectTimeout: Duration,
-    val userAgent: Option[`User-Agent`],
-    val maxTotalConnections: Int,
-    val maxWaitQueueLimit: Int,
+    val responseHeaderTimeout:       Duration,
+    val idleTimeout:                 Duration,
+    val requestTimeout:              Duration,
+    val connectTimeout:              Duration,
+    val userAgent:                   Option[`User-Agent`],
+    val maxTotalConnections:         Int,
+    val maxWaitQueueLimit:           Int,
     val maxConnectionsPerRequestKey: RequestKey => Int,
-    val sslContext: SSLContextOption,
+    val sslContext:                  SSLContextOption,
     val checkEndpointIdentification: Boolean,
-    val maxResponseLineSize: Int,
-    val maxHeaderLength: Int,
-    val maxChunkSize: Int,
-    val chunkBufferMaxSize: Int,
-    val parserMode: ParserMode,
-    val bufferSize: Int,
-    executionContextConfig: ExecutionContextConfig,
-    val scheduler: Resource[F, TickWheelExecutor],
-    val asynchronousChannelGroup: Option[AsynchronousChannelGroup],
-    val channelOptions: ChannelOptions,
-    val customDnsResolver: Option[RequestKey => Either[Throwable, InetSocketAddress]],
-    val retries: Int,
-    val maxIdleDuration: Duration,
-)(implicit protected val F: Async[F])
+    val maxResponseLineSize:         Int,
+    val maxHeaderLength:             Int,
+    val maxChunkSize:                Int,
+    val chunkBufferMaxSize:          Int,
+    val parserMode:                  ParserMode,
+    val bufferSize:                  Int,
+    executionContextConfig:          ExecutionContextConfig,
+    val scheduler:                   Resource[F, TickWheelExecutor],
+    val asynchronousChannelGroup:    Option[AsynchronousChannelGroup],
+    val channelOptions:              ChannelOptions,
+    val customDnsResolver:           Option[RequestKey => Either[Throwable, InetSocketAddress]],
+    val retries:                     Int,
+    val maxIdleDuration:             Duration,
+)(implicit protected val F:          Async[F])
     extends BlazeBackendBuilder[Client[F]]
     with BackendBuilder[F, Client[F]] {
   type Self = BlazeClientBuilder[F]
@@ -101,104 +101,103 @@ sealed abstract class BlazeClientBuilder[F[_]] private (
 
   @deprecated("Preserved for binary compatibility", "0.23.8")
   private[BlazeClientBuilder] def this(
-      responseHeaderTimeout: Duration,
-      idleTimeout: Duration,
-      requestTimeout: Duration,
-      connectTimeout: Duration,
-      userAgent: Option[`User-Agent`],
-      maxTotalConnections: Int,
-      maxWaitQueueLimit: Int,
+      responseHeaderTimeout:       Duration,
+      idleTimeout:                 Duration,
+      requestTimeout:              Duration,
+      connectTimeout:              Duration,
+      userAgent:                   Option[`User-Agent`],
+      maxTotalConnections:         Int,
+      maxWaitQueueLimit:           Int,
       maxConnectionsPerRequestKey: RequestKey => Int,
-      sslContext: SSLContextOption,
+      sslContext:                  SSLContextOption,
       checkEndpointIdentification: Boolean,
-      maxResponseLineSize: Int,
-      maxHeaderLength: Int,
-      maxChunkSize: Int,
-      chunkBufferMaxSize: Int,
-      parserMode: ParserMode,
-      bufferSize: Int,
-      executionContextConfig: ExecutionContextConfig,
-      scheduler: Resource[F, TickWheelExecutor],
-      asynchronousChannelGroup: Option[AsynchronousChannelGroup],
-      channelOptions: ChannelOptions,
-      customDnsResolver: Option[RequestKey => Either[Throwable, InetSocketAddress]],
-      F: Async[F],
+      maxResponseLineSize:         Int,
+      maxHeaderLength:             Int,
+      maxChunkSize:                Int,
+      chunkBufferMaxSize:          Int,
+      parserMode:                  ParserMode,
+      bufferSize:                  Int,
+      executionContextConfig:      ExecutionContextConfig,
+      scheduler:                   Resource[F, TickWheelExecutor],
+      asynchronousChannelGroup:    Option[AsynchronousChannelGroup],
+      channelOptions:              ChannelOptions,
+      customDnsResolver:           Option[RequestKey => Either[Throwable, InetSocketAddress]],
+      F:                           Async[F],
   ) = this(
-    responseHeaderTimeout = responseHeaderTimeout,
-    idleTimeout = idleTimeout,
-    requestTimeout = requestTimeout,
-    connectTimeout = connectTimeout,
-    userAgent = userAgent,
-    maxTotalConnections = maxTotalConnections,
-    maxWaitQueueLimit = maxWaitQueueLimit,
+    responseHeaderTimeout       = responseHeaderTimeout,
+    idleTimeout                 = idleTimeout,
+    requestTimeout              = requestTimeout,
+    connectTimeout              = connectTimeout,
+    userAgent                   = userAgent,
+    maxTotalConnections         = maxTotalConnections,
+    maxWaitQueueLimit           = maxWaitQueueLimit,
     maxConnectionsPerRequestKey = maxConnectionsPerRequestKey,
-    sslContext = sslContext,
+    sslContext                  = sslContext,
     checkEndpointIdentification = checkEndpointIdentification,
-    maxResponseLineSize = maxResponseLineSize,
-    maxHeaderLength = maxHeaderLength,
-    maxChunkSize = maxChunkSize,
-    chunkBufferMaxSize = chunkBufferMaxSize,
-    parserMode = parserMode,
-    bufferSize = bufferSize,
-    executionContextConfig = executionContextConfig,
-    scheduler = scheduler,
-    asynchronousChannelGroup = asynchronousChannelGroup,
-    channelOptions = channelOptions,
-    customDnsResolver = customDnsResolver,
-    retries = 0,
-    maxIdleDuration = Duration.Inf,
+    maxResponseLineSize         = maxResponseLineSize,
+    maxHeaderLength             = maxHeaderLength,
+    maxChunkSize                = maxChunkSize,
+    chunkBufferMaxSize          = chunkBufferMaxSize,
+    parserMode                  = parserMode,
+    bufferSize                  = bufferSize,
+    executionContextConfig      = executionContextConfig,
+    scheduler                   = scheduler,
+    asynchronousChannelGroup    = asynchronousChannelGroup,
+    channelOptions              = channelOptions,
+    customDnsResolver           = customDnsResolver,
+    retries                     = 0,
+    maxIdleDuration             = Duration.Inf,
   )(F)
 
   private def copy(
-      responseHeaderTimeout: Duration = responseHeaderTimeout,
-      idleTimeout: Duration = idleTimeout,
-      requestTimeout: Duration = requestTimeout,
-      connectTimeout: Duration = connectTimeout,
-      userAgent: Option[`User-Agent`] = userAgent,
-      maxTotalConnections: Int = maxTotalConnections,
-      maxWaitQueueLimit: Int = maxWaitQueueLimit,
+      responseHeaderTimeout:       Duration = responseHeaderTimeout,
+      idleTimeout:                 Duration = idleTimeout,
+      requestTimeout:              Duration = requestTimeout,
+      connectTimeout:              Duration = connectTimeout,
+      userAgent:                   Option[`User-Agent`] = userAgent,
+      maxTotalConnections:         Int = maxTotalConnections,
+      maxWaitQueueLimit:           Int = maxWaitQueueLimit,
       maxConnectionsPerRequestKey: RequestKey => Int = maxConnectionsPerRequestKey,
-      sslContext: SSLContextOption = sslContext,
+      sslContext:                  SSLContextOption = sslContext,
       checkEndpointIdentification: Boolean = checkEndpointIdentification,
-      maxResponseLineSize: Int = maxResponseLineSize,
-      maxHeaderLength: Int = maxHeaderLength,
-      maxChunkSize: Int = maxChunkSize,
-      chunkBufferMaxSize: Int = chunkBufferMaxSize,
-      parserMode: ParserMode = parserMode,
-      bufferSize: Int = bufferSize,
-      executionContextConfig: ExecutionContextConfig = executionContextConfig,
-      scheduler: Resource[F, TickWheelExecutor] = scheduler,
-      asynchronousChannelGroup: Option[AsynchronousChannelGroup] = asynchronousChannelGroup,
-      channelOptions: ChannelOptions = channelOptions,
-      customDnsResolver: Option[RequestKey => Either[Throwable, InetSocketAddress]] =
-        customDnsResolver,
-      retries: Int = retries,
-      maxIdleDuration: Duration = maxIdleDuration,
+      maxResponseLineSize:         Int = maxResponseLineSize,
+      maxHeaderLength:             Int = maxHeaderLength,
+      maxChunkSize:                Int = maxChunkSize,
+      chunkBufferMaxSize:          Int = chunkBufferMaxSize,
+      parserMode:                  ParserMode = parserMode,
+      bufferSize:                  Int = bufferSize,
+      executionContextConfig:      ExecutionContextConfig = executionContextConfig,
+      scheduler:                   Resource[F, TickWheelExecutor] = scheduler,
+      asynchronousChannelGroup:    Option[AsynchronousChannelGroup] = asynchronousChannelGroup,
+      channelOptions:              ChannelOptions = channelOptions,
+      customDnsResolver:           Option[RequestKey => Either[Throwable, InetSocketAddress]] = customDnsResolver,
+      retries:                     Int = retries,
+      maxIdleDuration:             Duration = maxIdleDuration,
   ): BlazeClientBuilder[F] =
     new BlazeClientBuilder[F](
-      responseHeaderTimeout = responseHeaderTimeout,
-      idleTimeout = idleTimeout,
-      requestTimeout = requestTimeout,
-      connectTimeout = connectTimeout,
-      userAgent = userAgent,
-      maxTotalConnections = maxTotalConnections,
-      maxWaitQueueLimit = maxWaitQueueLimit,
+      responseHeaderTimeout       = responseHeaderTimeout,
+      idleTimeout                 = idleTimeout,
+      requestTimeout              = requestTimeout,
+      connectTimeout              = connectTimeout,
+      userAgent                   = userAgent,
+      maxTotalConnections         = maxTotalConnections,
+      maxWaitQueueLimit           = maxWaitQueueLimit,
       maxConnectionsPerRequestKey = maxConnectionsPerRequestKey,
-      sslContext = sslContext,
+      sslContext                  = sslContext,
       checkEndpointIdentification = checkEndpointIdentification,
-      maxResponseLineSize = maxResponseLineSize,
-      maxHeaderLength = maxHeaderLength,
-      maxChunkSize = maxChunkSize,
-      chunkBufferMaxSize = chunkBufferMaxSize,
-      parserMode = parserMode,
-      bufferSize = bufferSize,
-      executionContextConfig = executionContextConfig,
-      scheduler = scheduler,
-      asynchronousChannelGroup = asynchronousChannelGroup,
-      channelOptions = channelOptions,
-      customDnsResolver = customDnsResolver,
-      retries = retries,
-      maxIdleDuration = maxIdleDuration,
+      maxResponseLineSize         = maxResponseLineSize,
+      maxHeaderLength             = maxHeaderLength,
+      maxChunkSize                = maxChunkSize,
+      chunkBufferMaxSize          = chunkBufferMaxSize,
+      parserMode                  = parserMode,
+      bufferSize                  = bufferSize,
+      executionContextConfig      = executionContextConfig,
+      scheduler                   = scheduler,
+      asynchronousChannelGroup    = asynchronousChannelGroup,
+      channelOptions              = channelOptions,
+      customDnsResolver           = customDnsResolver,
+      retries                     = retries,
+      maxIdleDuration             = maxIdleDuration,
     ) {}
 
   @deprecated(
@@ -225,9 +224,9 @@ sealed abstract class BlazeClientBuilder[F[_]] private (
 
   def withUserAgentOption(userAgent: Option[`User-Agent`]): BlazeClientBuilder[F] =
     copy(userAgent = userAgent)
-  def withUserAgent(userAgent: `User-Agent`): BlazeClientBuilder[F] =
+  def withUserAgent(userAgent: `User-Agent`):               BlazeClientBuilder[F] =
     withUserAgentOption(Some(userAgent))
-  def withoutUserAgent: BlazeClientBuilder[F] =
+  def withoutUserAgent:                                     BlazeClientBuilder[F] =
     withUserAgentOption(None)
 
   def withMaxTotalConnections(maxTotalConnections: Int): BlazeClientBuilder[F] =
@@ -267,14 +266,11 @@ sealed abstract class BlazeClientBuilder[F[_]] private (
 
   /** Use some provided `SSLContext` when making secure calls, or disable secure calls with `None` */
   @deprecated(
-    message =
-      "Use withDefaultSslContext, withSslContext or withoutSslContext to set the SSLContext",
-    since = "0.22.0-M1",
+    message = "Use withDefaultSslContext, withSslContext or withoutSslContext to set the SSLContext",
+    since   = "0.22.0-M1",
   )
   def withSslContextOption(sslContext: Option[SSLContext]): BlazeClientBuilder[F] =
-    copy(sslContext =
-      sslContext.fold[SSLContextOption](SSLContextOption.NoSSL)(SSLContextOption.Provided.apply)
-    )
+    copy(sslContext = sslContext.fold[SSLContextOption](SSLContextOption.NoSSL)(SSLContextOption.Provided.apply))
 
   /** Disable secure calls */
   def withoutSslContext: BlazeClientBuilder[F] =
@@ -312,7 +308,7 @@ sealed abstract class BlazeClientBuilder[F[_]] private (
       asynchronousChannelGroup: AsynchronousChannelGroup
   ): BlazeClientBuilder[F] =
     withAsynchronousChannelGroupOption(Some(asynchronousChannelGroup))
-  def withoutAsynchronousChannelGroup: BlazeClientBuilder[F] =
+  def withoutAsynchronousChannelGroup:             BlazeClientBuilder[F] =
     withAsynchronousChannelGroupOption(None)
 
   def withChannelOptions(channelOptions: ChannelOptions): BlazeClientBuilder[F] =
@@ -331,21 +327,21 @@ sealed abstract class BlazeClientBuilder[F[_]] private (
     */
   def resourceWithState: Resource[F, (Client[F], BlazeClientState[F])] =
     for {
-      dispatcher <- Dispatcher[F]
-      scheduler <- scheduler
-      _ <- Resource.eval(verifyAllTimeoutsAccuracy(scheduler))
-      _ <- Resource.eval(verifyTimeoutRelations())
-      manager <- connectionManager(scheduler, dispatcher)
+      dispatcher       <- Dispatcher[F]
+      scheduler        <- scheduler
+      _                <- Resource.eval(verifyAllTimeoutsAccuracy(scheduler))
+      _                <- Resource.eval(verifyTimeoutRelations())
+      manager          <- connectionManager(scheduler, dispatcher)
       executionContext <- Resource.eval(executionContextConfig.getExecutionContext)
-      client = BlazeClient.makeClient(
-        manager = manager,
-        responseHeaderTimeout = responseHeaderTimeout,
-        requestTimeout = requestTimeout,
-        scheduler = scheduler,
-        ec = executionContext,
-        retries = retries,
-        dispatcher = dispatcher,
-      )
+      client            = BlazeClient.makeClient(
+                            manager               = manager,
+                            responseHeaderTimeout = responseHeaderTimeout,
+                            requestTimeout        = requestTimeout,
+                            scheduler             = scheduler,
+                            ec                    = executionContext,
+                            retries               = retries,
+                            dispatcher            = dispatcher,
+                          )
 
     } yield (client, manager.state)
 
@@ -358,13 +354,13 @@ sealed abstract class BlazeClientBuilder[F[_]] private (
     } yield ()
 
   private def verifyTimeoutAccuracy(
-      tick: Duration,
-      timeout: Duration,
+      tick:        Duration,
+      timeout:     Duration,
       timeoutName: String,
   ): F[Unit] =
     F.delay {
       val warningThreshold = 0.1 // 10%
-      val inaccuracy = tick / timeout
+      val inaccuracy       = tick / timeout
       if (inaccuracy > warningThreshold)
         logger.warn(
           s"With current configuration, $timeoutName ($timeout) may be up to ${inaccuracy * 100}% longer than configured. " +
@@ -393,41 +389,41 @@ sealed abstract class BlazeClientBuilder[F[_]] private (
     }
 
   private def connectionManager(scheduler: TickWheelExecutor, dispatcher: Dispatcher[F])(implicit
-      F: Async[F]
+      F:                                   Async[F]
   ): Resource[F, ConnectionManager.Stateful[F, BlazeConnection[F]]] = {
     val http1: ConnectionBuilder[F, BlazeConnection[F]] =
       (requestKey: RequestKey) =>
         new Http1Support[F](
-          sslContextOption = sslContext,
-          bufferSize = bufferSize,
-          asynchronousChannelGroup = asynchronousChannelGroup,
-          executionContextConfig = executionContextConfig,
-          scheduler = scheduler,
+          sslContextOption            = sslContext,
+          bufferSize                  = bufferSize,
+          asynchronousChannelGroup    = asynchronousChannelGroup,
+          executionContextConfig      = executionContextConfig,
+          scheduler                   = scheduler,
           checkEndpointIdentification = checkEndpointIdentification,
-          maxResponseLineSize = maxResponseLineSize,
-          maxHeaderLength = maxHeaderLength,
-          maxChunkSize = maxChunkSize,
-          chunkBufferMaxSize = chunkBufferMaxSize,
-          parserMode = parserMode,
-          userAgent = userAgent,
-          channelOptions = channelOptions,
-          connectTimeout = connectTimeout,
-          dispatcher = dispatcher,
-          idleTimeout = idleTimeout,
-          getAddress = customDnsResolver.getOrElse(BlazeClientBuilder.getAddress(_)),
+          maxResponseLineSize         = maxResponseLineSize,
+          maxHeaderLength             = maxHeaderLength,
+          maxChunkSize                = maxChunkSize,
+          chunkBufferMaxSize          = chunkBufferMaxSize,
+          parserMode                  = parserMode,
+          userAgent                   = userAgent,
+          channelOptions              = channelOptions,
+          connectTimeout              = connectTimeout,
+          dispatcher                  = dispatcher,
+          idleTimeout                 = idleTimeout,
+          getAddress                  = customDnsResolver.getOrElse(BlazeClientBuilder.getAddress(_)),
         ).makeClient(requestKey)
 
     Resource.make(
       executionContextConfig.getExecutionContext.flatMap(executionContext =>
         ConnectionManager.pool(
-          builder = http1,
-          maxTotal = maxTotalConnections,
-          maxWaitQueueLimit = maxWaitQueueLimit,
+          builder                     = http1,
+          maxTotal                    = maxTotalConnections,
+          maxWaitQueueLimit           = maxWaitQueueLimit,
           maxConnectionsPerRequestKey = maxConnectionsPerRequestKey,
-          responseHeaderTimeout = responseHeaderTimeout,
-          requestTimeout = requestTimeout,
-          executionContext = executionContext,
-          maxIdleDuration = maxIdleDuration,
+          responseHeaderTimeout       = responseHeaderTimeout,
+          requestTimeout              = requestTimeout,
+          executionContext            = executionContext,
+          maxIdleDuration             = maxIdleDuration,
         )
       )
     )(_.shutdown)
@@ -438,29 +434,29 @@ object BlazeClientBuilder {
 
   def apply[F[_]: Async]: BlazeClientBuilder[F] =
     new BlazeClientBuilder[F](
-      responseHeaderTimeout = Duration.Inf,
-      idleTimeout = 1.minute,
-      requestTimeout = defaults.RequestTimeout,
-      connectTimeout = defaults.ConnectTimeout,
-      userAgent = Some(`User-Agent`(ProductId("http4s-blaze", Some(BuildInfo.version)))),
-      maxTotalConnections = 10,
-      maxWaitQueueLimit = 256,
+      responseHeaderTimeout       = Duration.Inf,
+      idleTimeout                 = 1.minute,
+      requestTimeout              = defaults.RequestTimeout,
+      connectTimeout              = defaults.ConnectTimeout,
+      userAgent                   = Some(`User-Agent`(ProductId("http4s-blaze", Some(BuildInfo.version)))),
+      maxTotalConnections         = 10,
+      maxWaitQueueLimit           = 256,
       maxConnectionsPerRequestKey = Function.const(256),
-      sslContext = SSLContextOption.TryDefaultSSLContext,
+      sslContext                  = SSLContextOption.TryDefaultSSLContext,
       checkEndpointIdentification = true,
-      maxResponseLineSize = 4096,
-      maxHeaderLength = 40960,
-      maxChunkSize = Int.MaxValue,
-      chunkBufferMaxSize = 1024 * 1024,
-      parserMode = ParserMode.Strict,
-      bufferSize = 8192,
-      executionContextConfig = ExecutionContextConfig.DefaultContext,
-      scheduler = tickWheelResource,
-      asynchronousChannelGroup = None,
-      channelOptions = ChannelOptions(Vector.empty),
-      customDnsResolver = None,
-      retries = 2,
-      maxIdleDuration = Duration.Inf,
+      maxResponseLineSize         = 4096,
+      maxHeaderLength             = 40960,
+      maxChunkSize                = Int.MaxValue,
+      chunkBufferMaxSize          = 1024 * 1024,
+      parserMode                  = ParserMode.Strict,
+      bufferSize                  = 8192,
+      executionContextConfig      = ExecutionContextConfig.DefaultContext,
+      scheduler                   = tickWheelResource,
+      asynchronousChannelGroup    = None,
+      channelOptions              = ChannelOptions(Vector.empty),
+      customDnsResolver           = None,
+      retries                     = 2,
+      maxIdleDuration             = Duration.Inf,
     ) {}
 
   @deprecated(

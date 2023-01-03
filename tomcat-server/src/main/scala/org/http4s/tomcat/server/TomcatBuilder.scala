@@ -52,17 +52,17 @@ import scala.collection.immutable
 import scala.concurrent.duration._
 
 sealed class TomcatBuilder[F[_]] private (
-    socketAddress: InetSocketAddress,
-    externalExecutor: Option[Executor],
-    private val idleTimeout: Duration,
-    private val asyncTimeout: Duration,
-    private val servletIo: ServletIo[F],
-    sslConfig: SslConfig,
-    mounts: Vector[Mount[F]],
+    socketAddress:                   InetSocketAddress,
+    externalExecutor:                Option[Executor],
+    private val idleTimeout:         Duration,
+    private val asyncTimeout:        Duration,
+    private val servletIo:           ServletIo[F],
+    sslConfig:                       SslConfig,
+    mounts:                          Vector[Mount[F]],
     private val serviceErrorHandler: ServiceErrorHandler[F],
-    banner: immutable.Seq[String],
-    classloader: Option[ClassLoader],
-)(implicit protected val F: Async[F])
+    banner:                          immutable.Seq[String],
+    classloader:                     Option[ClassLoader],
+)(implicit protected val F:          Async[F])
     extends ServletContainer[F]
     with ServerBuilder[F] {
   type Self = TomcatBuilder[F]
@@ -70,16 +70,16 @@ sealed class TomcatBuilder[F[_]] private (
   private[this] val logger = getLogger
 
   private def copy(
-      socketAddress: InetSocketAddress = socketAddress,
-      externalExecutor: Option[Executor] = externalExecutor,
-      idleTimeout: Duration = idleTimeout,
-      asyncTimeout: Duration = asyncTimeout,
-      servletIo: ServletIo[F] = servletIo,
-      sslConfig: SslConfig = sslConfig,
-      mounts: Vector[Mount[F]] = mounts,
+      socketAddress:       InetSocketAddress = socketAddress,
+      externalExecutor:    Option[Executor] = externalExecutor,
+      idleTimeout:         Duration = idleTimeout,
+      asyncTimeout:        Duration = asyncTimeout,
+      servletIo:           ServletIo[F] = servletIo,
+      sslConfig:           SslConfig = sslConfig,
+      mounts:              Vector[Mount[F]] = mounts,
       serviceErrorHandler: ServiceErrorHandler[F] = serviceErrorHandler,
-      banner: immutable.Seq[String] = banner,
-      classloader: Option[ClassLoader] = classloader,
+      banner:              immutable.Seq[String] = banner,
+      classloader:         Option[ClassLoader] = classloader,
   ): Self =
     new TomcatBuilder(
       socketAddress,
@@ -95,11 +95,11 @@ sealed class TomcatBuilder[F[_]] private (
     )
 
   def withSSL(
-      keyStore: StoreInfo,
+      keyStore:           StoreInfo,
       keyManagerPassword: String,
-      protocol: String = "TLS",
-      trustStore: Option[StoreInfo] = None,
-      clientAuth: SSLClientAuthMode = SSLClientAuthMode.NotRequested,
+      protocol:           String = "TLS",
+      trustStore:         Option[StoreInfo] = None,
+      clientAuth:         SSLClientAuthMode = SSLClientAuthMode.NotRequested,
   ): Self =
     copy(
       sslConfig = new KeyStoreBits(keyStore, keyManagerPassword, protocol, trustStore, clientAuth)
@@ -120,21 +120,21 @@ sealed class TomcatBuilder[F[_]] private (
     copy(externalExecutor = None)
 
   override def mountServlet(
-      servlet: HttpServlet,
+      servlet:    HttpServlet,
       urlMapping: String,
-      name: Option[String] = None,
+      name:       Option[String] = None,
   ): Self =
     copy(mounts = mounts :+ Mount[F] { (ctx, index, _, _) =>
       val servletName = name.getOrElse(s"servlet-$index")
-      val wrapper = Tomcat.addServlet(ctx, servletName, servlet)
+      val wrapper     = Tomcat.addServlet(ctx, servletName, servlet)
       wrapper.addMapping(urlMapping)
       wrapper.setAsyncSupported(true)
     })
 
   override def mountFilter(
-      filter: Filter,
+      filter:     Filter,
       urlMapping: String,
-      name: Option[String],
+      name:       Option[String],
       dispatches: util.EnumSet[DispatcherType],
   ): Self =
     copy(mounts = mounts :+ Mount[F] { (ctx, index, _, _) =>
@@ -162,11 +162,11 @@ sealed class TomcatBuilder[F[_]] private (
   def mountHttpApp(service: HttpApp[F], prefix: String): Self =
     copy(mounts = mounts :+ Mount[F] { (ctx, index, builder, dispatcher) =>
       val servlet = new AsyncHttp4sServlet(
-        service = service,
-        asyncTimeout = builder.asyncTimeout,
-        servletIo = builder.servletIo,
+        service             = service,
+        asyncTimeout        = builder.asyncTimeout,
+        servletIo           = builder.servletIo,
         serviceErrorHandler = builder.serviceErrorHandler,
-        dispatcher = dispatcher,
+        dispatcher          = dispatcher,
       )
       val wrapper = Tomcat.addServlet(ctx, s"servlet-$index", servlet)
       wrapper.addMapping(ServletContainer.prefixMapping(prefix))
@@ -199,10 +199,10 @@ sealed class TomcatBuilder[F[_]] private (
   override def resource: Resource[F, Server] =
     Dispatcher[F].flatMap(dispatcher =>
       Resource(F.blocking {
-        val tomcat = new Tomcat
-        val cl = classloader.getOrElse(getClass.getClassLoader)
+        val tomcat  = new Tomcat
+        val cl      = classloader.getOrElse(getClass.getClassLoader)
         val docBase = cl.getResource("") match {
-          case null => null
+          case null     => null
           case resource => resource.getPath
         }
         tomcat.addContext("", docBase)
@@ -250,7 +250,7 @@ sealed class TomcatBuilder[F[_]] private (
         banner.foreach(logger.info(_))
         val tomcatVersion = ServerInfo.getServerInfo.split("/") match {
           case Array(_, version) => version
-          case _ => ServerInfo.getServerInfo // well, we tried
+          case _                 => ServerInfo.getServerInfo // well, we tried
         }
         logger.info(
           s"http4s v${BuildInfo.version} on Tomcat v${tomcatVersion} started at ${server.baseUri}"
@@ -264,16 +264,16 @@ sealed class TomcatBuilder[F[_]] private (
 object TomcatBuilder {
   def apply[F[_]: Async]: TomcatBuilder[F] =
     new TomcatBuilder[F](
-      socketAddress = defaults.IPv4SocketAddress,
-      externalExecutor = None,
-      idleTimeout = defaults.IdleTimeout,
-      asyncTimeout = defaults.ResponseTimeout,
-      servletIo = ServletContainer.DefaultServletIo[F],
-      sslConfig = NoSsl,
-      mounts = Vector.empty,
+      socketAddress       = defaults.IPv4SocketAddress,
+      externalExecutor    = None,
+      idleTimeout         = defaults.IdleTimeout,
+      asyncTimeout        = defaults.ResponseTimeout,
+      servletIo           = ServletContainer.DefaultServletIo[F],
+      sslConfig           = NoSsl,
+      mounts              = Vector.empty,
       serviceErrorHandler = DefaultServiceErrorHandler,
-      banner = defaults.Banner,
-      classloader = None,
+      banner              = defaults.Banner,
+      classloader         = None,
     )
 
   private sealed trait SslConfig {
@@ -282,11 +282,11 @@ object TomcatBuilder {
   }
 
   private class KeyStoreBits(
-      keyStore: StoreInfo,
+      keyStore:           StoreInfo,
       keyManagerPassword: String,
-      protocol: String,
-      trustStore: Option[StoreInfo],
-      clientAuth: SSLClientAuthMode,
+      protocol:           String,
+      trustStore:         Option[StoreInfo],
+      clientAuth:         SSLClientAuthMode,
   ) extends SslConfig {
     def configureConnector(conn: Connector): Unit = {
       conn.setSecure(true)
@@ -300,8 +300,8 @@ object TomcatBuilder {
       conn.setProperty(
         "clientAuth",
         clientAuth match {
-          case SSLClientAuthMode.Required => "required"
-          case SSLClientAuthMode.Requested => "optional"
+          case SSLClientAuthMode.Required     => "required"
+          case SSLClientAuthMode.Requested    => "optional"
           case SSLClientAuthMode.NotRequested => "none"
         },
       )

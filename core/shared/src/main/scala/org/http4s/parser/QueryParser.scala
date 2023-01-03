@@ -29,9 +29,9 @@ import scala.io.Codec
   * checked beforehand.
   */
 private[http4s] class QueryParser(
-    codec: Codec,
+    codec:           Codec,
     colonSeparators: Boolean,
-    qChars: BitSet = QueryParser.ExtendedQChars,
+    qChars:          BitSet = QueryParser.ExtendedQChars,
 ) {
   import QueryParser._
 
@@ -48,21 +48,21 @@ private[http4s] class QueryParser(
     val acc: Builder[Query.KeyValue, Vector[Query.KeyValue]] = Vector.newBuilder
     decodeBuffer(input, (k, v) => acc += ((k, v)), flush) match {
       case Some(e) => ParseResult.fail("Decoding of url encoded data failed.", e)
-      case None => ParseResult.success(acc.result())
+      case None    => ParseResult.success(acc.result())
     }
   }
 
   // Some[String] represents an error message, None = success
   private def decodeBuffer(
       input: CharBuffer,
-      acc: (String, Option[String]) => Builder[Query.KeyValue, Vector[Query.KeyValue]],
+      acc:   (String, Option[String]) => Builder[Query.KeyValue, Vector[Query.KeyValue]],
       flush: Boolean,
   ): Option[String] = {
     val valAcc = new StringBuilder(InitialBufferCapactiy)
 
     var error: String = null
-    var key: String = null
-    var state: State = KEY
+    var key:   String = null
+    var state: State  = KEY
 
     def appendValue(): Unit = {
       if (state == KEY) {
@@ -101,7 +101,7 @@ private[http4s] class QueryParser(
           if (state == VALUE) valAcc.append('=')
           else {
             state = VALUE
-            key = valAcc.result()
+            key   = valAcc.result()
             valAcc.clear()
           }
 
@@ -121,7 +121,7 @@ private[http4s] class QueryParser(
   private def decodeParam(str: String): String =
     try Uri.decode(str, codec.charSet, plusIsSpace = true)
     catch {
-      case _: IllegalArgumentException => ""
+      case _: IllegalArgumentException     => ""
       case _: UnsupportedEncodingException => ""
     }
 }
@@ -135,7 +135,7 @@ private[http4s] object QueryParser {
 
   def parseQueryStringVector(
       queryString: String,
-      codec: Codec = Codec.UTF8,
+      codec:       Codec = Codec.UTF8,
   ): ParseResult[Vector[Query.KeyValue]] =
     if (queryString.isEmpty) Right(Vector.empty)
     else new QueryParser(codec, true).decodeVector(CharBuffer.wrap(queryString), true)
@@ -154,8 +154,8 @@ private[http4s] object QueryParser {
     * support this extension.
     */
   val ExtendedQChars: BitSet = QChars ++ ("[]".map(_.toInt).toSet)
-  private def Pchar = Unreserved ++ SubDelims ++ ":@%".toSet
+  private def Pchar      = Unreserved ++ SubDelims ++ ":@%".toSet
   private def Unreserved = "-._~".toSet ++ AlphaNum
-  private def SubDelims = "!$&'()*+,;=".toSet
-  private def AlphaNum = (('a' to 'z') ++ ('A' to 'Z') ++ ('0' to '9')).toSet
+  private def SubDelims  = "!$&'()*+,;=".toSet
+  private def AlphaNum   = (('a' to 'z') ++ ('A' to 'Z') ++ ('0' to '9')).toSet
 }

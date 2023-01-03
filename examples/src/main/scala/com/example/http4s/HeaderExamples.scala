@@ -29,8 +29,8 @@ object HeaderExamples {
   final case class Foo(v: String)
   object Foo {
     implicit def headerFoo: Header[Foo, Header.Single] = new Header[Foo, Header.Single] {
-      def name = ci"foo"
-      def value(f: Foo) = f.v
+      def name             = ci"foo"
+      def value(f: Foo)    = f.v
       def parse(s: String) = Foo(s).asRight
     }
 
@@ -47,9 +47,9 @@ object HeaderExamples {
   object Bar {
     implicit val headerBar: Header[Bar, Header.Recurring] with Semigroup[Bar] =
       new Header[Bar, Header.Recurring] with Semigroup[Bar] {
-        def name = ci"Bar"
-        def value(b: Bar) = b.v.toList.mkString(",")
-        def parse(s: String) = Bar(NonEmptyList.one(s)).asRight
+        def name                    = ci"Bar"
+        def value(b: Bar)           = b.v.toList.mkString(",")
+        def parse(s: String)        = Bar(NonEmptyList.one(s)).asRight
         def combine(a: Bar, b: Bar) = Bar(a.v |+| b.v)
       }
   }
@@ -58,12 +58,12 @@ object HeaderExamples {
   object SetCookie {
     implicit val headerCookie: Header[SetCookie, Header.Recurring] =
       new Header[SetCookie, Header.Recurring] {
-        def name = ci"Set-Cookie"
+        def name                = ci"Set-Cookie"
         def value(c: SetCookie) = s"${c.name}:${c.value}"
-        def parse(s: String) =
+        def parse(s: String)    =
           s.split(':').toList match {
             case List(name, value) => SetCookie(name, value).asRight
-            case _ => Left(ParseFailure("Malformed cookie", ""))
+            case _                 => Left(ParseFailure("Malformed cookie", ""))
           }
       }
   }

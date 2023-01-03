@@ -41,13 +41,13 @@ object `X-B3-Flags` {
   }
 
   object Flag {
-    case object Debug extends Flag {
+    case object Debug extends Flag       {
       override def longValue: Long = 1 << 0
     }
     case object SamplingSet extends Flag {
       override def longValue: Long = 1 << 1
     }
-    case object Sampled extends Flag {
+    case object Sampled extends Flag     {
       override def longValue: Long = 1 << 2
     }
   }

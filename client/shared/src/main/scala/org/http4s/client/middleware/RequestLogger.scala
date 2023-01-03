@@ -34,11 +34,11 @@ object RequestLogger {
   private def defaultLogAction[F[_]: Sync](s: String): F[Unit] = Sync[F].delay(logger.info(s))
 
   def apply[F[_]: Async](
-      logHeaders: Boolean,
-      logBody: Boolean,
+      logHeaders:        Boolean,
+      logBody:           Boolean,
       redactHeadersWhen: CIString => Boolean = Headers.SensitiveHeaders.contains,
-      logAction: Option[String => F[Unit]] = None,
-  )(client: Client[F]): Client[F] =
+      logAction:         Option[String => F[Unit]] = None,
+  )(client:              Client[F]): Client[F] =
     impl(client, logBody) { request =>
       Logger.logMessage[F, Request[F]](request)(
         logHeaders,
@@ -48,11 +48,11 @@ object RequestLogger {
     }
 
   def logBodyText[F[_]: Async](
-      logHeaders: Boolean,
-      logBody: Stream[F, Byte] => Option[F[String]],
+      logHeaders:        Boolean,
+      logBody:           Stream[F, Byte] => Option[F[String]],
       redactHeadersWhen: CIString => Boolean = Headers.SensitiveHeaders.contains,
-      logAction: Option[String => F[Unit]] = None,
-  )(client: Client[F]): Client[F] =
+      logAction:         Option[String => F[Unit]] = None,
+  )(client:              Client[F]): Client[F] =
     impl(client, logBody = true) { request =>
       InternalLogger.logMessageWithBodyText[F, Request[F]](request)(
         logHeaders,
@@ -62,9 +62,9 @@ object RequestLogger {
     }
 
   def customized[F[_]: Async](
-      client: Client[F],
-      logBody: Boolean = true,
-      logAction: Option[String => F[Unit]] = None,
+      client:      Client[F],
+      logBody:     Boolean = true,
+      logAction:   Option[String => F[Unit]] = None,
   )(requestToText: Request[F] => F[String]): Client[F] =
     impl(client, logBody) { request =>
       val log = logAction.getOrElse(defaultLogAction[F] _)
@@ -72,8 +72,8 @@ object RequestLogger {
     }
 
   private def impl[F[_]](client: Client[F], logBody: Boolean)(
-      logMessage: Request[F] => F[Unit]
-  )(implicit F: Async[F]): Client[F] =
+      logMessage:                Request[F] => F[Unit]
+  )(implicit F:                  Async[F]): Client[F] =
     Client { req =>
       if (!logBody)
         Resource.eval(logMessage(req)) *> client.run(req)
@@ -100,12 +100,12 @@ object RequestLogger {
   val defaultRequestColor: String = Console.BLUE
 
   def colored[F[_]](
-      logHeaders: Boolean,
-      logBody: Boolean,
+      logHeaders:        Boolean,
+      logBody:           Boolean,
       redactHeadersWhen: CIString => Boolean = Headers.SensitiveHeaders.contains,
-      color: String = defaultRequestColor,
-      logAction: Option[String => F[Unit]] = None,
-  )(client: Client[F])(implicit F: Async[F]): Client[F] =
+      color:             String = defaultRequestColor,
+      logAction:         Option[String => F[Unit]] = None,
+  )(client:              Client[F])(implicit F: Async[F]): Client[F] =
     customized(client, logBody, logAction) { request =>
       import Console._
       val methodColor =
@@ -121,7 +121,7 @@ object RequestLogger {
       val bodyText: F[String] =
         InternalLogger.defaultLogBody[F, Request[F]](request)(logBody) match {
           case Some(textF) => textF.map(text => s"""body="$text"""")
-          case None => Sync[F].pure("")
+          case None        => Sync[F].pure("")
         }
 
       def spaced(x: String): String = if (x.isEmpty) x else s" $x"

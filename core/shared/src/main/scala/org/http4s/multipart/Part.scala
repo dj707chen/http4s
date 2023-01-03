@@ -32,7 +32,7 @@ import java.io.InputStream
 import java.net.URL
 
 final case class Part[F[_]](headers: Headers, body: Stream[F, Byte]) extends Media[F] {
-  def name: Option[String] = headers.get[`Content-Disposition`].flatMap(_.parameters.get(ci"name"))
+  def name:     Option[String] = headers.get[`Content-Disposition`].flatMap(_.parameters.get(ci"name"))
   def filename: Option[String] =
     headers.get[`Content-Disposition`].flatMap(_.parameters.get(ci"filename"))
 
@@ -64,10 +64,10 @@ object Part {
     fileData(name, resource.getPath.split("/").last, resource.openStream(), headers: _*)
 
   def fileData[F[_]](
-      name: String,
-      filename: String,
+      name:       String,
+      filename:   String,
       entityBody: EntityBody[F],
-      headers: Header.ToRaw*
+      headers:    Header.ToRaw*
   ): Part[F] =
     Part(
       Headers(
@@ -82,10 +82,10 @@ object Part {
   // this API publicly would invite unsafe use, and the `EntityBody` version
   // should be safe.
   private def fileData[F[_]](
-      name: String,
+      name:     String,
       filename: String,
-      in: => InputStream,
-      headers: Header.ToRaw*
+      in:       => InputStream,
+      headers:  Header.ToRaw*
   )(implicit F: Sync[F]): Part[F] =
     fileData(name, filename, readInputStream(F.delay(in), ChunkSize), headers: _*)
 }

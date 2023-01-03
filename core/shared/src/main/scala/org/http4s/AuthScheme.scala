@@ -19,8 +19,8 @@ package org.http4s
 import org.typelevel.ci._
 
 object AuthScheme {
-  val Basic = ci"Basic"
+  val Basic  = ci"Basic"
   val Digest = ci"Digest"
   val Bearer = ci"Bearer"
-  val OAuth = ci"OAuth"
+  val OAuth  = ci"OAuth"
 }

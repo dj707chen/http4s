@@ -43,9 +43,9 @@ package object internal {
 
   private[http4s] def loggingAsyncCallback[F[_], A](
       logger: Logger
-  )(attempt: Either[Throwable, A])(implicit F: Sync[F]): F[Unit] =
+  )(attempt:  Either[Throwable, A])(implicit F: Sync[F]): F[Unit] =
     attempt match {
-      case Left(e) => F.delay(logger.error(e)("Error in asynchronous callback"))
+      case Left(e)  => F.delay(logger.error(e)("Error in asynchronous callback"))
       case Right(_) => F.unit
     }
 
@@ -65,17 +65,17 @@ package object internal {
     * Adapted from apache commons Hex.encodeHex
     */
   private[http4s] final def encodeHex(data: Array[Byte]): Array[Char] = {
-    val l = data.length
+    val l   = data.length
     val out = new Array[Char](l << 1)
     // two characters form the hex value.
     def iterateData(out: Array[Char], l: Int): Array[Char] = {
       def innerEncode(l: Int, i: Int, j: Int): Array[Char] =
         i match {
           case k if k < l =>
-            out(j) = Digits((0xf0 & data(k)) >>> 4)
+            out(j)     = Digits((0xf0 & data(k)) >>> 4)
             out(j + 1) = Digits(0x0f & data(k))
             innerEncode(l, k + 1, j + 2)
-          case _ => out
+          case _          => out
         }
       innerEncode(l, 0, 0)
     }
@@ -111,9 +111,9 @@ package object internal {
       var i = 0
       var j = 0
       while (j < len) {
-        f = toDigit(data(j)) << 4
+        f      = toDigit(data(j)) << 4
         j += 1
-        f = f | toDigit(data(j))
+        f      = f | toDigit(data(j))
         j += 1
         out(i) = (f & 0xff).toByte
 
@@ -125,10 +125,9 @@ package object internal {
     }
   }
 
-  private[http4s] def fromCompletionStage[F[_], CF[x] <: CompletionStage[x], A](fcs: F[CF[A]])(
-      implicit
+  private[http4s] def fromCompletionStage[F[_], CF[x] <: CompletionStage[x], A](fcs: F[CF[A]])(implicit
       // Concurrent is intentional, see https://github.com/http4s/http4s/pull/3255#discussion_r395719880
-      F: Async[F]
+      F:                                                                             Async[F]
   ): F[A] =
     fcs.flatMap { cs =>
       F.async_ { cb =>
@@ -136,7 +135,7 @@ package object internal {
           { (result: A, err: Throwable) =>
             err match {
               case null => cb(Right(result))
-              case _: CancellationException => ()
+              case _:  CancellationException                      => ()
               case ex: CompletionException if ex.getCause ne null => cb(Left(ex.getCause))
               case ex => cb(Left(ex))
             }
@@ -147,13 +146,13 @@ package object internal {
     }
 
   private[http4s] def unsafeToCompletionStage[F[_], A](
-      fa: F[A],
+      fa:         F[A],
       dispatcher: Dispatcher[F],
-  )(implicit F: Sync[F]): CompletionStage[A] = {
+  )(implicit F:   Sync[F]): CompletionStage[A] = {
     val cf = new CompletableFuture[A]()
     dispatcher.unsafeToFuture(fa.attemptTap {
       case Right(a) => F.delay { cf.complete(a); () }
-      case Left(e) => F.delay { cf.completeExceptionally(e); () }
+      case Left(e)  => F.delay { cf.completeExceptionally(e); () }
     })
     cf
   }
@@ -165,8 +164,8 @@ package object internal {
 
   // TODO Remove in 1.0. We can do better with MurmurHash3.
   private[http4s] def hashLower(s: String): Int = {
-    var h = 0
-    var i = 0
+    var h   = 0
+    var i   = 0
     val len = s.length
     while (i < len) {
       // Strings are equal igoring case if either their uppercase or lowercase
@@ -182,10 +181,10 @@ package object internal {
 
   @deprecated("Use fs2.text.decodeWithCharset", "0.23.5")
   def decode[F[_]: RaiseThrowable](charset: Charset): Pipe[F, Byte, String] = { in =>
-    val decoder = charset.nioCharset.newDecoder
+    val decoder        = charset.nioCharset.newDecoder
     val byteBufferSize = 16
-    val byteBuffer = ByteBuffer.allocate(byteBufferSize)
-    val charBuffer =
+    val byteBuffer     = ByteBuffer.allocate(byteBufferSize)
+    val charBuffer     =
       CharBuffer.allocate(math.ceil(byteBufferSize.toDouble * decoder.averageCharsPerByte).toInt)
 
     def skipByteOrderMark(chunk: Chunk[Byte]): Chunk[Byte] =
@@ -202,23 +201,23 @@ package object internal {
     Pull
       .loop[F, String, Stream[F, Byte]] { stream =>
         stream.pull.unconsN(byteBuffer.remaining(), allowFewer = true).flatMap {
-          case None =>
+          case None                  =>
             byteBuffer.flip()
             val result = decoder.decode(byteBuffer, charBuffer, true)
             byteBuffer.compact()
             result match {
-              case _ if result.isUnderflow =>
+              case _ if result.isUnderflow  =>
                 def flushLoop: Pull[F, String, Unit] =
                   decoder.flush(charBuffer) match {
                     case result if result.isUnderflow =>
                       out
-                    case result if result.isOverflow =>
+                    case result if result.isOverflow  =>
                       out >> flushLoop
                   }
                 flushLoop.as(None)
-              case _ if result.isOverflow =>
+              case _ if result.isOverflow   =>
                 out.as(Some(Stream.empty))
-              case _ if result.isMalformed =>
+              case _ if result.isMalformed  =>
                 Pull.raiseError(new MalformedInputException(result.length()))
               case _ if result.isUnmappable =>
                 Pull.raiseError(new UnmappableCharacterException(result.length()))
@@ -227,14 +226,14 @@ package object internal {
             val chunkWithoutBom = skipByteOrderMark(chunk)
             byteBuffer.put(chunkWithoutBom.toArray)
             byteBuffer.flip()
-            val result = decoder.decode(byteBuffer, charBuffer, false)
+            val result          = decoder.decode(byteBuffer, charBuffer, false)
             byteBuffer.compact()
             result match {
               case _ if result.isUnderflow || result.isOverflow =>
                 out.as(Some(stream))
-              case _ if result.isMalformed =>
+              case _ if result.isMalformed                      =>
                 Pull.raiseError(new MalformedInputException(result.length()))
-              case _ if result.isUnmappable =>
+              case _ if result.isUnmappable                     =>
                 Pull.raiseError(new UnmappableCharacterException(result.length()))
             }
         }
@@ -296,13 +295,13 @@ package object internal {
   ): Int = {
     val extractComparison: F[Int] => Option[Int] =
       _.extract match {
-        case 0 => None
+        case 0         => None
         case otherwise => Some(otherwise)
       }
 
     comparisons
       .reduceLeftTo(extractComparison) {
-        case (None, next) => extractComparison(next)
+        case (None, next)   => extractComparison(next)
         case (otherwise, _) => otherwise
       }
       .getOrElse(0)

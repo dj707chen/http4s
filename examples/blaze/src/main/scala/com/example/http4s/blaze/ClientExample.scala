@@ -32,8 +32,8 @@ object ClientExample extends IOApp {
       for {
         // each execution of the effect will refetch the page!
         pageContent <- page
-        firstBytes = pageContent.take(72)
-        _ <- IO.println(firstBytes)
+        firstBytes   = pageContent.take(72)
+        _           <- IO.println(firstBytes)
       } yield ()
     }).as(())
   }
@@ -44,13 +44,13 @@ object ClientExample extends IOApp {
     for {
       // Match on response code!
       page <- client.get(uri"http://http4s.org/resources/foo.json") {
-        case Successful(resp) =>
-          // decodeJson is defined for Circe, just need the right decoder!
-          resp.decodeJson[Foo].map("Received response: " + _)
-        case NotFound(_) => IO.pure("Not Found!!!")
-        case resp => IO.pure("Failed: " + resp.status)
-      }
-      _ <- IO.println(page)
+                case Successful(resp) =>
+                  // decodeJson is defined for Circe, just need the right decoder!
+                  resp.decodeJson[Foo].map("Received response: " + _)
+                case NotFound(_)      => IO.pure("Not Found!!!")
+                case resp             => IO.pure("Failed: " + resp.status)
+              }
+      _    <- IO.println(page)
     } yield ()
   }
 

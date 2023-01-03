@@ -38,7 +38,7 @@ import org.http4s.util.Writer
 import scala.util.hashing.MurmurHash3
 
 sealed class MediaRange private[http4s] (
-    val mainType: String,
+    val mainType:   String,
     val extensions: Map[String, String] = Map.empty,
 ) {
 
@@ -49,12 +49,12 @@ sealed class MediaRange private[http4s] (
   final def satisfies(mediaRange: MediaRange): Boolean = mediaRange.satisfiedBy(this)
 
   def isApplication: Boolean = mainType === "application"
-  def isAudio: Boolean = mainType === "audio"
-  def isImage: Boolean = mainType === "image"
-  def isMessage: Boolean = mainType === "message"
-  def isMultipart: Boolean = mainType === "multipart"
-  def isText: Boolean = mainType === "text"
-  def isVideo: Boolean = mainType === "video"
+  def isAudio:       Boolean = mainType === "audio"
+  def isImage:       Boolean = mainType === "image"
+  def isMessage:     Boolean = mainType === "message"
+  def isMultipart:   Boolean = mainType === "multipart"
+  def isText:        Boolean = mainType === "text"
+  def isVideo:       Boolean = mainType === "video"
 
   def withQValue(q: QValue): MediaRangeAndQValue = MediaRangeAndQValue(this, q)
 
@@ -64,10 +64,10 @@ sealed class MediaRange private[http4s] (
 
   override def equals(obj: Any): Boolean =
     obj match {
-      case _: MediaType => false
+      case _: MediaType  => false
       case x: MediaRange =>
         (this eq x) ||
-        mainType === x.mainType &&
+        mainType   === x.mainType &&
         extensions === x.extensions
       case _ =>
         false
@@ -82,14 +82,14 @@ sealed class MediaRange private[http4s] (
 }
 
 object MediaRange {
-  val `*/*` = new MediaRange("*")
+  val `*/*`           = new MediaRange("*")
   val `application/*` = new MediaRange("application")
-  val `audio/*` = new MediaRange("audio")
-  val `image/*` = new MediaRange("image")
-  val `message/*` = new MediaRange("message")
-  val `multipart/*` = new MediaRange("multipart")
-  val `text/*` = new MediaRange("text")
-  val `video/*` = new MediaRange("video")
+  val `audio/*`       = new MediaRange("audio")
+  val `image/*`       = new MediaRange("image")
+  val `message/*`     = new MediaRange("message")
+  val `multipart/*`   = new MediaRange("multipart")
+  val `text/*`        = new MediaRange("text")
+  val `video/*`       = new MediaRange("video")
 
   val standard: Map[String, MediaRange] =
     List(
@@ -112,12 +112,11 @@ object MediaRange {
     import Parser.char
     import org.http4s.internal.parsing.Rfc7230.{ows, quotedString, token}
 
-    val escapedString = "\\\\"
+    val escapedString   = "\\\\"
     val unescapedString = "\\"
 
-    (char(';') *> ows *> token ~ (char('=') *> token.orElse(quotedString)).?).map {
-      case (s: String, s2: Option[String]) =>
-        (s, s2.map(_.replace(escapedString, unescapedString)).getOrElse(""))
+    (char(';') *> ows *> token ~ (char('=') *> token.orElse(quotedString)).?).map { case (s: String, s2: Option[String]) =>
+      (s, s2.map(_.replace(escapedString, unescapedString)).getOrElse(""))
     }
   }
 
@@ -129,7 +128,7 @@ object MediaRange {
     (parser ~ extensions).map { case (mr, exts) =>
       exts match {
         case Nil => mr
-        case _ => mr.withExtensions(exts.toMap)
+        case _   => mr.withExtensions(exts.toMap)
       }
     }
   }
@@ -171,16 +170,16 @@ object MediaRange {
         new MediaType(mainType.toLowerCase, subType.toLowerCase),
       )
 
-  implicit val http4sShowForMediaRange: Show[MediaRange] =
+  implicit val http4sShowForMediaRange:      Show[MediaRange]      =
     Show.show(s => s"${s.mainType}/*${MediaRange.extensionsToString(s)}")
-  implicit val http4sOrderForMediaRange: Order[MediaRange] =
+  implicit val http4sOrderForMediaRange:     Order[MediaRange]     =
     Order.from { (x, y) =>
       def orderedSubtype(a: MediaRange) =
         a match {
           case mt: MediaType => mt.subType
           case _ => ""
         }
-      def f(a: MediaRange) = (a.mainType, orderedSubtype(a), a.extensions.toVector.sortBy(_._1))
+      def f(a: MediaRange)              = (a.mainType, orderedSubtype(a), a.extensions.toVector.sortBy(_._1))
       Order[(String, String, Vector[(String, String)])].compare(f(x), f(y))
     }
   implicit val http4sHttpCodecForMediaRange: HttpCodec[MediaRange] =
@@ -200,12 +199,12 @@ object MediaRange {
 }
 
 sealed class MediaType(
-    mainType: String,
-    val subType: String,
-    val compressible: Boolean = false,
-    val binary: Boolean = false,
+    mainType:           String,
+    val subType:        String,
+    val compressible:   Boolean = false,
+    val binary:         Boolean = false,
     val fileExtensions: List[String] = Nil,
-    extensions: Map[String, String] = Map.empty,
+    extensions:         Map[String, String] = Map.empty,
 ) extends MediaRange(mainType, extensions) {
   override def withExtensions(ext: Map[String, String]): MediaType =
     new MediaType(mainType, subType, compressible, binary, fileExtensions, ext)
@@ -217,7 +216,7 @@ sealed class MediaType(
       case mediaType: MediaType =>
         (this eq mediaType) ||
         mainType === mediaType.mainType &&
-        subType === mediaType.subType
+        subType  === mediaType.subType
 
       case _ => false
     }
@@ -226,8 +225,8 @@ sealed class MediaType(
     obj match {
       case x: MediaType =>
         (this eq x) ||
-        mainType === x.mainType &&
-        subType === x.subType &&
+        mainType   === x.mainType &&
+        subType    === x.subType &&
         extensions === x.extensions
       case _ => false
     }
@@ -272,13 +271,13 @@ object MediaType extends MimeDB {
     allMediaTypes.flatMap(m => m.fileExtensions.map(_ -> m)).toMap
 
   val parser: Parser[MediaType] = {
-    val mediaType = MediaRange.mediaRangeParser(getMediaType)
+    val mediaType  = MediaRange.mediaRangeParser(getMediaType)
     val extensions = MediaRange.mediaTypeExtensionParser.rep0
 
     (mediaType ~ extensions).map { case (mr, exts) =>
       exts match {
         case Nil => mr
-        case _ => mr.withExtensions(exts.toMap)
+        case _   => mr.withExtensions(exts.toMap)
       }
     }
   }
@@ -302,9 +301,9 @@ object MediaType extends MimeDB {
       new MediaType(mainType.toLowerCase, subType.toLowerCase),
     )
 
-  implicit val http4sEqForMediaType: Eq[MediaType] =
+  implicit val http4sEqForMediaType:        Eq[MediaType]        =
     Eq.fromUniversalEquals
-  implicit val http4sShowForMediaType: Show[MediaType] =
+  implicit val http4sShowForMediaType:      Show[MediaType]      =
     Show.show(s => s"${s.mainType}/${s.subType}${MediaRange.extensionsToString(s)}")
   implicit val http4sHttpCodecForMediaType: HttpCodec[MediaType] =
     new HttpCodec[MediaType] {

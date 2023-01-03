@@ -60,10 +60,10 @@ object TransferCoding {
   private class TransferCodingImpl(coding: String) extends TransferCoding(coding)
 
   // https://www.iana.org/assignments/http-parameters/http-parameters.xml#transfer-coding
-  val chunked: TransferCoding = new TransferCodingImpl("chunked")
+  val chunked:  TransferCoding = new TransferCodingImpl("chunked")
   val compress: TransferCoding = new TransferCodingImpl("compress")
-  val deflate: TransferCoding = new TransferCodingImpl("deflate")
-  val gzip: TransferCoding = new TransferCodingImpl("gzip")
+  val deflate:  TransferCoding = new TransferCodingImpl("deflate")
+  val gzip:     TransferCoding = new TransferCodingImpl("gzip")
   val identity: TransferCoding = new TransferCodingImpl("identity")
 
   def parse(s: String): ParseResult[TransferCoding] =
@@ -85,9 +85,9 @@ object TransferCoding {
     )
   }
 
-  implicit val http4sOrderForTransferCoding: Order[TransferCoding] =
+  implicit val http4sOrderForTransferCoding:     Order[TransferCoding]     =
     Order.fromComparable
-  implicit val http4sShowForTransferCoding: Show[TransferCoding] =
+  implicit val http4sShowForTransferCoding:      Show[TransferCoding]      =
     Show.show(_.coding)
   implicit val http4sInstancesForTransferCoding: HttpCodec[TransferCoding] =
     new HttpCodec[TransferCoding] {

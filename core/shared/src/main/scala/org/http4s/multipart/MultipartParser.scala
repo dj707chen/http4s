@@ -35,17 +35,16 @@ import org.typelevel.ci.CIString
 
 /** A low-level multipart-parsing pipe.  Most end users will prefer EntityDecoder[Multipart]. */
 object MultipartParser {
-  private[this] val CRLFBytesN = Array[Byte]('\r', '\n')
+  private[this] val CRLFBytesN       = Array[Byte]('\r', '\n')
   private[this] val DoubleCRLFBytesN = Array[Byte]('\r', '\n', '\r', '\n')
-  private[this] val DashDashBytesN = Array[Byte]('-', '-')
-  private[this] val BoundaryBytesN: Boundary => Array[Byte] = boundary =>
-    boundary.value.getBytes("UTF-8")
-  val StartLineBytesN: Boundary => Array[Byte] = BoundaryBytesN.andThen(DashDashBytesN ++ _)
+  private[this] val DashDashBytesN   = Array[Byte]('-', '-')
+  private[this] val BoundaryBytesN: Boundary => Array[Byte] = boundary => boundary.value.getBytes("UTF-8")
+  val StartLineBytesN:              Boundary => Array[Byte] = BoundaryBytesN.andThen(DashDashBytesN ++ _)
 
   /** `delimiter` in RFC 2046 */
   private[this] val ExpectedBytesN: Boundary => Array[Byte] =
     BoundaryBytesN.andThen(CRLFBytesN ++ DashDashBytesN ++ _)
-  private[this] val dashByte: Byte = '-'.toByte
+  private[this] val dashByte:       Byte                    = '-'.toByte
   private[this] val streamEmpty = Stream.empty
 
   private type SplitStream[F[_]] = Pull[F, Nothing, (Stream[F, Byte], Stream[F, Byte])]
@@ -57,7 +56,7 @@ object MultipartParser {
 
   def parseStreamed[F[_]: Concurrent](
       boundary: Boundary,
-      limit: Int = 1024,
+      limit:    Int = 1024,
   ): Pipe[F, Byte, Multipart[F]] = { st =>
     st.through(
       parseToPartsStream(boundary, limit)
@@ -66,7 +65,7 @@ object MultipartParser {
   }
 
   def parseToPartsStream[F[_]](boundary: Boundary, limit: Int = 1024)(implicit
-      F: Concurrent[F]
+      F:                                 Concurrent[F]
   ): Pipe[F, Byte, Part[F]] = { st =>
     st.through(
       parseEvents[F](boundary, limit)
@@ -74,18 +73,18 @@ object MultipartParser {
       // The left half is the part under construction, the right half is a part to be emitted.
       .evalMapAccumulate[F, Option[Part[F]], Option[Part[F]]](None) { (acc, item) =>
         (acc, item) match {
-          case (None, PartStart(headers)) =>
+          case (None, PartStart(headers))       =>
             F.pure((Some(Part(headers, Stream.empty)), None))
           // Shouldn't happen if the `parseToEventsStream` contract holds.
           case (None, (_: PartChunk | PartEnd)) =>
             F.raiseError(bug("Missing PartStart"))
-          case (Some(acc0), PartChunk(chunk)) =>
+          case (Some(acc0), PartChunk(chunk))   =>
             F.pure((Some(acc0.copy(body = acc0.body ++ Stream.chunk(chunk))), None))
-          case (Some(_), PartEnd) =>
+          case (Some(_), PartEnd)               =>
             // Part done - emit it and start over.
             F.pure((None, acc))
           // Shouldn't happen if the `parseToEventsStream` contract holds.
-          case (Some(_), _: PartStart) =>
+          case (Some(_), _: PartStart)          =>
             F.raiseError(bug("Missing PartEnd"))
         }
       }
@@ -94,12 +93,12 @@ object MultipartParser {
 
   private def splitAndIgnorePrev[F[_]](
       values: Array[Byte],
-      state: Int,
-      c: Chunk[Byte],
+      state:  Int,
+      c:      Chunk[Byte],
   ): (Int, Stream[F, Byte]) = {
-    var i = 0
+    var i         = 0
     var currState = state
-    val len = values.length
+    val len       = values.length
     while (currState < len && i < c.size) {
       if (c(i) == values(currState))
         currState += 1
@@ -132,11 +131,11 @@ object MultipartParser {
     */
   private def splitCompleteMatch[F[_]](
       middleChunked: Boolean,
-      sti: Int,
-      i: Int,
-      acc: Stream[F, Byte],
-      carry: Stream[F, Byte],
-      c: Chunk[Byte],
+      sti:           Int,
+      i:             Int,
+      acc:           Stream[F, Byte],
+      carry:         Stream[F, Byte],
+      c:             Chunk[Byte],
   ): (Int, Stream[F, Byte], Stream[F, Byte]) =
     if (middleChunked)
       (
@@ -144,7 +143,7 @@ object MultipartParser {
         // Emit the partial match as well
         acc ++ carry ++ Stream.chunk(c.take(i - sti)),
         Stream.chunk(c.drop(i)),
-      ) // Emit after the match
+      )      // Emit after the match
     else
       (
         sti,
@@ -160,11 +159,11 @@ object MultipartParser {
     */
   private def splitPartialMatch[F[_]](
       middleChunked: Boolean,
-      currState: Int,
-      i: Int,
-      acc: Stream[F, Byte],
-      carry: Stream[F, Byte],
-      c: Chunk[Byte],
+      currState:     Int,
+      i:             Int,
+      acc:           Stream[F, Byte],
+      carry:         Stream[F, Byte],
+      c:             Chunk[Byte],
   ): (Int, Stream[F, Byte], Stream[F, Byte]) = {
     val ixx = i - currState
     if (middleChunked) {
@@ -189,14 +188,14 @@ object MultipartParser {
     */
   private[http4s] def splitOnChunk[F[_]](
       values: Array[Byte],
-      state: Int,
-      c: Chunk[Byte],
-      acc: Stream[F, Byte],
-      carry: Stream[F, Byte],
+      state:  Int,
+      c:      Chunk[Byte],
+      acc:    Stream[F, Byte],
+      carry:  Stream[F, Byte],
   ): (Int, Stream[F, Byte], Stream[F, Byte]) = {
-    var i = 0
-    var currState = state
-    val len = values.length
+    var i             = 0
+    var currState     = state
+    val len           = values.length
     while (currState < len && i < c.size) {
       if (c(i) == values(currState))
         currState += 1
@@ -230,7 +229,7 @@ object MultipartParser {
   private def splitOrFinish[F[_]: Concurrent](
       values: Array[Byte],
       stream: Stream[F, Byte],
-      limit: Int,
+      limit:  Int,
   ): SplitStream[F] = {
     // Check if a particular chunk a final chunk, that is,
     // whether it's the boundary plus an extra "--", indicating it's
@@ -238,8 +237,8 @@ object MultipartParser {
     def checkIfLast(c: Chunk[Byte], rest: Stream[F, Byte]): SplitStream[F] = {
       // precond: both c1 and c2 are nonempty chunks
       def checkTwoNonEmpty(
-          c1: Chunk[Byte],
-          c2: Chunk[Byte],
+          c1:        Chunk[Byte],
+          c2:        Chunk[Byte],
           remaining: Stream[F, Byte],
       ): SplitStream[F] =
         if (c1(0) == dashByte && c2(0) == dashByte)
@@ -262,7 +261,7 @@ object MultipartParser {
         rest.pull.uncons.flatMap {
           case Some((chnk, remaining)) =>
             checkTwoNonEmpty(c, chnk, remaining)
-          case None =>
+          case None                    =>
             Pull.raiseError[F](MalformedMessageBodyFailure("Malformed Multipart ending"))
         }
       else if (c(0) == dashByte && c(1) == dashByte)
@@ -277,10 +276,10 @@ object MultipartParser {
     }
 
     def go(
-        s: Stream[F, Byte],
-        state: Int,
-        lacc: Stream[F, Byte],
-        racc: Stream[F, Byte],
+        s:        Stream[F, Byte],
+        state:    Int,
+        lacc:     Stream[F, Byte],
+        racc:     Stream[F, Byte],
         limitCTR: Int,
     ): SplitStream[F] =
       if (limitCTR >= limit)
@@ -294,14 +293,14 @@ object MultipartParser {
           case Some((chnk, str)) =>
             val (ix, l, r, add) = splitOnChunkLimited[F](values, state, chnk, lacc, racc)
             go(str, ix, l, r, limitCTR + add)
-          case None =>
+          case None              =>
             Pull.raiseError[F](MalformedMessageBodyFailure("Invalid boundary - partial boundary"))
         }
 
     stream.pull.uncons.flatMap {
       case Some((chunk, rest)) =>
         checkIfLast(chunk, rest)
-      case None =>
+      case None                =>
         Pull.raiseError[F](MalformedMessageBodyFailure("Invalid boundary - partial boundary"))
     }
   }
@@ -327,7 +326,7 @@ object MultipartParser {
           .echo >> r.pull.uncons.flatMap {
           case Some(_) =>
             tailrecParse(r, headers)
-          case None =>
+          case None    =>
             Pull.done
         }
       }
@@ -343,10 +342,10 @@ object MultipartParser {
     */
   private def splitHalf[F[_]](values: Array[Byte], stream: Stream[F, Byte]): SplitStream[F] = {
     def go(
-        s: Stream[F, Byte],
+        s:     Stream[F, Byte],
         state: Int,
-        lacc: Stream[F, Byte],
-        racc: Stream[F, Byte],
+        lacc:  Stream[F, Byte],
+        racc:  Stream[F, Byte],
     ): SplitStream[F] =
       if (state == values.length)
         Pull.pure((lacc, racc ++ s))
@@ -355,7 +354,7 @@ object MultipartParser {
           case Some((chnk, str)) =>
             val (ix, l, r) = splitOnChunk[F](values, state, chnk, lacc, racc)
             go(str, ix, l, r)
-          case None =>
+          case None              =>
             // We got to the end, and matched on nothing.
             Pull.pure((lacc ++ racc, streamEmpty))
         }
@@ -364,7 +363,7 @@ object MultipartParser {
       case Some((chunk, rest)) =>
         val (ix, l, r) = splitOnChunk[F](values, 0, chunk, Stream.empty, Stream.empty)
         go(rest, ix, l, r)
-      case None =>
+      case None                =>
         Pull.pure((streamEmpty, streamEmpty))
     }
   }
@@ -382,13 +381,13 @@ object MultipartParser {
     * emit everything after the partial match.
     */
   private def splitCompleteLimited[F[_]](
-      state: Int,
+      state:         Int,
       middleChunked: Boolean,
-      sti: Int,
-      i: Int,
-      acc: Stream[F, Byte],
-      carry: Stream[F, Byte],
-      c: Chunk[Byte],
+      sti:           Int,
+      i:             Int,
+      acc:           Stream[F, Byte],
+      carry:         Stream[F, Byte],
+      c:             Chunk[Byte],
   ): (Int, Stream[F, Byte], Stream[F, Byte], Int) =
     if (middleChunked)
       (
@@ -402,7 +401,7 @@ object MultipartParser {
     else
       (
         sti,
-        acc, // block completes partial match, so do not emit carry
+        acc,                     // block completes partial match, so do not emit carry
         Stream.chunk(c.drop(i)), // Emit everything after the match
         0,
       )
@@ -422,13 +421,13 @@ object MultipartParser {
     * add it to the carry over
     */
   private[http4s] def splitPartialLimited[F[_]](
-      state: Int,
+      state:         Int,
       middleChunked: Boolean,
-      currState: Int,
-      i: Int,
-      acc: Stream[F, Byte],
-      carry: Stream[F, Byte],
-      c: Chunk[Byte],
+      currState:     Int,
+      i:             Int,
+      acc:           Stream[F, Byte],
+      carry:         Stream[F, Byte],
+      c:             Chunk[Byte],
   ): (Int, Stream[F, Byte], Stream[F, Byte], Int) = {
     val ixx = i - currState
     if (middleChunked) {
@@ -446,14 +445,14 @@ object MultipartParser {
 
   private[http4s] def splitOnChunkLimited[F[_]](
       values: Array[Byte],
-      state: Int,
-      c: Chunk[Byte],
-      acc: Stream[F, Byte],
-      carry: Stream[F, Byte],
+      state:  Int,
+      c:      Chunk[Byte],
+      acc:    Stream[F, Byte],
+      carry:  Stream[F, Byte],
   ): (Int, Stream[F, Byte], Stream[F, Byte], Int) = {
-    var i = 0
+    var i         = 0
     var currState = state
-    val len = values.length
+    val len       = values.length
     while (currState < len && i < c.size) {
       if (c(i) == values(currState))
         currState += 1
@@ -487,11 +486,11 @@ object MultipartParser {
     */
   @deprecated("Use parseSupervisedFile", "0.23")
   def parseStreamedFile[F[_]: Concurrent: Files](
-      boundary: Boundary,
-      limit: Int = 1024,
+      boundary:           Boundary,
+      limit:              Int = 1024,
       maxSizeBeforeWrite: Int = 52428800,
-      maxParts: Int = 20,
-      failOnLimit: Boolean = false,
+      maxParts:           Int = 20,
+      failOnLimit:        Boolean = false,
   ): Pipe[F, Byte, Multipart[F]] = { st =>
     st.through(
       parseToPartsStreamedFile(boundary, limit, maxSizeBeforeWrite, maxParts, failOnLimit)
@@ -501,11 +500,11 @@ object MultipartParser {
 
   @deprecated("Use parseSupervisedFile", "0.23")
   def parseToPartsStreamedFile[F[_]: Concurrent: Files](
-      boundary: Boundary,
-      limit: Int = 1024,
+      boundary:           Boundary,
+      limit:              Int = 1024,
       maxSizeBeforeWrite: Int = 52428800,
-      maxParts: Int = 20,
-      failOnLimit: Boolean = false,
+      maxParts:           Int = 20,
+      failOnLimit:        Boolean = false,
   ): Pipe[F, Byte, Part[F]] = {
 
     val pullParts: Stream[F, Event] => Stream[F, Part[F]] =
@@ -513,7 +512,7 @@ object MultipartParser {
         .loop[F, Part[F], Stream[F, Event]](
           _.pull.uncons1.flatMap(
             _.traverse {
-              case (PartStart(headers), s) =>
+              case (PartStart(headers), s)     =>
                 partBodyFileStream(s, maxSizeBeforeWrite)
                   .flatMap { case (body, rest) =>
                     Pull.output1(Part(headers, body)).as(rest)
@@ -534,7 +533,7 @@ object MultipartParser {
   }
 
   private[this] def limitParts[F[_]: RaiseThrowable](
-      maxParts: Int,
+      maxParts:    Int,
       failOnLimit: Boolean,
   ): Pipe[F, Event, Event] = {
     def go(st: Stream[F, Event], partsCounter: Int): Pull[F, Event, Unit] =
@@ -545,9 +544,9 @@ object MultipartParser {
           } else if (failOnLimit) {
             Pull.raiseError[F](MalformedMessageBodyFailure("Parts limit exceeded"))
           } else Pull.pure(())
-        case Some((event, rest)) =>
+        case Some((event, rest))            =>
           Pull.output1(event) >> go(rest, partsCounter)
-        case None => Pull.pure(())
+        case None                           => Pull.pure(())
       }
 
     go(_, 0).stream
@@ -555,15 +554,15 @@ object MultipartParser {
 
   // Consume `PartChunk`s until the first `PartEnd`, produce a stream with all the consumed data.
   private[this] def partBodyFileStream[F[_]: Concurrent: Files](
-      stream: Stream[F, Event],
+      stream:         Stream[F, Event],
       maxBeforeWrite: Int,
   ): Pull[F, Nothing, (Stream[F, Byte], Stream[F, Event])] = {
     // Consume `PartChunk`s until the first `PartEnd`, and write all the data into the file.
     def streamAndWrite(
-        s: Stream[F, Event],
-        lacc: Stream[Pure, Byte],
+        s:        Stream[F, Event],
+        lacc:     Stream[Pure, Byte],
         limitCTR: Int,
-        fileRef: Path,
+        fileRef:  Path,
     ): Pull[F, Nothing, Stream[F, Event]] =
       if (limitCTR >= maxBeforeWrite)
         Pull.eval(
@@ -574,9 +573,9 @@ object MultipartParser {
         ) >> streamAndWrite(s, Stream.empty, 0, fileRef)
       else
         s.pull.uncons1.flatMap {
-          case Some((PartChunk(chnk), str)) =>
+          case Some((PartChunk(chnk), str))   =>
             streamAndWrite(str, lacc ++ Stream.chunk(chnk), limitCTR + chnk.size, fileRef)
-          case Some((PartEnd, str)) =>
+          case Some((PartEnd, str))           =>
             Pull
               .eval(
                 lacc
@@ -594,8 +593,8 @@ object MultipartParser {
     // Produce a stream with all the accumulated data.
     // Fall back to `streamAndWrite` after the limit is reached
     def go(
-        s: Stream[F, Event],
-        lacc: Stream[Pure, Byte],
+        s:        Stream[F, Event],
+        lacc:     Stream[Pure, Byte],
         limitCTR: Int,
     ): Pull[F, Nothing, (Stream[F, Byte], Stream[F, Event])] =
       if (limitCTR >= maxBeforeWrite)
@@ -608,9 +607,9 @@ object MultipartParser {
           }
       else
         s.pull.uncons1.flatMap {
-          case Some((PartChunk(chnk), str)) =>
+          case Some((PartChunk(chnk), str))   =>
             go(str, lacc ++ Stream.chunk(chnk), limitCTR + chnk.size)
-          case Some((PartEnd, str)) =>
+          case Some((PartEnd, str))           =>
             Pull.pure((lacc, str))
           // Shouldn't happen if the `parseToEventsStream` contract holds.
           case Some((_: PartStart, _)) | None =>
@@ -627,13 +626,13 @@ object MultipartParser {
   /** Like parseStreamedFile, but the produced parts' resources are managed by the supervisor.
     */
   private[multipart] def parseSupervisedFile[F[_]: Concurrent: Files](
-      supervisor: Supervisor[F],
-      boundary: Boundary,
-      limit: Int = 1024,
+      supervisor:         Supervisor[F],
+      boundary:           Boundary,
+      limit:              Int = 1024,
       maxSizeBeforeWrite: Int = 52428800,
-      maxParts: Int = 20,
-      failOnLimit: Boolean = false,
-      chunkSize: Int = 8192,
+      maxParts:           Int = 20,
+      failOnLimit:        Boolean = false,
+      chunkSize:          Int = 8192,
   ): Pipe[F, Byte, Multipart[F]] = { st =>
     st.through(
       parseToPartsSupervisedFile(
@@ -650,14 +649,14 @@ object MultipartParser {
   }
 
   private[multipart] def parseToPartsSupervisedFile[F[_]](
-      supervisor: Supervisor[F],
-      boundary: Boundary,
-      limit: Int = 1024,
+      supervisor:         Supervisor[F],
+      boundary:           Boundary,
+      limit:              Int = 1024,
       maxSizeBeforeWrite: Int = 52428800,
-      maxParts: Int = 20,
-      failOnLimit: Boolean = false,
-      chunkSize: Int = 8192,
-  )(implicit F: Concurrent[F], files: Files[F]): Pipe[F, Byte, Part[F]] = {
+      maxParts:           Int = 20,
+      failOnLimit:        Boolean = false,
+      chunkSize:          Int = 8192,
+  )(implicit F:           Concurrent[F], files: Files[F]): Pipe[F, Byte, Part[F]] = {
     val createFile = superviseResource(supervisor, files.tempFile)
     def append(file: Path, bytes: Stream[Pure, Byte]): F[Unit] =
       bytes.through(files.writeAll(file, Flags.Append)).compile.drain
@@ -665,7 +664,7 @@ object MultipartParser {
     final case class Acc(file: Option[Path], bytes: Stream[Pure, Byte], bytesSize: Int)
 
     def stepPartChunk(oldAcc: Acc, chunk: Chunk[Byte]): F[Acc] = {
-      val newSize = oldAcc.bytesSize + chunk.size
+      val newSize  = oldAcc.bytesSize + chunk.size
       val newBytes = oldAcc.bytes ++ Stream.chunk(chunk)
       if (newSize > maxSizeBeforeWrite) {
         oldAcc.file
@@ -676,7 +675,7 @@ object MultipartParser {
     }
 
     val stepPartEnd: Acc => F[Stream[F, Byte]] = {
-      case Acc(None, bytes, _) => F.pure(bytes)
+      case Acc(None, bytes, _)          => F.pure(bytes)
       case Acc(Some(file), bytes, size) =>
         append(file, bytes)
           .whenA(size > 0)
@@ -686,22 +685,22 @@ object MultipartParser {
     }
 
     val step: (Option[(Headers, Acc)], Event) => F[(Option[(Headers, Acc)], Option[Part[F]])] = {
-      case (None, PartStart(headers)) =>
+      case (None, PartStart(headers))                  =>
         val newAcc = Acc(None, Stream.empty, 0)
         F.pure((Some((headers, newAcc)), None))
       // Shouldn't happen if the `parseToEventsStream` contract holds.
-      case (None, (_: PartChunk | PartEnd)) =>
+      case (None, (_: PartChunk | PartEnd))            =>
         F.raiseError(bug("Missing PartStart"))
       case (Some((headers, oldAcc)), PartChunk(chunk)) =>
         stepPartChunk(oldAcc, chunk).map { newAcc =>
           (Some((headers, newAcc)), None)
         }
-      case (Some((headers, acc)), PartEnd) =>
+      case (Some((headers, acc)), PartEnd)             =>
         // Part done - emit it and start over.
         stepPartEnd(acc)
           .map(body => (None, Some(Part(headers, body))))
       // Shouldn't happen if the `parseToEventsStream` contract holds.
-      case (Some(_), _: PartStart) =>
+      case (Some(_), _: PartStart)                     =>
         F.raiseError(bug("Missing PartEnd"))
     }
 
@@ -717,8 +716,8 @@ object MultipartParser {
   // supervisor sees fit to cancel it. The resulting action waits for the resource to be acquired.
   private[this] def superviseResource[F[_], A](
       supervisor: Supervisor[F],
-      resource: Resource[F, A],
-  )(implicit F: Concurrent[F]): F[A] =
+      resource:   Resource[F, A],
+  )(implicit F:   Concurrent[F]): F[A] =
     F.deferred[Either[Throwable, A]].flatMap { deferred =>
       supervisor.supervise[Nothing](
         resource.attempt
@@ -743,7 +742,7 @@ object MultipartParser {
     * Any number of such sequences may be produced.
     */
   private[this] def parseEvents[F[_]: Concurrent](
-      boundary: Boundary,
+      boundary:    Boundary,
       headerLimit: Int,
   ): Pipe[F, Byte, Event] =
     skipPrelude(boundary, _)
@@ -755,7 +754,7 @@ object MultipartParser {
     */
   private[this] def skipPrelude[F[_]: Concurrent](
       boundary: Boundary,
-      stream: Stream[F, Byte],
+      stream:   Stream[F, Byte],
   ): Pull[F, Nothing, Stream[F, Byte]] = {
     val dashBoundaryBytes = StartLineBytesN(boundary)
 
@@ -765,7 +764,7 @@ object MultipartParser {
           val (ix, remainder) = splitAndIgnorePrev(dashBoundaryBytes, state, chnk)
           if (ix === dashBoundaryBytes.length) Pull.pure(remainder ++ rest)
           else go(rest, ix)
-        case None =>
+        case None               =>
           Pull.raiseError[F](MalformedMessageBodyFailure("Malformed Malformed match"))
       }
 
@@ -774,8 +773,8 @@ object MultipartParser {
 
   /** Pull part events for parts until the end of the stream. */
   private[this] def pullPartsEvents[F[_]: Concurrent](
-      boundary: Boundary,
-      stream: Stream[F, Byte],
+      boundary:    Boundary,
+      stream:      Stream[F, Byte],
       headerLimit: Int,
   ): Pull[F, Event, Unit] = {
     val delimiterBytes = ExpectedBytesN(boundary)
@@ -807,8 +806,8 @@ object MultipartParser {
 
   /** Pulls part events for a single part. */
   private[this] def pullPartEvents[F[_]: Concurrent](
-      headerStream: Stream[F, Byte],
-      rest: Stream[F, Byte],
+      headerStream:   Stream[F, Byte],
+      rest:           Stream[F, Byte],
       delimiterBytes: Array[Byte],
   ): Pull[F, Event, Stream[F, Byte]] =
     Pull
@@ -827,12 +826,12 @@ object MultipartParser {
   /** Split the stream on `delimiterBytes`, emitting the left part as `PartChunk` events. */
   private[this] def pullPartChunks[F[_]: Concurrent](
       delimiterBytes: Array[Byte],
-      stream: Stream[F, Byte],
+      stream:         Stream[F, Byte],
   ): Pull[F, PartChunk, Stream[F, Byte]] = {
     def go(
-        s: Stream[F, Byte],
+        s:     Stream[F, Byte],
         state: Int,
-        racc: Stream[F, Byte],
+        racc:  Stream[F, Byte],
     ): Pull[F, PartChunk, Stream[F, Byte]] =
       if (state == delimiterBytes.length)
         Pull.pure(racc ++ s)
@@ -844,7 +843,7 @@ object MultipartParser {
               if (ix == delimiterBytes.length) Pull.pure(r ++ rest)
               else go(rest, ix, r)
             }
-          case None =>
+          case None               =>
             Pull.raiseError[F](MalformedMessageBodyFailure("Invalid boundary - partial boundary"))
         }
 

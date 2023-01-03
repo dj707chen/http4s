@@ -28,15 +28,15 @@ import scala.collection.mutable.Buffer
 import scala.concurrent.Future
 
 private[http4s] class CachingStaticWriter[F[_]](
-    out: TailStage[ByteBuffer],
-    bufferSize: Int = 8 * 1024,
+    out:                    TailStage[ByteBuffer],
+    bufferSize:             Int = 8 * 1024,
 )(implicit protected val F: Async[F])
     extends Http1Writer[F] {
   @volatile
   private var _forceClose = false
-  private val bodyBuffer: Buffer[Chunk[Byte]] = Buffer()
-  private var writer: StringWriter = null
-  private var innerWriter: InnerWriter = _
+  private val bodyBuffer:  Buffer[Chunk[Byte]] = Buffer()
+  private var writer:      StringWriter        = null
+  private var innerWriter: InnerWriter         = _
 
   def writeHeaders(headerWriter: StringWriter): Future[Unit] = {
     this.writer = headerWriter
@@ -88,8 +88,8 @@ private[http4s] class CachingStaticWriter[F[_]](
 
   // Make the write stuff public
   private class InnerWriter extends IdentityWriter(-1, out) {
-    override def writeEnd(chunk: Chunk[Byte]): Future[Boolean] = super.writeEnd(chunk)
-    override def writeBodyChunk(chunk: Chunk[Byte], flush: Boolean): Future[Unit] =
+    override def writeEnd(chunk: Chunk[Byte]):                       Future[Boolean] = super.writeEnd(chunk)
+    override def writeBodyChunk(chunk: Chunk[Byte], flush: Boolean): Future[Unit]    =
       super.writeBodyChunk(chunk, flush)
   }
 }

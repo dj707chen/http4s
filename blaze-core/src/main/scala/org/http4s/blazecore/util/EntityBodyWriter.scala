@@ -56,7 +56,7 @@ private[http4s] trait EntityBodyWriter[F[_]] {
     * @return the Task which when run will unwind the Process
     */
   def writeEntityBody(p: EntityBody[F]): F[Boolean] = {
-    val writeBody: F[Unit] = writePipe(p).compile.drain
+    val writeBody:    F[Unit]    = writePipe(p).compile.drain
     val writeBodyEnd: F[Boolean] = fromFutureNoShift(F.delay(writeEnd(Chunk.empty)))
     writeBody *> writeBodyEnd
   }
@@ -73,7 +73,7 @@ private[http4s] trait EntityBodyWriter[F[_]] {
     val writeStream: Stream[F, INothing] =
       s.repeatPull {
         _.uncons.flatMap {
-          case None => Pull.pure(None)
+          case None           => Pull.pure(None)
           case Some((hd, tl)) => Pull.eval(writeChunk(hd)).as(Some(tl))
         }
       }

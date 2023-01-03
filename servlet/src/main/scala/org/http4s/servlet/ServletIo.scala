@@ -32,7 +32,7 @@ import scala.annotation.tailrec
 
 /** Determines the mode of I/O used for reading request bodies and writing response bodies.
   */
-sealed abstract class ServletIo[F[_]: Async] {
+sealed abstract class ServletIo[F[_]: Async]                                            {
   protected[servlet] val F: Async[F] = Async[F]
 
   protected[servlet] def reader(servletRequest: HttpServletRequest): EntityBody[F]
@@ -46,14 +46,14 @@ sealed abstract class ServletIo[F[_]: Async] {
   * This is more CPU efficient per request than [[NonBlockingServletIo]], but is likely to
   * require a larger request thread pool for the same load.
   */
-final case class BlockingServletIo[F[_]: Async](chunkSize: Int) extends ServletIo[F] {
+final case class BlockingServletIo[F[_]: Async](chunkSize: Int) extends ServletIo[F]    {
   override protected[servlet] def reader(servletRequest: HttpServletRequest): EntityBody[F] =
     io.readInputStream[F](F.pure(servletRequest.getInputStream), chunkSize)
 
   override protected[servlet] def initWriter(
       servletResponse: HttpServletResponse
   ): BodyWriter[F] = { (response: Response[F]) =>
-    val out = servletResponse.getOutputStream
+    val out   = servletResponse.getOutputStream
     val flush = response.isChunked
     response.body.chunks
       .evalTap { chunk =>
@@ -81,7 +81,7 @@ final case class NonBlockingServletIo[F[_]: Async](chunkSize: Int) extends Servl
   private[this] val logger = getLogger
 
   private[this] def rightSome[A](a: A) = Right(Some(a))
-  private[this] val rightNone = Right(None)
+  private[this] val rightNone          = Right(None)
 
   override protected[servlet] def reader(servletRequest: HttpServletRequest): EntityBody[F] =
     Stream.suspend {
@@ -124,19 +124,19 @@ final case class NonBlockingServletIo[F[_]: Async](chunkSize: Int) extends Servl
                   override def onDataAvailable(): Unit =
                     state.getAndSet(Ready) match {
                       case Blocked(cb) => read(cb)
-                      case _ => ()
+                      case _           => ()
                     }
 
                   override def onError(t: Throwable): Unit =
                     state.getAndSet(Errored(t)) match {
                       case Blocked(cb) => cb(Left(t))
-                      case _ => ()
+                      case _           => ()
                     }
 
                   override def onAllDataRead(): Unit =
                     state.getAndSet(Complete) match {
                       case Blocked(cb) => cb(rightNone)
-                      case _ => ()
+                      case _           => ()
                     }
                 }
               )
@@ -159,7 +159,7 @@ final case class NonBlockingServletIo[F[_]: Async](chunkSize: Int) extends Servl
                       else {
                         /* NOOP: our callback is either still needed or has been handled */
                       }
-                    else go() // Our state transitioned so try again.
+                    else go()    // Our state transitioned so try again.
 
                   case Complete => cb(rightNone)
 
@@ -193,14 +193,14 @@ final case class NonBlockingServletIo[F[_]: Async](chunkSize: Int) extends Servl
     sealed case class Blocked(cb: Callback[Chunk[Byte] => Unit]) extends State
     sealed case class AwaitingLastWrite(cb: Callback[Unit]) extends State
 
-    val out = servletResponse.getOutputStream
+    val out                 = servletResponse.getOutputStream
     /*
      * If onWritePossible isn't called at least once, Tomcat begins to throw
      * NullPointerExceptions from NioEndpoint$SocketProcessor.doRun under
      * load.  The Init state means we block callbacks until the WriteListener
      * fires.
      */
-    val state = new AtomicReference[State](Init)
+    val state               = new AtomicReference[State](Init)
     @volatile var autoFlush = false
 
     val writeChunk = Right { (chunk: Chunk[Byte]) =>
@@ -216,16 +216,16 @@ final case class NonBlockingServletIo[F[_]: Async](chunkSize: Int) extends Servl
     val listener = new WriteListener {
       override def onWritePossible(): Unit =
         state.getAndSet(Ready) match {
-          case Blocked(cb) => cb(writeChunk)
+          case Blocked(cb)           => cb(writeChunk)
           case AwaitingLastWrite(cb) => cb(Right(()))
-          case old @ _ => ()
+          case old @ _               => ()
         }
 
       override def onError(t: Throwable): Unit =
         state.getAndSet(Errored(t)) match {
-          case Blocked(cb) => cb(Left(t))
+          case Blocked(cb)           => cb(Left(t))
           case AwaitingLastWrite(cb) => cb(Left(t))
-          case _ => ()
+          case _                     => ()
         }
     }
     /*
@@ -240,7 +240,7 @@ final case class NonBlockingServletIo[F[_]: Async](chunkSize: Int) extends Servl
       F.async_[Unit] { cb =>
         state.getAndSet(AwaitingLastWrite(cb)) match {
           case Ready if out.isReady => cb(Right(()))
-          case _ => ()
+          case _                    => ()
         }
       }
     }
@@ -252,10 +252,10 @@ final case class NonBlockingServletIo[F[_]: Async](chunkSize: Int) extends Servl
           case Ready if out.isReady =>
             if (state.compareAndSet(blocked, Ready))
               cb(writeChunk)
-          case e @ Errored(t) =>
+          case e @ Errored(t)       =>
             if (state.compareAndSet(blocked, e))
               cb(Left(t))
-          case _ =>
+          case _                    =>
             ()
         }
       }

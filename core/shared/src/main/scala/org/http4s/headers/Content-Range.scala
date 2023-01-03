@@ -75,7 +75,7 @@ object `Content-Range` {
             writer << h.unit << ' ' << h.range << '/'
             h.length match {
               case Some(l) => writer << l
-              case None => writer << '*'
+              case None    => writer << '*'
             }
           }
         },

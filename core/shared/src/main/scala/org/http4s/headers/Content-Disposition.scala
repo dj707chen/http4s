@@ -41,19 +41,19 @@ object `Content-Disposition` {
     case class AsciiChar(c: Char) extends ValueChar
     case class EncodedChar(a: Char, b: Char) extends ValueChar
 
-    val attrChar = Rfc3986.alpha
+    val attrChar   = Rfc3986.alpha
       .orElse(Rfc3986.digit)
       .orElse(Parser.charIn('!', '#', '$', '&', '+', '-', '.', '^', '_', '`', '|', '~'))
       .map { (a: Char) =>
         AsciiChar(a)
       }
-    val pctEncoded = (Parser.string("%") *> Rfc3986.hexdig ~ Rfc3986.hexdig).map {
-      case (a: Char, b: Char) => EncodedChar(a, b)
+    val pctEncoded = (Parser.string("%") *> Rfc3986.hexdig ~ Rfc3986.hexdig).map { case (a: Char, b: Char) =>
+      EncodedChar(a, b)
     }
     val valueChars = attrChar.orElse(pctEncoded).rep
-    val language = Parser.string(Rfc5234.alpha.rep) ~ (Parser.string("-") *> Rfc2616.token).rep0
-    val charset = Parser.ignoreCase("UTF-8").as(StandardCharsets.UTF_8)
-    val extValue = (Rfc5234.dquote *> Parser.charsWhile0(
+    val language   = Parser.string(Rfc5234.alpha.rep) ~ (Parser.string("-") *> Rfc2616.token).rep0
+    val charset    = Parser.ignoreCase("UTF-8").as(StandardCharsets.UTF_8)
+    val extValue   = (Rfc5234.dquote *> Parser.charsWhile0(
       CharPredicate.All -- '"'
     ) <* Rfc5234.dquote) | (charset ~ (Parser.string("'") *> language.? <* Parser.string(
       "'"
@@ -63,7 +63,7 @@ object `Content-Disposition` {
           case EncodedChar(a: Char, b: Char) =>
             val charByte = (Character.digit(a, 16) << 4) + Character.digit(b, 16)
             new String(Array(charByte.toByte), charset)
-          case AsciiChar(a) => a.toString
+          case AsciiChar(a)                  => a.toString
         }
         .toList
         .mkString
@@ -73,12 +73,11 @@ object `Content-Disposition` {
 
     val parameter = for {
       tok <- Rfc7230.token <* Parser.string("=") <* Rfc7230.ows
-      v <- if (tok.endsWith("*")) extValue else value
+      v   <- if (tok.endsWith("*")) extValue else value
     } yield (CIString(tok), v)
 
-    (Rfc7230.token ~ (Parser.string(";") *> Rfc7230.ows *> parameter).rep0).map {
-      case (token: String, params: List[(CIString, String)]) =>
-        `Content-Disposition`(token, params.toMap)
+    (Rfc7230.token ~ (Parser.string(";") *> Rfc7230.ows *> parameter).rep0).map { case (token: String, params: List[(CIString, String)]) =>
+      `Content-Disposition`(token, params.toMap)
     }
   }
 
@@ -89,9 +88,9 @@ object `Content-Disposition` {
         new Renderable {
           // Adapted from https://github.com/akka/akka-http/blob/b071bd67547714bd8bed2ccd8170fbbc6c2dbd77/akka-http-core/src/main/scala/akka/http/scaladsl/model/headers/headers.scala#L468-L492
           def render(writer: Writer): writer.type = {
-            val renderExtFilename =
+            val renderExtFilename   =
               v.parameters.get(ci"filename").exists(!safeChars.matchesAll(_))
-            val withExtParams =
+            val withExtParams       =
               if (renderExtFilename && !v.parameters.contains(ci"filename*"))
                 v.parameters + (ci"filename*" -> v.parameters(ci"filename"))
               else v.parameters

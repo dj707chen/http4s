@@ -77,7 +77,7 @@ final class QValue private (val thousandths: Int) extends AnyVal with Ordered[QV
 }
 
 object QValue extends QValuePlatform {
-  lazy val One: QValue = new QValue(1000)
+  lazy val One:  QValue = new QValue(1000)
   lazy val Zero: QValue = new QValue(0)
 
   def unapply(qValue: QValue): Option[Int] = Some(qValue.thousandths)
@@ -131,11 +131,8 @@ object QValue extends QValuePlatform {
   )
   def ☠(thousandths: Int): QValue = new QValue(thousandths)
 
-  implicit val catsInstancesForHttp4sQValue: Order[QValue]
-    with Show[QValue]
-    with Hash[QValue]
-    with HttpCodec[QValue]
-    with BoundedEnumerable[QValue] = new Order[QValue]
+  implicit val catsInstancesForHttp4sQValue
+      : Order[QValue] with Show[QValue] with Hash[QValue] with HttpCodec[QValue] with BoundedEnumerable[QValue] = new Order[QValue]
     with Show[QValue]
     with Hash[QValue]
     with HttpCodec[QValue]
@@ -150,25 +147,25 @@ object QValue extends QValuePlatform {
     override def hash(x: QValue): Int = x.hashCode
 
     // HttpCodec
-    override def parse(s: String): ParseResult[QValue] = QValue.parse(s)
-    override def render(writer: Writer, q: QValue): writer.type = q.render(writer)
+    override def parse(s: String):                  ParseResult[QValue] = QValue.parse(s)
+    override def render(writer: Writer, q: QValue): writer.type         = q.render(writer)
 
     // BoundedEnumerable
-    override def partialNext(a: QValue): Option[QValue] = a match {
-      case QValue.One => None
+    override def partialNext(a: QValue):     Option[QValue] = a match {
+      case QValue.One                                                 => None
       case QValue(thousandths) if fromThousandths(thousandths).isLeft => None
-      case QValue(thousandths) => Some(new QValue(thousandths + 1))
-      case _ => None
+      case QValue(thousandths)                                        => Some(new QValue(thousandths + 1))
+      case _                                                          => None
     }
     override def partialPrevious(a: QValue): Option[QValue] = a match {
-      case QValue.Zero => None
+      case QValue.Zero                                                => None
       case QValue(thousandths) if fromThousandths(thousandths).isLeft => None
-      case QValue(thousandths) => Some(new QValue(thousandths - 1))
-      case _ => None
+      case QValue(thousandths)                                        => Some(new QValue(thousandths - 1))
+      case _                                                          => None
     }
-    override def order: Order[QValue] = self
-    override def minBound: QValue = QValue.Zero
-    override def maxBound: QValue = QValue.One
+    override def order:                      Order[QValue]  = self
+    override def minBound:                   QValue         = QValue.Zero
+    override def maxBound:                   QValue         = QValue.One
   }
 
   implicit val stdLibOrderingInstance: Ordering[QValue] =

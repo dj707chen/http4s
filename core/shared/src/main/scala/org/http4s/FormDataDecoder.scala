@@ -92,7 +92,7 @@ sealed trait FormDataDecoder[A] {
 }
 
 object FormDataDecoder {
-  type FormData = Map[String, Chain[String]]
+  type FormData  = Map[String, Chain[String]]
   type Result[A] = ValidatedNel[ParseFailure, A]
 
   def apply[A](f: FormData => Result[A]): FormDataDecoder[A] =
@@ -111,14 +111,13 @@ object FormDataDecoder {
 
   private def apply[Data, A](
       extract: FormData => Either[String, Data]
-  )(decode: Data => Result[A]): FormDataDecoder[Either[String, A]] =
+  )(decode:    Data => Result[A]): FormDataDecoder[Either[String, A]] =
     new FormDataDecoder[Either[String, A]] {
       def apply(data: FormData): Result[Either[String, A]] =
         extract(data).traverse(decode(_))
     }
 
-  implicit class FormDataDecoderSyntax[A](private val decoder: FormDataDecoder[Either[String, A]])
-      extends AnyVal {
+  implicit class FormDataDecoderSyntax[A](private val decoder: FormDataDecoder[Either[String, A]]) extends AnyVal {
 
     def required: FormDataDecoder[A] =
       decoder.mapValidated(_.fold(ParseFailure(_, "").invalidNel[A], Valid(_)))
@@ -185,7 +184,7 @@ object FormDataDecoder {
     )
 
   def chainEither[A](
-      key: String
+      key:      String
   )(implicit A: FormDataDecoder[A]): FormDataDecoder[Either[String, Chain[A]]] =
     apply[FormData, Chain[A]](extractPrefix(key + "[]."))(
       _.toList
@@ -217,7 +216,7 @@ object FormDataDecoder {
 
   private def extractPrefix(
       prefix: String
-  )(data: FormData): Either[String, FormData] = {
+  )(data:     FormData): Either[String, FormData] = {
     val extracted = nonEmptyFields(data).toList.mapFilter { case (k, v) =>
       if (k.startsWith(prefix))
         Some((k.stripPrefix(prefix), v))
@@ -240,7 +239,7 @@ object FormDataDecoder {
 
       def ap[A, B](
           ff: FormDataDecoder[A => B]
-      )(fa: FormDataDecoder[A]): FormDataDecoder[B] =
+      )(fa:   FormDataDecoder[A]): FormDataDecoder[B] =
         apply { data =>
           fa(data).ap(ff(data))
         }

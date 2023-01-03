@@ -32,9 +32,9 @@ private[http4s] object SSLContextOption {
 
   def toMaybeSSLContext(sco: SSLContextOption): Option[SSLContext] =
     sco match {
-      case SSLContextOption.NoSSL => None
+      case SSLContextOption.NoSSL                => None
       case SSLContextOption.TryDefaultSSLContext => tryDefaultSslContext
-      case SSLContextOption.Provided(context) => Some(context)
+      case SSLContextOption.Provided(context)    => Some(context)
     }
 
   def tryDefaultSslContext: Option[SSLContext] =

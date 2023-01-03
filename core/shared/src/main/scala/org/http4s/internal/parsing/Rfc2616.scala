@@ -39,8 +39,8 @@ private[http4s] object Rfc2616 {
    * token          = 1*<any CHAR except CTLs or separators>
    */
   val token: Parser[String] = {
-    val ascii = Set(0.toChar to 127.toChar: _*)
-    val ctl = Set(0.toChar to 31.toChar: _*) + 127.toChar
+    val ascii      = Set(0.toChar to 127.toChar: _*)
+    val ctl        = Set(0.toChar to 31.toChar: _*) + 127.toChar
     val separators = Set("()<>@,;:\\\"/[]?={} \t".toSeq: _*)
 
     val tchar = charIn(ascii -- ctl -- separators)
@@ -49,12 +49,12 @@ private[http4s] object Rfc2616 {
 
   final case class Rfc1123Date(
       wkday: Int,
-      day: Int,
+      day:   Int,
       month: Int,
-      year: Int,
-      hour: Int,
-      min: Int,
-      sec: Int,
+      year:  Int,
+      hour:  Int,
+      min:   Int,
+      sec:   Int,
   )
 
   val rfc1123Date: Parser[Rfc1123Date] = {
@@ -102,9 +102,8 @@ private[http4s] object Rfc2616 {
     val time = (twoDigit <* char(':')) ~ (twoDigit <* char(':')) ~ twoDigit
 
     /* rfc1123-date = wkday "," SP date1 SP time SP "GMT" */
-    ((wkday <* string(", ")) ~ (date1 <* sp) ~ (time <* string(" GMT"))).map {
-      case ((wkday, ((day, month), year)), ((hour, min), sec)) =>
-        Rfc1123Date(wkday, day, month, year, hour, min, sec)
+    ((wkday <* string(", ")) ~ (date1 <* sp) ~ (time <* string(" GMT"))).map { case ((wkday, ((day, month), year)), ((hour, min), sec)) =>
+      Rfc1123Date(wkday, day, month, year, hour, min, sec)
     }
   }
 }

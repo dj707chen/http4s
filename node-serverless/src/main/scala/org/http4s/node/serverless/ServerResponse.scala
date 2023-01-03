@@ -25,8 +25,8 @@ import scala.scalajs.js
 @nowarn
 trait ServerResponse extends js.Object with Writable {
   def writeHead(
-      statusCode: Int,
+      statusCode:    Int,
       statusMessage: String,
-      headers: js.Dictionary[String],
+      headers:       js.Dictionary[String],
   ): ServerResponse = js.native
 }

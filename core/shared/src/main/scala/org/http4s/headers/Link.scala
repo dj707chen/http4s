@@ -77,17 +77,16 @@ object Link {
     }
 
     val linkValueWithAttr: Parser[LinkValue] =
-      ((char('<') *> linkValue <* char('>')) ~ (char(';') *> ows *> linkParam).rep0).map {
-        case (linkValue, linkParams) =>
-          linkParams.foldLeft(linkValue) { case (lv, lp) =>
-            lp match {
-              case Rel(rel) =>
-                if (lv.rel.isDefined) lv else lv.copy(rel = Some(rel))
-              case Rev(rev) => lv.copy(rev = Some(rev))
-              case Title(title) => lv.copy(title = Some(title))
-              case Type(tpe) => lv.copy(`type` = Some(tpe))
-            }
+      ((char('<') *> linkValue <* char('>')) ~ (char(';') *> ows *> linkParam).rep0).map { case (linkValue, linkParams) =>
+        linkParams.foldLeft(linkValue) { case (lv, lp) =>
+          lp match {
+            case Rel(rel)     =>
+              if (lv.rel.isDefined) lv else lv.copy(rel = Some(rel))
+            case Rev(rev)     => lv.copy(rev = Some(rev))
+            case Title(title) => lv.copy(title = Some(title))
+            case Type(tpe)    => lv.copy(`type` = Some(tpe))
           }
+        }
       }
 
     headerRep1(linkValueWithAttr).map(links => Link(links.head, links.tail: _*))

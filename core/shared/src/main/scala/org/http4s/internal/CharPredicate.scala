@@ -33,13 +33,13 @@ sealed abstract class CharPredicate extends (Char => Boolean) {
       case _ => sys.error("CharPredicate is not MaskBased")
     }
 
-  def ++(that: CharPredicate): CharPredicate
-  def ++(chars: Seq[Char]): CharPredicate
-  def --(that: CharPredicate): CharPredicate
-  def --(chars: Seq[Char]): CharPredicate
+  def ++(that:  CharPredicate): CharPredicate
+  def ++(chars: Seq[Char]):     CharPredicate
+  def --(that:  CharPredicate): CharPredicate
+  def --(chars: Seq[Char]):     CharPredicate
 
-  def ++(char: Char): CharPredicate = this ++ (char :: Nil)
-  def --(char: Char): CharPredicate = this -- (char :: Nil)
+  def ++(char: Char):    CharPredicate = this ++ (char :: Nil)
+  def --(char: Char):    CharPredicate = this -- (char :: Nil)
   def ++(chars: String): CharPredicate = this ++ chars.toIndexedSeq
   def --(chars: String): CharPredicate = this -- chars.toIndexedSeq
 
@@ -48,8 +48,8 @@ sealed abstract class CharPredicate extends (Char => Boolean) {
   def negated: CharPredicate =
     this match {
       case Empty => All
-      case All => Empty
-      case x => from(c => !x(c))
+      case All   => Empty
+      case x     => from(c => !x(c))
     }
 
   def matchesAny(string: String): Boolean = {
@@ -99,20 +99,20 @@ sealed abstract class CharPredicate extends (Char => Boolean) {
 }
 
 object CharPredicate {
-  val Empty: CharPredicate = MaskBased(0L, 0L)
-  val All: CharPredicate = from(_ => true)
-  val LowerAlpha: CharPredicate = CharPredicate('a' to 'z')
-  val UpperAlpha: CharPredicate = CharPredicate('A' to 'Z')
-  val Alpha: CharPredicate = LowerAlpha ++ UpperAlpha
-  val Digit: CharPredicate = CharPredicate('0' to '9')
-  val Digit19: CharPredicate = CharPredicate('1' to '9')
-  val AlphaNum: CharPredicate = Alpha ++ Digit
+  val Empty:          CharPredicate = MaskBased(0L, 0L)
+  val All:            CharPredicate = from(_ => true)
+  val LowerAlpha:     CharPredicate = CharPredicate('a' to 'z')
+  val UpperAlpha:     CharPredicate = CharPredicate('A' to 'Z')
+  val Alpha:          CharPredicate = LowerAlpha ++ UpperAlpha
+  val Digit:          CharPredicate = CharPredicate('0' to '9')
+  val Digit19:        CharPredicate = CharPredicate('1' to '9')
+  val AlphaNum:       CharPredicate = Alpha ++ Digit
   val LowerHexLetter: CharPredicate = CharPredicate('a' to 'f')
   val UpperHexLetter: CharPredicate = CharPredicate('A' to 'F')
-  val HexLetter: CharPredicate = LowerHexLetter ++ UpperHexLetter
-  val HexDigit: CharPredicate = Digit ++ HexLetter
-  val Visible: CharPredicate = CharPredicate('\u0021' to '\u007e')
-  val Printable: CharPredicate = Visible ++ ' '
+  val HexLetter:      CharPredicate = LowerHexLetter ++ UpperHexLetter
+  val HexDigit:       CharPredicate = Digit ++ HexLetter
+  val Visible:        CharPredicate = CharPredicate('\u0021' to '\u007e')
+  val Printable:      CharPredicate = Visible ++ ' '
 
   def from(predicate: Char => Boolean): CharPredicate =
     predicate match {
@@ -129,9 +129,9 @@ object CharPredicate {
     implicit def fromPredicate(predicate: Char => Boolean): ApplyMagnet = new ApplyMagnet(
       from(predicate)
     )
-    implicit def fromChar(c: Char): ApplyMagnet = fromChars(c :: Nil)
-    implicit def fromCharArray(array: Array[Char]): ApplyMagnet = fromChars(array.toIndexedSeq)
-    implicit def fromString(chars: String): ApplyMagnet = fromChars(chars)
+    implicit def fromChar(c: Char):                         ApplyMagnet = fromChars(c :: Nil)
+    implicit def fromCharArray(array: Array[Char]):         ApplyMagnet = fromChars(array.toIndexedSeq)
+    implicit def fromString(chars: String):                 ApplyMagnet = fromChars(chars)
 
     implicit def fromChars(chars: Seq[Char]): ApplyMagnet =
       chars match {
@@ -140,7 +140,7 @@ object CharPredicate {
             if (ix == chars.length) result else rec(ix + 1, result ++ chars(ix))
           new ApplyMagnet(rec(0, Empty))
         case r: NumericRange[Char] => new ApplyMagnet(new RangeBased(r))
-        case _ => new ApplyMagnet(new ArrayBased(chars.toArray))
+        case _                                                 => new ApplyMagnet(new ArrayBased(chars.toArray))
       }
   }
 
@@ -151,8 +151,7 @@ object CharPredicate {
   // scalafix:off Http4sGeneralLinters.nonValidatingCopyConstructor; bincompat until 1.0
 
   // efficient handling of 7bit-ASCII chars
-  final case class MaskBased private[CharPredicate] (lowMask: Long, highMask: Long)
-      extends CharPredicate {
+  final case class MaskBased private[CharPredicate] (lowMask: Long, highMask: Long) extends CharPredicate {
 
     def apply(c: Char): Boolean = {
       val mask = if (c < 64) lowMask else highMask
@@ -164,16 +163,16 @@ object CharPredicate {
         case Empty => this
         case _ if this == Empty => that
         case MaskBased(low, high) => MaskBased(lowMask | low, highMask | high)
-        case _ => this.or(that)
+        case _                    => this.or(that)
       }
 
     def ++(chars: Seq[Char]): CharPredicate =
       chars.foldLeft(this: CharPredicate) {
-        case (_: MaskBased, c) if unmaskable(c) =>
+        case (_: MaskBased, c) if unmaskable(c)  =>
           new ArrayBased(chars.toArray) ++ new ArrayBased(toArray)
         case (MaskBased(low, high), c) if c < 64 => MaskBased(low | 1L << c.toLong, high)
-        case (MaskBased(low, high), c) => MaskBased(low, high | 1L << c.toLong)
-        case (x, _) => x // once the fold acc is not a MaskBased we are done
+        case (MaskBased(low, high), c)           => MaskBased(low, high | 1L << c.toLong)
+        case (x, _)                              => x // once the fold acc is not a MaskBased we are done
       }
 
     def --(that: CharPredicate): CharPredicate =
@@ -181,16 +180,16 @@ object CharPredicate {
         case Empty => this
         case _ if this == Empty => this
         case MaskBased(low, high) => MaskBased(lowMask & ~low, highMask & ~high)
-        case _ => this.andNot(that)
+        case _                    => this.andNot(that)
       }
 
     def --(chars: Seq[Char]): CharPredicate =
       if (this != Empty)
         chars.foldLeft(this: CharPredicate) {
-          case (_: MaskBased, c) if unmaskable(c) => this.andNot(new ArrayBased(chars.toArray))
+          case (_: MaskBased, c) if unmaskable(c)  => this.andNot(new ArrayBased(chars.toArray))
           case (MaskBased(low, high), c) if c < 64 => MaskBased(low & ~(1L << c.toLong), high)
-          case (MaskBased(low, high), c) => MaskBased(low, high & ~(1L << c.toLong))
-          case (x, _) => x // once the fold acc is not a MaskBased we are done
+          case (MaskBased(low, high), c)           => MaskBased(low, high & ~(1L << c.toLong))
+          case (x, _)                              => x // once the fold acc is not a MaskBased we are done
         }
       else this
 
@@ -199,7 +198,7 @@ object CharPredicate {
         case Empty => Empty
         case _ if this == Empty => Empty
         case MaskBased(low, high) => MaskBased(lowMask & low, highMask & high)
-        case _ => this.and(that)
+        case _                    => this.and(that)
       }
 
     def size: Int = java.lang.Long.bitCount(lowMask) + java.lang.Long.bitCount(highMask)
@@ -230,14 +229,13 @@ object CharPredicate {
     override def toString(): String = "CharPredicate.MaskBased(" + new String(toArray) + ')'
   }
 
-  final class RangeBased private[CharPredicate] (private val range: NumericRange[Char])
-      extends CharPredicate {
+  final class RangeBased private[CharPredicate] (private val range: NumericRange[Char]) extends CharPredicate {
     def apply(c: Char): Boolean = range contains c
 
     def ++(that: CharPredicate): CharPredicate =
       that match {
         case Empty => this
-        case _ => this.or(that)
+        case _     => this.or(that)
       }
 
     def ++(other: Seq[Char]): CharPredicate =
@@ -246,7 +244,7 @@ object CharPredicate {
     def --(that: CharPredicate): CharPredicate =
       that match {
         case Empty => this
-        case _ => this.andNot(that)
+        case _     => this.andNot(that)
       }
 
     def --(other: Seq[Char]): CharPredicate =
@@ -255,7 +253,7 @@ object CharPredicate {
     def intersect(that: CharPredicate): CharPredicate =
       that match {
         case Empty => Empty
-        case _ => this.and(that)
+        case _     => this.and(that)
       }
 
     override def toString(): String =
@@ -263,8 +261,7 @@ object CharPredicate {
         s"step = ${range.step.toInt}, inclusive = ${range.isInclusive})"
   }
 
-  final class ArrayBased private[CharPredicate] (private val chars: Array[Char])
-      extends CharPredicate {
+  final class ArrayBased private[CharPredicate] (private val chars: Array[Char]) extends CharPredicate {
     import java.util.Arrays._
     sort(chars)
 
@@ -305,15 +302,14 @@ object CharPredicate {
     override def toString(): String = "CharPredicate.ArrayBased(" + new String(chars) + ')'
   }
 
-  final case class General private[CharPredicate] (predicate: Char => Boolean)
-      extends CharPredicate {
+  final case class General private[CharPredicate] (predicate: Char => Boolean) extends CharPredicate {
     def apply(c: Char): Boolean = predicate(c)
 
     def ++(that: CharPredicate): CharPredicate =
       that match {
-        case Empty => this
+        case Empty                  => this
         case General(thatPredicate) => from(c => predicate(c) || thatPredicate(c))
-        case _ => from(c => predicate(c) || that(c))
+        case _                      => from(c => predicate(c) || that(c))
       }
 
     def ++(chars: Seq[Char]): CharPredicate =
@@ -324,9 +320,9 @@ object CharPredicate {
 
     def --(that: CharPredicate): CharPredicate =
       that match {
-        case Empty => this
+        case Empty                  => this
         case General(thatPredicate) => from(c => predicate(c) && !thatPredicate(c))
-        case _ => from(c => predicate(c) && !that(c))
+        case _                      => from(c => predicate(c) && !that(c))
       }
 
     def --(chars: Seq[Char]): CharPredicate =
@@ -337,9 +333,9 @@ object CharPredicate {
 
     def intersect(that: CharPredicate): CharPredicate =
       that match {
-        case Empty => Empty
+        case Empty      => Empty
         case General(_) => from(c => predicate(c) && that(c))
-        case _ => this.and(that)
+        case _          => this.and(that)
       }
 
     override def toString(): String = "CharPredicate.General@" + System.identityHashCode(this)

@@ -29,20 +29,20 @@ import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
 
 final case class ServerSentEvent(
-    data: Option[String] = None,
+    data:      Option[String] = None,
     eventType: Option[String] = None,
-    id: Option[EventId] = None,
-    retry: Option[FiniteDuration] = None,
-    comment: Option[String] = None,
+    id:        Option[EventId] = None,
+    retry:     Option[FiniteDuration] = None,
+    comment:   Option[String] = None,
 ) extends Renderable {
   def render(writer: Writer): writer.type = {
     data.foreach(writer << "data: " << _ << "\n")
     comment.foreach(writer << ": " << _ << "\n")
     eventType.foreach(writer << "event: " << _ << "\n")
     id match {
-      case None =>
+      case None                =>
       case Some(EventId.reset) => writer << "id\n"
-      case Some(EventId(id)) => writer << "id: " << id << "\n"
+      case Some(EventId(id))   => writer << "id: " << id << "\n"
     }
     retry.foreach(writer << "retry: " << _.toMillis << "\n")
     writer << "\n"
@@ -78,12 +78,12 @@ object ServerSentEvent {
     }
     val emptyBuffer = LineBuffer()
     def go(
-        dataBuffer: LineBuffer,
-        eventType: Option[String],
-        id: Option[EventId],
-        retry: Option[Long],
+        dataBuffer:    LineBuffer,
+        eventType:     Option[String],
+        id:            Option[EventId],
+        retry:         Option[Long],
         commentBuffer: LineBuffer,
-        stream: Stream[F, String],
+        stream:        Stream[F, String],
     ): Pull[F, ServerSentEvent, Unit] = {
       //      def dispatch(h: Handle[F, String]): Pull[F, ServerSentEvent, Nothing] =
       def dispatch(stream: Stream[F, String]): Pull[F, ServerSentEvent, Unit] = {
@@ -98,37 +98,37 @@ object ServerSentEvent {
       }
 
       def handleLine(
-          field: String,
-          value: String,
+          field:  String,
+          value:  String,
           stream: Stream[F, String],
       ): Pull[F, ServerSentEvent, Unit] =
         field match {
-          case "" =>
+          case ""      =>
             go(dataBuffer, eventType, id, retry, commentBuffer.append(value), stream)
           case "event" =>
             go(dataBuffer, Some(value), id, retry, commentBuffer, stream)
-          case "data" =>
+          case "data"  =>
             go(dataBuffer.append(value), eventType, id, retry, commentBuffer, stream)
-          case "id" =>
+          case "id"    =>
             val newId = EventId(value)
             go(dataBuffer, eventType, Some(newId), retry, commentBuffer, stream)
           case "retry" =>
             val newRetry = Try(value.toLong).toOption.orElse(retry)
             go(dataBuffer, eventType, id, newRetry, commentBuffer, stream)
-          case _ =>
+          case _       =>
             go(dataBuffer, eventType, id, retry, commentBuffer, stream)
         }
 
       stream.pull.uncons1.flatMap {
-        case None =>
+        case None               =>
           Pull.done
         case Some(("", stream)) =>
           dispatch(stream)
-        case Some((s, stream)) =>
+        case Some((s, stream))  =>
           FieldSeparator.split(s, 2) match {
             case Array(field, value) =>
               handleLine(field, value, stream)
-            case Array(line) =>
+            case Array(line)         =>
               handleLine(line, "", stream)
           }
       }

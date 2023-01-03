@@ -38,22 +38,22 @@ import org.typelevel.vault.Key
   *                           default: BadRequest
   */
 sealed abstract class WebSocketBuilder2[F[_]: Applicative] private (
-    headers: Headers,
+    headers:               Headers,
     onNonWebSocketRequest: F[Response[F]],
-    onHandshakeFailure: F[Response[F]],
-    onClose: F[Unit],
-    filterPingPongs: Boolean,
-    webSocketKey: Key[WebSocketContext[F]],
+    onHandshakeFailure:    F[Response[F]],
+    onClose:               F[Unit],
+    filterPingPongs:       Boolean,
+    webSocketKey:          Key[WebSocketContext[F]],
 ) {
   import WebSocketBuilder2.impl
 
   private def copy(
-      headers: Headers = this.headers,
+      headers:               Headers = this.headers,
       onNonWebSocketRequest: F[Response[F]] = this.onNonWebSocketRequest,
-      onHandshakeFailure: F[Response[F]] = this.onHandshakeFailure,
-      onClose: F[Unit] = this.onClose,
-      filterPingPongs: Boolean = this.filterPingPongs,
-      webSocketKey: Key[WebSocketContext[F]] = this.webSocketKey,
+      onHandshakeFailure:    F[Response[F]] = this.onHandshakeFailure,
+      onClose:               F[Unit] = this.onClose,
+      filterPingPongs:       Boolean = this.filterPingPongs,
+      webSocketKey:          Key[WebSocketContext[F]] = this.webSocketKey,
   ): WebSocketBuilder2[F] = WebSocketBuilder2.impl[F](
     headers,
     onNonWebSocketRequest,
@@ -155,7 +155,7 @@ sealed abstract class WebSocketBuilder2[F[_]: Applicative] private (
     * @return
     */
   def build(
-      send: Stream[F, WebSocketFrame],
+      send:    Stream[F, WebSocketFrame],
       receive: Pipe[F, WebSocketFrame, Unit],
   ): F[Response[F]] = {
 
@@ -181,30 +181,28 @@ object WebSocketBuilder2 {
       webSocketKey: Key[WebSocketContext[F]]
   ): WebSocketBuilder2[F] =
     impl(
-      headers = Headers.empty,
-      onNonWebSocketRequest =
-        Response[F](Status.NotImplemented).withEntity("This is a WebSocket route.").pure[F],
-      onHandshakeFailure =
-        Response[F](Status.BadRequest).withEntity("WebSocket handshake failed.").pure[F],
-      onClose = Applicative[F].unit,
-      filterPingPongs = true,
-      webSocketKey = webSocketKey,
+      headers               = Headers.empty,
+      onNonWebSocketRequest = Response[F](Status.NotImplemented).withEntity("This is a WebSocket route.").pure[F],
+      onHandshakeFailure    = Response[F](Status.BadRequest).withEntity("WebSocket handshake failed.").pure[F],
+      onClose               = Applicative[F].unit,
+      filterPingPongs       = true,
+      webSocketKey          = webSocketKey,
     )
 
   private def impl[F[_]: Applicative](
-      headers: Headers,
+      headers:               Headers,
       onNonWebSocketRequest: F[Response[F]],
-      onHandshakeFailure: F[Response[F]],
-      onClose: F[Unit],
-      filterPingPongs: Boolean,
-      webSocketKey: Key[WebSocketContext[F]],
+      onHandshakeFailure:    F[Response[F]],
+      onClose:               F[Unit],
+      filterPingPongs:       Boolean,
+      webSocketKey:          Key[WebSocketContext[F]],
   ): WebSocketBuilder2[F] =
     new WebSocketBuilder2[F](
-      headers = headers,
+      headers               = headers,
       onNonWebSocketRequest = onNonWebSocketRequest,
-      onHandshakeFailure = onHandshakeFailure,
-      onClose = onClose,
-      filterPingPongs = filterPingPongs,
-      webSocketKey = webSocketKey,
+      onHandshakeFailure    = onHandshakeFailure,
+      onClose               = onClose,
+      filterPingPongs       = filterPingPongs,
+      webSocketKey          = webSocketKey,
     ) {}
 }

@@ -29,15 +29,15 @@ import org.http4s.internal.reduceComparisons
   *       could not be used in a [[cats.data.NonEmptySet]].
   */
 sealed abstract class RequestPrelude extends Product with Serializable {
-  def headers: Headers
+  def headers:     Headers
   def httpVersion: HttpVersion
-  def method: Method
-  def uri: Uri
+  def method:      Method
+  def uri:         Uri
 
-  def withHeaders(value: Headers): RequestPrelude
+  def withHeaders(value:     Headers):     RequestPrelude
   def withHttpVersion(value: HttpVersion): RequestPrelude
-  def withMethod(value: Method): RequestPrelude
-  def withUri(value: Uri): RequestPrelude
+  def withMethod(value:      Method):      RequestPrelude
+  def withUri(value:         Uri):         RequestPrelude
 
   // final //
 
@@ -60,10 +60,10 @@ sealed abstract class RequestPrelude extends Product with Serializable {
 
 object RequestPrelude {
   private[this] final case class RequestPreludeImpl(
-      override final val headers: Headers,
+      override final val headers:     Headers,
       override final val httpVersion: HttpVersion,
-      override final val method: Method,
-      override final val uri: Uri,
+      override final val method:      Method,
+      override final val uri:         Uri,
   ) extends RequestPrelude {
     override final def withHeaders(value: Headers): RequestPrelude =
       this.copy(headers = value)
@@ -79,10 +79,10 @@ object RequestPrelude {
   }
 
   def apply(
-      headers: Headers,
+      headers:     Headers,
       httpVersion: HttpVersion,
-      method: Method,
-      uri: Uri,
+      method:      Method,
+      uri:         Uri,
   ): RequestPrelude =
     RequestPreludeImpl(
       headers,

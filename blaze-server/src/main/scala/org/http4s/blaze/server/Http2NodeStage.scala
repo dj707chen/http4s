@@ -46,17 +46,17 @@ import scala.concurrent.duration.FiniteDuration
 import scala.util._
 
 private class Http2NodeStage[F[_]](
-    streamId: Int,
-    timeout: Duration,
+    streamId:                              Int,
+    timeout:                               Duration,
     implicit private val executionContext: ExecutionContext,
-    attributes: () => Vault,
-    httpApp: HttpApp[F],
-    serviceErrorHandler: ServiceErrorHandler[F],
-    responseHeaderTimeout: Duration,
-    idleTimeout: Duration,
-    scheduler: TickWheelExecutor,
-    dispatcher: Dispatcher[F],
-)(implicit F: Async[F])
+    attributes:                            () => Vault,
+    httpApp:                               HttpApp[F],
+    serviceErrorHandler:                   ServiceErrorHandler[F],
+    responseHeaderTimeout:                 Duration,
+    idleTimeout:                           Duration,
+    scheduler:                             TickWheelExecutor,
+    dispatcher:                            Dispatcher[F],
+)(implicit F:                              Async[F])
     extends TailStage[StreamFrame] {
   // micro-optimization: unwrap the service and call its .run directly
   private[this] val runApp = httpApp.run
@@ -73,7 +73,7 @@ private class Http2NodeStage[F[_]](
     idleTimeout match {
       case f: FiniteDuration =>
         val cb: Callback[TimeoutException] = {
-          case Left(t) =>
+          case Left(t)  =>
             logger.error(t)("Error in idle timeout callback")
             closePipeline(Some(t))
           case Right(_) =>
@@ -106,7 +106,7 @@ private class Http2NodeStage[F[_]](
 
   /** collect the body: a maxlen < 0 is interpreted as undefined */
   private def getBody(maxlen: Long): EntityBody[F] = {
-    var complete = false
+    var complete  = false
     var bytesRead = 0L
 
     val t = F.async[Option[Chunk[Byte]]] { cb =>
@@ -122,12 +122,12 @@ private class Http2NodeStage[F[_]](
               // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-http2-17#section-8.1.2  -> 8.2.1.6
               if (complete && maxlen > 0 && bytesRead != maxlen) {
                 val msg = s"Entity too small. Expected $maxlen, received $bytesRead"
-                val e = Http2Exception.PROTOCOL_ERROR.rst(streamId, msg)
+                val e   = Http2Exception.PROTOCOL_ERROR.rst(streamId, msg)
                 closePipeline(Some(e))
                 cb(Either.left(InvalidBodyException(msg)))
               } else if (maxlen > 0 && bytesRead > maxlen) {
                 val msg = s"Entity too large. Expected $maxlen, received bytesRead"
-                val e = Http2Exception.PROTOCOL_ERROR.rst(streamId, msg)
+                val e   = Http2Exception.PROTOCOL_ERROR.rst(streamId, msg)
                 closePipeline(Some(e))
                 cb(Either.left(InvalidBodyException(msg)))
               } else cb(Either.right(Some(Chunk.array(bytes.array))))
@@ -139,7 +139,7 @@ private class Http2NodeStage[F[_]](
             case Success(other) => // This should cover it
               val msg = "Received invalid frame while accumulating body: " + other
               logger.info(msg)
-              val e = Http2Exception.PROTOCOL_ERROR.rst(streamId, msg)
+              val e   = Http2Exception.PROTOCOL_ERROR.rst(streamId, msg)
               closePipeline(Some(e))
               cb(Either.left(InvalidBodyException(msg)))
 
@@ -164,11 +164,11 @@ private class Http2NodeStage[F[_]](
 
   private def checkAndRunRequest(hs: Headers, endStream: Boolean): Unit = {
     val headers = new ListBuffer[Header.ToRaw]
-    var method: HMethod = null
-    var scheme: String = null
-    var path: Uri = null
-    var contentLength: Long = -1
-    var error: String = ""
+    var method:        HMethod = null
+    var scheme:        String  = null
+    var path:          Uri     = null
+    var contentLength: Long    = -1
+    var error:         String  = ""
     var pseudoDone = false
 
     hs.foreach {
@@ -176,7 +176,7 @@ private class Http2NodeStage[F[_]](
         if (pseudoDone) error += "Pseudo header in invalid position. "
         else if (method == null) org.http4s.Method.fromString(v) match {
           case Right(m) => method = m
-          case Left(e) => error = s"$error Invalid method: $e "
+          case Left(e)  => error  = s"$error Invalid method: $e "
         }
         else error += "Multiple ':method' headers defined. "
 
@@ -188,15 +188,15 @@ private class Http2NodeStage[F[_]](
       case (PseudoHeaders.Path, v) =>
         if (pseudoDone) error += "Pseudo header in invalid position. "
         else if (path == null) Uri.requestTarget(v) match {
-          case Right(p) => path = p
-          case Left(e) => error = s"$error Invalid path: $e"
+          case Right(p) => path  = p
+          case Left(e)  => error = s"$error Invalid path: $e"
         }
         else error += "Multiple ':path' headers defined. "
 
       case (PseudoHeaders.Authority, _) => // NOOP; TODO: we should keep the authority header
         if (pseudoDone) error += "Pseudo header in invalid position. "
 
-      case h @ (k, _) if k.startsWith(":") => error += s"Invalid pseudo header: $h. "
+      case h @ (k, _) if k.startsWith(":")            => error += s"Invalid pseudo header: $h. "
       case (k, _) if !HeaderNames.validH2HeaderKey(k) => error += s"Invalid header key: $k. "
 
       case hs => // Non pseudo headers
@@ -233,8 +233,8 @@ private class Http2NodeStage[F[_]](
       closePipeline(Some(Http2Exception.PROTOCOL_ERROR.rst(streamId, error)))
     else {
       val body = if (endStream) EmptyBody else getBody(contentLength)
-      val hs = Headers(headers.result())
-      val req = Request(method, path, HttpVersion.`HTTP/2`, hs, body, attributes())
+      val hs   = Headers(headers.result())
+      val req  = Request(method, path, HttpVersion.`HTTP/2`, hs, body, attributes())
       executionContext.execute(new Runnable {
         def run(): Unit = {
           val action = F
@@ -244,7 +244,7 @@ private class Http2NodeStage[F[_]](
 
           val fa = action.attempt.flatMap {
             case Right(_) => F.unit
-            case Left(t) =>
+            case Left(t)  =>
               F.delay(logger.error(t)(s"Error running request: $req")).attempt *> F.delay(
                 closePipeline(None)
               )
@@ -275,9 +275,9 @@ private class Http2NodeStage[F[_]](
     }
 
     new Http2Writer(this, hs).writeEntityBody(resp.body).attempt.map {
-      case Right(_) => closePipeline(None)
+      case Right(_)      => closePipeline(None)
       case Left(Cmd.EOF) => stageShutdown()
-      case Left(t) => closePipeline(Some(t))
+      case Left(t)       => closePipeline(Some(t))
     }
   }
 

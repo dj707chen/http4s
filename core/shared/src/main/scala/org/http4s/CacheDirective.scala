@@ -33,9 +33,9 @@ import org.typelevel.ci.CIString
 import scala.concurrent.duration.Duration
 
 sealed trait CacheDirective extends Product with Renderable {
-  val name: CIString = CIString(productPrefix.replace("$minus", "-"))
-  def value: String = name.toString
-  override def toString: String = value
+  val name:                   CIString    = CIString(productPrefix.replace("$minus", "-"))
+  def value:                  String      = name.toString
+  override def toString:      String      = value
   def render(writer: Writer): writer.type = writer.append(value)
 }
 
@@ -99,7 +99,7 @@ object CacheDirective {
 
   private final case class CustomCacheDirective(
       override val name: CIString,
-      argument: Option[String] = None,
+      argument:          Option[String] = None,
   ) extends CacheDirective {
     override def value: String = name.toString + argument.fold("")("=\"" + _ + '"')
   }

@@ -50,23 +50,23 @@ object PushSupport {
         .getOrElse(Vector(PushLocation(newUrl, cascade)))
 
       response.copy(
-        body = response.body,
+        body       = response.body,
         attributes = response.attributes.insert(PushSupport.pushLocationKey, newPushResouces),
       )
     }
   }
 
   private def collectResponse[F[_]](
-      r: Vector[PushLocation],
-      req: Request[F],
-      verify: String => Boolean,
-      routes: HttpRoutes[F],
+      r:        Vector[PushLocation],
+      req:      Request[F],
+      verify:   String => Boolean,
+      routes:   HttpRoutes[F],
   )(implicit F: Monad[F]): F[Vector[PushResponse[F]]] = {
     val emptyCollect: F[Vector[PushResponse[F]]] = F.pure(Vector.empty[PushResponse[F]])
 
     def fetchAndAdd(facc: F[Vector[PushResponse[F]]], v: PushLocation): F[Vector[PushResponse[F]]] =
       routes(req.withPathInfo(Uri.Path.unsafeFromString(v.location))).value.flatMap {
-        case None => emptyCollect
+        case None           => emptyCollect
         case Some(response) =>
           if (v.cascade) {
             val pr = PushResponse(v.location, response)
@@ -74,7 +74,7 @@ object PushSupport {
               case Some(pushed) => // Need to gather the sub resources
                 val fsubs = collectResponse(pushed, req, verify, routes)
                 F.map2(facc, fsubs)(_ ++ _ :+ pr)
-              case None => facc.map(_ :+ pr)
+              case None         => facc.map(_ :+ pr)
             }
           } else {
             facc.map(_ :+ PushResponse(v.location, response))

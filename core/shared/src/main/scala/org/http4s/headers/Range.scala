@@ -39,7 +39,7 @@ object Range {
   def apply(begin: Long): Range = apply(SubRange(begin, None))
 
   object SubRange {
-    def apply(first: Long): SubRange = SubRange(first, None)
+    def apply(first: Long):               SubRange = SubRange(first, None)
     def apply(first: Long, second: Long): SubRange = SubRange(first, Some(second))
   }
 

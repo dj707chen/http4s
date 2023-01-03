@@ -40,8 +40,8 @@ private[http4s] object Trampoline extends ExecutionContextExecutor {
   // Only safe to use from a single thread
   private final class ThreadLocalTrampoline extends ExecutionContext {
     private var running = false
-    private var r0, r1, r2: Runnable = null
-    private var rest: ArrayDeque[Runnable] = null
+    private var r0, r1, r2: Runnable             = null
+    private var rest:       ArrayDeque[Runnable] = null
 
     override def execute(runnable: Runnable): Unit = {
       if (r0 == null) r0 = runnable
@@ -64,7 +64,7 @@ private[http4s] object Trampoline extends ExecutionContextExecutor {
     private def run(): Unit = {
       val r = next()
       if (r == null) {
-        rest = null // don't want a memory leak from potentially large array buffers
+        rest    = null // don't want a memory leak from potentially large array buffers
         running = false
       } else {
         try r.run()

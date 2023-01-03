@@ -41,46 +41,46 @@ final class ServletContextOps private[syntax] (val self: ServletContext) extends
     */
   @deprecated("Use mountRoutes instead", "0.23.11")
   def mountService[F[_]: Async](
-      name: String,
-      service: HttpRoutes[F],
-      mapping: String = "/*",
+      name:       String,
+      service:    HttpRoutes[F],
+      mapping:    String = "/*",
       dispatcher: Dispatcher[F],
   ): ServletRegistration.Dynamic =
     mountHttpApp(name, service.orNotFound, mapping, dispatcher, defaults.ResponseTimeout)
 
   def mountRoutes[F[_]: Async](
-      name: String,
-      service: HttpRoutes[F],
-      mapping: String = "/*",
-      dispatcher: Dispatcher[F],
+      name:         String,
+      service:      HttpRoutes[F],
+      mapping:      String = "/*",
+      dispatcher:   Dispatcher[F],
       asyncTimeout: Duration = defaults.ResponseTimeout,
   ): ServletRegistration.Dynamic =
     mountHttpApp(name, service.orNotFound, mapping, dispatcher, asyncTimeout)
 
   @deprecated("Use mountHttpApp with async timeout param instead", "0.23.11")
   private[servlet] def mountHttpApp[F[_]: Async](
-      name: String,
-      service: HttpApp[F],
-      mapping: String,
+      name:       String,
+      service:    HttpApp[F],
+      mapping:    String,
       dispatcher: Dispatcher[F],
   ): ServletRegistration.Dynamic =
     mountHttpApp(name, service, mapping, dispatcher, defaults.ResponseTimeout)
 
   def mountHttpApp[F[_]: Async](
-      name: String,
-      service: HttpApp[F],
-      mapping: String = "/*",
-      dispatcher: Dispatcher[F],
+      name:         String,
+      service:      HttpApp[F],
+      mapping:      String = "/*",
+      dispatcher:   Dispatcher[F],
       asyncTimeout: Duration = defaults.ResponseTimeout,
   ): ServletRegistration.Dynamic = {
     val servlet = new AsyncHttp4sServlet(
-      service = service,
-      asyncTimeout = asyncTimeout,
-      servletIo = NonBlockingServletIo(DefaultChunkSize),
+      service             = service,
+      asyncTimeout        = asyncTimeout,
+      servletIo           = NonBlockingServletIo(DefaultChunkSize),
       serviceErrorHandler = DefaultServiceErrorHandler[F],
       dispatcher,
     )
-    val reg = self.addServlet(name, servlet)
+    val reg     = self.addServlet(name, servlet)
     reg.setLoadOnStartup(1)
     reg.setAsyncSupported(true)
     reg.addMapping(mapping)

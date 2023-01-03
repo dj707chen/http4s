@@ -39,7 +39,7 @@ object GZip {
 
   def apply[F[_]](bufferSize: Int = 32 * 1024)(client: Client[F])(implicit F: Async[F]): Client[F] =
     Client[F] { req =>
-      val reqWithEncoding = addHeaders(req)
+      val reqWithEncoding  = addHeaders(req)
       val responseResource = client.run(reqWithEncoding)
 
       responseResource.map { actualResponse =>
@@ -51,16 +51,15 @@ object GZip {
     req.headers.get[`Accept-Encoding`] match {
       case Some(_) =>
         req
-      case _ =>
+      case _       =>
         req.putHeaders(`Accept-Encoding`(supportedCompressions))
     }
 
   private def decompress[F[_]](bufferSize: Int, response: Response[F])(implicit
-      F: Async[F]
+      F:                                   Async[F]
   ): Response[F] =
     response.headers.get[`Content-Encoding`] match {
-      case Some(header)
-          if header.contentCoding == ContentCoding.gzip || header.contentCoding == ContentCoding.`x-gzip` =>
+      case Some(header) if header.contentCoding == ContentCoding.gzip || header.contentCoding == ContentCoding.`x-gzip` =>
         val gunzip: Pipe[F, Byte, Byte] =
           _.through(Compression[F].gunzip(bufferSize)).flatMap(_.content)
         response
@@ -79,10 +78,10 @@ object GZip {
 
   private def decompressWith[F[_]](
       decompressor: Pipe[F, Byte, Byte]
-  )(implicit F: Async[F]): Pipe[F, Byte, Byte] =
+  )(implicit F:     Async[F]): Pipe[F, Byte, Byte] =
     _.pull.peek1
       .flatMap {
-        case None => Pull.raiseError(EmptyBodyException)
+        case None                  => Pull.raiseError(EmptyBodyException)
         case Some((_, fullStream)) => Pull.output1(fullStream)
       }
       .stream
@@ -90,7 +89,7 @@ object GZip {
       .through(decompressor)
       .handleErrorWith {
         case EmptyBodyException => Stream.empty
-        case error => Stream.raiseError(error)
+        case error              => Stream.raiseError(error)
       }
 
   private def nonCompressionHeader(header: Header.Raw): Boolean =

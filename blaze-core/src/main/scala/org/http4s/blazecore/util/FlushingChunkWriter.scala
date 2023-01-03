@@ -27,11 +27,10 @@ import org.http4s.util.StringWriter
 import java.nio.ByteBuffer
 import scala.concurrent._
 
-private[http4s] class FlushingChunkWriter[F[_]](pipe: TailStage[ByteBuffer], trailer: F[Headers])(
-    implicit
-    protected val F: Async[F],
-    private val ec: ExecutionContext,
-    protected val dispatcher: Dispatcher[F],
+private[http4s] class FlushingChunkWriter[F[_]](pipe: TailStage[ByteBuffer], trailer: F[Headers])(implicit
+    protected val F:                                  Async[F],
+    private val ec:                                   ExecutionContext,
+    protected val dispatcher:                         Dispatcher[F],
 ) extends Http1Writer[F] {
   import ChunkWriter._
 

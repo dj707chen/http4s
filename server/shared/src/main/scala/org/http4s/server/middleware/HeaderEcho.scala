@@ -31,7 +31,7 @@ object HeaderEcho {
     */
   def apply[F[_]: Functor, G[_]](
       echoHeadersWhen: CIString => Boolean
-  )(http: Http[F, G]): Http[F, G] =
+  )(http:              Http[F, G]): Http[F, G] =
     Kleisli { (req: Request[G]) =>
       val headersToEcho = Headers(req.headers.headers.filter(h => echoHeadersWhen(h.name)))
 

@@ -47,15 +47,15 @@ private[http4s] trait WebSocketSupport[F[_]] extends Http1ServerStage[F] {
   protected def maxBufferSize: Option[Int]
 
   override protected def renderResponse(
-      req: Request[F],
-      resp: Response[F],
+      req:     Request[F],
+      resp:    Response[F],
       cleanup: () => Future[ByteBuffer],
   ): Unit = {
     val ws = resp.attributes.lookup(webSocketKey)
     logger.debug(s"Websocket key: $ws\nRequest headers: " + req.headers)
 
     ws match {
-      case None => super.renderResponse(req, resp, cleanup)
+      case None            => super.renderResponse(req, resp, cleanup)
       case Some(wsContext) =>
         val hdrs = req.headers.headers.map(h => (h.name.toString, h.value))
         if (WebSocketHandshake.isWebSocketRequest(hdrs))
@@ -74,7 +74,7 @@ private[http4s] trait WebSocketSupport[F[_]] extends Http1ServerStage[F] {
                   .flatMap {
                     case Right(resp) =>
                       F.delay(super.renderResponse(req, resp, cleanup))
-                    case Left(_) =>
+                    case Left(_)     =>
                       F.unit
                   }
 
@@ -101,10 +101,10 @@ private[http4s] trait WebSocketSupport[F[_]] extends Http1ServerStage[F] {
                 case Success(_) =>
                   logger.debug("Switching pipeline segments for websocket")
 
-                  val deadSignal = dispatcher.unsafeRunSync(SignallingRef[F, Boolean](false))
+                  val deadSignal     = dispatcher.unsafeRunSync(SignallingRef[F, Boolean](false))
                   val writeSemaphore = dispatcher.unsafeRunSync(Semaphore[F](1L))
-                  val sentClose = new AtomicBoolean(false)
-                  val segment =
+                  val sentClose      = new AtomicBoolean(false)
+                  val segment        =
                     LeafBuilder(
                       new Http4sWSStage[F](
                         wsContext.webSocket,

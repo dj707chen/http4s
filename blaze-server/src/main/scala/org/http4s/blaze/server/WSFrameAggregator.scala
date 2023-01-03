@@ -48,7 +48,7 @@ private class WSFrameAggregator extends MidStage[WebSocketFrame, WebSocketFrame]
 
   private def readLoop(frame: WebSocketFrame, p: Promise[WebSocketFrame]): Unit =
     frame match {
-      case _: Text => handleHead(frame, p)
+      case _: Text   => handleHead(frame, p)
       case _: Binary => handleHead(frame, p)
 
       case c: Continuation =>
@@ -104,14 +104,14 @@ private class WSFrameAggregator extends MidStage[WebSocketFrame, WebSocketFrame]
     }
 
   // Just forward write requests
-  def writeRequest(data: WebSocketFrame): Future[Unit] = channelWrite(data)
+  def writeRequest(data: WebSocketFrame):                          Future[Unit] = channelWrite(data)
   override def writeRequest(data: collection.Seq[WebSocketFrame]): Future[Unit] = channelWrite(data)
 }
 
 private object WSFrameAggregator {
   private final class Accumulator {
     private[this] val queue = new mutable.Queue[WebSocketFrame]
-    private[this] var size = 0
+    private[this] var size  = 0
 
     def isEmpty: Boolean = queue.isEmpty
 
@@ -119,7 +119,7 @@ private object WSFrameAggregator {
       // The first frame needs to not be a continuation
       if (queue.isEmpty) frame match {
         case _: Text | _: Binary => // nop
-        case f =>
+        case f                   =>
           throw bug(s"Shouldn't get here. Wrong type: ${f.getClass.getName}")
       }
       size += frame.length
@@ -129,7 +129,7 @@ private object WSFrameAggregator {
 
     def take(): WebSocketFrame = {
       val isText = queue.head match {
-        case _: Text => true
+        case _: Text   => true
         case _: Binary => false
         case f =>
           // shouldn't happen as it's guarded for in `append`

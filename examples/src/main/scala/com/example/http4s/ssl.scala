@@ -34,7 +34,7 @@ import javax.net.ssl.KeyManagerFactory
 import javax.net.ssl.SSLContext
 
 object ssl {
-  val keystorePassword: String = "password"
+  val keystorePassword:   String = "password"
   val keyManagerPassword: String = "secure"
 
   val keystorePath: String = Paths.get("../server.jks").toAbsolutePath.toString
@@ -42,11 +42,11 @@ object ssl {
   val storeInfo: StoreInfo = StoreInfo(keystorePath, keystorePassword)
 
   def loadContextFromClasspath[F[_]](keystorePassword: String, keyManagerPass: String)(implicit
-      F: Sync[F]
+      F:                                               Sync[F]
   ): F[SSLContext] =
     F.delay {
       val ksStream = this.getClass.getResourceAsStream("/server.jks")
-      val ks = KeyStore.getInstance("JKS")
+      val ks       = KeyStore.getInstance("JKS")
       ks.load(ksStream, keystorePassword.toCharArray)
       ksStream.close()
 
@@ -71,17 +71,17 @@ object ssl {
       request.headers.get[Host] match {
         case Some(Host(host @ _, _)) =>
           val baseUri = request.uri.copy(
-            scheme = Scheme.https.some,
+            scheme    = Scheme.https.some,
             authority = Some(
               Authority(
                 userInfo = request.uri.authority.flatMap(_.userInfo),
-                host = RegName(host),
-                port = securePort.some,
+                host     = RegName(host),
+                port     = securePort.some,
               )
             ),
           )
           MovedPermanently(Location(baseUri.withPath(request.uri.path)))
-        case _ =>
+        case _                       =>
           BadRequest()
       }
     }

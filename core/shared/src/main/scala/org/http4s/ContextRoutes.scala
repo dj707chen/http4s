@@ -34,7 +34,7 @@ object ContextRoutes {
     * @return an [[ContextRoutes]] that wraps `run`
     */
   def apply[T, F[_]](run: ContextRequest[F, T] => OptionT[F, Response[F]])(implicit
-      F: Monad[F]
+      F:                  Monad[F]
   ): ContextRoutes[T, F] =
     Kleisli(req => OptionT(F.unit >> run(req).value))
 
@@ -48,7 +48,7 @@ object ContextRoutes {
     * wherever `pf` is defined, an `OptionT.none` wherever it is not
     */
   def of[T, F[_]](pf: PartialFunction[ContextRequest[F, T], F[Response[F]]])(implicit
-      F: Monad[F]
+      F:              Monad[F]
   ): ContextRoutes[T, F] =
     Kleisli(req => OptionT(Applicative[F].unit >> pf.lift(req).sequence))
 

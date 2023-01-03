@@ -38,17 +38,17 @@ object ResponseTiming {
     * @param headerName the name to use for the header containing the timing info
     */
   def apply[F[_]](
-      http: HttpApp[F],
-      timeUnit: TimeUnit = MILLISECONDS,
+      http:       HttpApp[F],
+      timeUnit:   TimeUnit = MILLISECONDS,
       headerName: CIString = ci"X-Response-Time",
-  )(implicit F: Sync[F], clock: Clock[F]): HttpApp[F] =
+  )(implicit F:   Sync[F], clock: Clock[F]): HttpApp[F] =
     Kleisli { req =>
       val getTime = clock.monotonic.map(_.toUnit(timeUnit).toLong)
       for {
         before <- getTime
-        resp <- http(req)
-        after <- getTime
-        header = Header.Raw(headerName, s"${after - before}")
+        resp   <- http(req)
+        after  <- getTime
+        header  = Header.Raw(headerName, s"${after - before}")
       } yield resp.putHeaders(header)
     }
 }

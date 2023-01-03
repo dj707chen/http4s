@@ -44,9 +44,9 @@ abstract class ServletContainer[F[_]] extends ServerBuilder[F] {
     * a servlet container.
     */
   def mountFilter(
-      filter: Filter,
+      filter:     Filter,
       urlMapping: String,
-      name: Option[String] = None,
+      name:       Option[String] = None,
       dispatches: util.EnumSet[DispatcherType] = util.EnumSet.of(
         DispatcherType.REQUEST,
         DispatcherType.FORWARD,

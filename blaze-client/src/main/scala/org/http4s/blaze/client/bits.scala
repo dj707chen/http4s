@@ -28,23 +28,23 @@ import scala.concurrent.duration._
 
 private[http4s] object bits {
   // Some default objects
-  val DefaultResponseHeaderTimeout: Duration = 10.seconds
-  val DefaultTimeout: Duration = 60.seconds
-  val DefaultBufferSize: Int = 8 * 1024
-  val DefaultUserAgent: Option[`User-Agent`] = Some(
+  val DefaultResponseHeaderTimeout: Duration             = 10.seconds
+  val DefaultTimeout:               Duration             = 60.seconds
+  val DefaultBufferSize:            Int                  = 8 * 1024
+  val DefaultUserAgent:             Option[`User-Agent`] = Some(
     `User-Agent`(ProductId("http4s-blaze", Some(BuildInfo.version)))
   )
   val DefaultMaxTotalConnections = 10
-  val DefaultMaxWaitQueueLimit = 256
+  val DefaultMaxWaitQueueLimit   = 256
 
   /** Caution: trusts all certificates and disables endpoint identification */
   lazy val TrustingSslContext: SSLContext = {
     val trustManager = new X509TrustManager {
-      def getAcceptedIssuers(): Array[X509Certificate] = Array.empty
-      def checkClientTrusted(certs: Array[X509Certificate], authType: String): Unit = {}
-      def checkServerTrusted(certs: Array[X509Certificate], authType: String): Unit = {}
+      def getAcceptedIssuers():                                                Array[X509Certificate] = Array.empty
+      def checkClientTrusted(certs: Array[X509Certificate], authType: String): Unit                   = {}
+      def checkServerTrusted(certs: Array[X509Certificate], authType: String): Unit                   = {}
     }
-    val sslContext = SSLContext.getInstance("TLS")
+    val sslContext   = SSLContext.getInstance("TLS")
     sslContext.init(null, Array(trustManager), new SecureRandom)
     sslContext
   }

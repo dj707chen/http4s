@@ -32,7 +32,7 @@ import cats.~>
   */
 object UrlFormLifter {
   def apply[F[_]: Sync, G[_]: Concurrent](f: G ~> F)(
-      http: Kleisli[F, Request[G], Response[G]],
+      http:         Kleisli[F, Request[G], Response[G]],
       strictDecode: Boolean = false,
   ): Kleisli[F, Request[G], Response[G]] =
     Kleisli { req =>
@@ -40,7 +40,7 @@ object UrlFormLifter {
         val flatForm = form.values.toVector.flatMap { case (k, vs) =>
           vs.toVector.map(v => (k, Some(v)))
         }
-        val params = req.uri.query.toVector ++ flatForm: Vector[(String, Option[String])]
+        val params   = req.uri.query.toVector ++ flatForm: Vector[(String, Option[String])]
         val newQuery = Query(params: _*)
 
         val newRequest = req
@@ -51,14 +51,13 @@ object UrlFormLifter {
       }
 
       req.headers.get[headers.`Content-Type`] match {
-        case Some(headers.`Content-Type`(MediaType.application.`x-www-form-urlencoded`, _))
-            if checkRequest(req) =>
+        case Some(headers.`Content-Type`(MediaType.application.`x-www-form-urlencoded`, _)) if checkRequest(req) =>
           for {
             decoded <- f(UrlForm.entityDecoder[G].decode(req, strictDecode).value)
-            resp <- decoded.fold(
-              mf => f(mf.toHttpResponse[G](req.httpVersion).pure[G]),
-              addUrlForm,
-            )
+            resp    <- decoded.fold(
+                         mf => f(mf.toHttpResponse[G](req.httpVersion).pure[G]),
+                         addUrlForm,
+                       )
           } yield resp
 
         case _ => http(req)

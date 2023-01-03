@@ -39,7 +39,7 @@ object ContextRequest {
       override def foldLeft[A, B](fa: ContextRequest[F, A], b: B)(f: (B, A) => B): B =
         f(b, fa.context)
       override def foldRight[A, B](fa: ContextRequest[F, A], lb: Eval[B])(
-          f: (A, Eval[B]) => Eval[B]
+          f:                           (A, Eval[B]) => Eval[B]
       ): Eval[B] =
         f(fa.context, lb)
       override def nonEmptyTraverse[G[_]: Apply, A, B](fa: ContextRequest[F, A])(
@@ -49,7 +49,7 @@ object ContextRequest {
       def reduceLeftTo[A, B](fa: ContextRequest[F, A])(f: A => B)(g: (B, A) => B): B =
         f(fa.context)
       def reduceRightTo[A, B](fa: ContextRequest[F, A])(f: A => B)(
-          g: (A, Eval[B]) => Eval[B]
+          g:                      (A, Eval[B]) => Eval[B]
       ): Eval[B] =
         Eval.later(f(fa.context))
     }

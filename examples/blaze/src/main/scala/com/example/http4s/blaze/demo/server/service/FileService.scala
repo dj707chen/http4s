@@ -52,9 +52,9 @@ class FileService[F[_]](implicit F: Async[F], S: StreamUtils[F]) {
 
   def store(part: Part[F]): Stream[F, Unit] =
     for {
-      home <- S.evalF(sys.env.getOrElse("HOME", "/tmp"))
+      home     <- S.evalF(sys.env.getOrElse("HOME", "/tmp"))
       filename <- S.evalF(part.filename.getOrElse("sample"))
-      path <- S.evalF(Paths.get(s"$home/$filename"))
-      result <- part.body.through(Files[F].writeAll(Path.fromNioPath(path)))
+      path     <- S.evalF(Paths.get(s"$home/$filename"))
+      result   <- part.body.through(Files[F].writeAll(Path.fromNioPath(path)))
     } yield result
 }

@@ -30,7 +30,7 @@ private[internal] trait ClientHelpersPlatform {
 
   @nowarn("msg=never used")
   private[internal] def mkTLSParameters(
-      address: Option[SocketAddress[Host]],
+      address:                  Option[SocketAddress[Host]],
       enableEndpointValidation: Boolean,
   ): TLSParameters =
     TLSParameters(
@@ -39,8 +39,8 @@ private[internal] trait ClientHelpersPlatform {
 
   @tailrec
   private def extractHostname(from: Host): String = from match {
-    case hostname: Hostname => hostname.normalized.toString
-    case address: IpAddress => address.toString
-    case idn: IDN => extractHostname(idn.hostname)
+    case hostname: Hostname  => hostname.normalized.toString
+    case address:  IpAddress => address.toString
+    case idn:      IDN       => extractHostname(idn.hostname)
   }
 }

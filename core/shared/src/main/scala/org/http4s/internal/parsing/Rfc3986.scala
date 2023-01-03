@@ -78,7 +78,7 @@ private[http4s] object Rfc3986 {
       .map(_.toInt.toByte)
       .backtrack
 
-    val dot = char('.')
+    val dot       = char('.')
     val decOctDot = decOctet <* dot
     (decOctDot, decOctDot, decOctDot, decOctet).tupled
   }
@@ -112,9 +112,9 @@ private[http4s] object Rfc3986 {
         java.lang.Integer.parseInt(s, 16).toShort
       }
 
-    val colon = char(':')
+    val colon       = char(':')
     val doubleColon = string("::").void
-    val h16Colon = h16 <* colon
+    val h16Colon    = h16 <* colon
 
     val parsedIpv4Bytes = ipv4Bytes.map { case (a: Byte, b: Byte, c: Byte, d: Byte) =>
       List(((a << 8) | b).toShort, ((c << 8) | d).toShort)
@@ -137,12 +137,12 @@ private[http4s] object Rfc3986 {
       .map { case (ls: List[Short], rs) => toIpv6(ls, rs) }
 
     val shortIpv6WithIpv4 = for {
-      lefts <- h16.repSep0(0, 5, colon).with1 <* doubleColon
+      lefts  <- h16.repSep0(0, 5, colon).with1 <* doubleColon
       rights <- rightsWithIpv4(4 - lefts.size)
     } yield toIpv6(lefts, rights)
 
     val shortIpv6 = for {
-      lefts <- h16.repSep0(0, 7, colon).with1 <* doubleColon
+      lefts  <- h16.repSep0(0, 7, colon).with1 <* doubleColon
       rights <-
         if (6 - lefts.size > 0)(h16.repSep0(0, 6 - lefts.size, colon)) else Parser.pure(Nil)
     } yield toIpv6(lefts, rights)

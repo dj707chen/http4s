@@ -79,7 +79,7 @@ trait Client[F[_]] {
   def stream(req: Request[F]): Stream[F, Response[F]]
 
   def expectOr[A](req: Request[F])(onError: Response[F] => F[Throwable])(implicit
-      d: EntityDecoder[F, A]
+      d:               EntityDecoder[F, A]
   ): F[A]
 
   /** Submits a request and decodes the response on success.  On failure, the
@@ -89,13 +89,13 @@ trait Client[F[_]] {
   def expect[A](req: Request[F])(implicit d: EntityDecoder[F, A]): F[A]
 
   def expectOr[A](req: F[Request[F]])(onError: Response[F] => F[Throwable])(implicit
-      d: EntityDecoder[F, A]
+      d:               EntityDecoder[F, A]
   ): F[A]
 
   def expect[A](req: F[Request[F]])(implicit d: EntityDecoder[F, A]): F[A]
 
   def expectOr[A](uri: Uri)(onError: Response[F] => F[Throwable])(implicit
-      d: EntityDecoder[F, A]
+      d:               EntityDecoder[F, A]
   ): F[A]
 
   /** Submits a GET request to the specified URI and decodes the response on
@@ -105,7 +105,7 @@ trait Client[F[_]] {
   def expect[A](uri: Uri)(implicit d: EntityDecoder[F, A]): F[A]
 
   def expectOr[A](s: String)(onError: Response[F] => F[Throwable])(implicit
-      d: EntityDecoder[F, A]
+      d:             EntityDecoder[F, A]
   ): F[A]
 
   /** Submits a GET request to the URI specified by the String and decodes the
@@ -115,7 +115,7 @@ trait Client[F[_]] {
   def expect[A](s: String)(implicit d: EntityDecoder[F, A]): F[A]
 
   def expectOptionOr[A](req: Request[F])(onError: Response[F] => F[Throwable])(implicit
-      d: EntityDecoder[F, A]
+      d:                     EntityDecoder[F, A]
   ): F[Option[A]]
 
   def expectOption[A](req: Request[F])(implicit d: EntityDecoder[F, A]): F[Option[A]]
@@ -173,17 +173,17 @@ trait Client[F[_]] {
   @deprecated("use public method with MonadCancelThrow instead", since = "0.23.7")
   private[client] def translate[G[_]: Async](
       fk: F ~> G
-  )(gK: G ~> F)(implicit F: MonadCancelThrow[F]): Client[G] = translateImpl(fk)(gK)
+  )(gK:   G ~> F)(implicit F: MonadCancelThrow[F]): Client[G] = translateImpl(fk)(gK)
 
   /** Translates the effect type of this client from F to G
     */
   def translate[G[_]: MonadCancelThrow](
       fk: F ~> G
-  )(gK: G ~> F)(implicit F: MonadCancelThrow[F]): Client[G] = translateImpl(fk)(gK)
+  )(gK:   G ~> F)(implicit F: MonadCancelThrow[F]): Client[G] = translateImpl(fk)(gK)
 
   /** As [[#expectOptionOr]], but defined in terms of [[cats.data.OptionT]]. */
   final def expectOptionOrT[A](req: Request[F])(onError: Response[F] => F[Throwable])(implicit
-      d: EntityDecoder[F, A]
+      d:                            EntityDecoder[F, A]
   ): OptionT[F, A] =
     OptionT(expectOptionOr(req)(onError)(d))
 
@@ -193,7 +193,7 @@ trait Client[F[_]] {
 
   private[client] def translateImpl[G[_]: MonadCancelThrow](
       fk: F ~> G
-  )(gK: G ~> F)(implicit F: MonadCancelThrow[F]): Client[G] =
+  )(gK:   G ~> F)(implicit F: MonadCancelThrow[F]): Client[G] =
     Client((req: Request[G]) =>
       run(
         req.mapK(gK)
@@ -204,7 +204,7 @@ trait Client[F[_]] {
 
 object Client {
   def apply[F[_]](
-      f: Request[F] => Resource[F, Response[F]]
+      f:        Request[F] => Resource[F, Response[F]]
   )(implicit F: MonadCancelThrow[F]): Client[F] =
     new DefaultClient[F] {
       def run(req: Request[F]): Resource[F, Response[F]] = f(req)
@@ -221,10 +221,10 @@ object Client {
         stream.pull.uncons.flatMap {
           case Some((chunk, stream)) =>
             Pull.eval(disposed.get).flatMap {
-              case true => Pull.raiseError[F](new IOException("response was disposed"))
+              case true  => Pull.raiseError[F](new IOException("response was disposed"))
               case false => Pull.output(chunk) >> go(stream)
             }
-          case None => Pull.done
+          case None                  => Pull.done
         }
       go(source).stream
     }
@@ -258,13 +258,11 @@ object Client {
     req.uri.host match {
       case Some(host) if req.headers.get[Host].isEmpty =>
         req.withHeaders(req.headers.put(Host(host.value, req.uri.port)))
-      case _ => req
+      case _                                           => req
     }
 }
 
-final case class UnexpectedStatus(status: Status, requestMethod: Method, requestUri: Uri)
-    extends RuntimeException
-    with NoStackTrace {
+final case class UnexpectedStatus(status: Status, requestMethod: Method, requestUri: Uri) extends RuntimeException with NoStackTrace {
   override def getMessage: String =
     s"unexpected HTTP status: $status for request $requestMethod $requestUri"
 }

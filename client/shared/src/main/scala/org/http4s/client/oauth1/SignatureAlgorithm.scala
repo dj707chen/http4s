@@ -33,13 +33,13 @@ object SignatureAlgorithm {
   private[oauth1] object Names {
 
     // algorithms implemented so far
-    val `HMAC-SHA1` = "HMAC-SHA1"
+    val `HMAC-SHA1`   = "HMAC-SHA1"
     val `HMAC-SHA256` = "HMAC-SHA256"
     val `HMAC-SHA512` = "HMAC-SHA512"
 
     // other known algorithms (not yet implemented)
-    val PLAINTEXT = "PLAINTEXT"
-    val `RSA-SHA1` = "RSA-SHA1"
+    val PLAINTEXT    = "PLAINTEXT"
+    val `RSA-SHA1`   = "RSA-SHA1"
     val `RSA-SHA256` = "RSA-SHA256"
     val `RSA-SHA512` = "RSA-SHA512"
   }
@@ -84,15 +84,15 @@ trait SignatureAlgorithm {
     generate[SyncIO](input, secretKey).unsafeRunSync()
 
   private[oauth1] def generateHMAC[F[_]: MonadThrow: Hmac](
-      input: String,
+      input:     String,
       algorithm: HmacAlgorithm,
       secretKey: String,
   ): F[String] =
     for {
       keyData <- ByteVector.encodeUtf8(secretKey).liftTo[F]
-      sk = SecretKeySpec(keyData, algorithm)
-      data <- ByteVector.encodeUtf8(input).liftTo[F]
-      digest <- Hmac[F].digest(sk, data)
+      sk       = SecretKeySpec(keyData, algorithm)
+      data    <- ByteVector.encodeUtf8(input).liftTo[F]
+      digest  <- Hmac[F].digest(sk, data)
     } yield digest.toBase64
 
 }
@@ -102,7 +102,7 @@ trait SignatureAlgorithm {
   * This uses the `HmacSHA1` implementation which every java platform is required to have.
   */
 object HmacSha1 extends SignatureAlgorithm {
-  override val name: String = `HMAC-SHA1`
+  override val name:                                                         String    = `HMAC-SHA1`
   override def generate[F[_]: MonadThrow](input: String, secretKey: String): F[String] =
     generateHMAC(input, HmacAlgorithm.SHA1, secretKey)
 }
@@ -112,7 +112,7 @@ object HmacSha1 extends SignatureAlgorithm {
   * This uses the `HmacSHA256` implementation which every java platform is required to have.
   */
 object HmacSha256 extends SignatureAlgorithm {
-  override val name: String = `HMAC-SHA256`
+  override val name:                                                         String    = `HMAC-SHA256`
   override def generate[F[_]: MonadThrow](input: String, secretKey: String): F[String] =
     generateHMAC(input, HmacAlgorithm.SHA256, secretKey)
 }
@@ -123,7 +123,7 @@ object HmacSha256 extends SignatureAlgorithm {
   * (However, most modern Java runtimes tend to have it)
   */
 object HmacSha512 extends SignatureAlgorithm {
-  override val name: String = `HMAC-SHA512`
+  override val name:                                                         String    = `HMAC-SHA512`
   override def generate[F[_]: MonadThrow](input: String, secretKey: String): F[String] =
     generateHMAC(input, HmacAlgorithm.SHA512, secretKey)
 }

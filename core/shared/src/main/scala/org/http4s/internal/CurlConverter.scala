@@ -48,7 +48,7 @@ private[http4s] object CurlConverter {
   }
 
   def requestToCurlWithoutBody[F[_]](
-      request: Request[F],
+      request:           Request[F],
       redactHeadersWhen: CIString => Boolean,
   ): String = {
     val params = List(

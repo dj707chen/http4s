@@ -57,26 +57,26 @@ object EmberServerSimpleExample extends IOApp {
 
     HttpRoutes
       .of[F] {
-        case req @ POST -> Root =>
+        case req @ POST -> Root           =>
           for {
             json <- req.decodeJson[Json]
             resp <- Ok(json)
           } yield resp
-        case GET -> Root =>
+        case GET -> Root                  =>
           Ok(Json.obj("root" -> Json.fromString("GET")))
         case GET -> Root / "hello" / name =>
           Ok(show"Hi $name!")
-        case GET -> Root / "chunked" =>
+        case GET -> Root / "chunked"      =>
           val body = Stream("This IS A CHUNK\n").repeat
             .take(100)
             .through(fs2.text.utf8.encode[F])
           Ok(body).map(_.withContentType(headers.`Content-Type`(MediaType.text.plain)))
-        case GET -> Root / "ws" =>
-          val send: Stream[F, WebSocketFrame] =
+        case GET -> Root / "ws"           =>
+          val send:    Stream[F, WebSocketFrame]     =
             Stream.awakeEvery[F](1.seconds).map(_ => WebSocketFrame.Text("text"))
           val receive: Pipe[F, WebSocketFrame, Unit] = _.evalMap {
             case WebSocketFrame.Text(text, _) => Sync[F].delay(println(text))
-            case other => Sync[F].delay(println(other))
+            case other                        => Sync[F].delay(println(other))
           }
           wsb.build(send, receive)
       }

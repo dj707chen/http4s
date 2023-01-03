@@ -58,20 +58,20 @@ object CookieJar {
   /** Middleware Constructor Using a Provided [[CookieJar]].
     */
   def apply[F[_]: Async](
-      alg: CookieJar[F]
+      alg:    CookieJar[F]
   )(
       client: Client[F]
   ): Client[F] =
     Client { req =>
       for {
-        _ <- Resource.eval(alg.evictExpired)
+        _          <- Resource.eval(alg.evictExpired)
         modRequest <- Resource.eval(alg.enrichRequest(req))
-        out <- client.run(modRequest)
-        _ <- Resource.eval(
-          out.cookies
-            .map(r => r.domain.fold(r.copy(domain = req.uri.host.map(_.value)))(_ => r))
-            .traverse_(alg.addCookie(_, req.uri))
-        )
+        out        <- client.run(modRequest)
+        _          <- Resource.eval(
+                        out.cookies
+                          .map(r => r.domain.fold(r.copy(domain = req.uri.host.map(_.value)))(_ => r))
+                          .traverse_(alg.addCookie(_, req.uri))
+                      )
       } yield out
     }
 
@@ -107,10 +107,10 @@ object CookieJar {
       for {
         now <- HttpDate.current[F]
         out <- ref.update(
-          _.filter { t =>
-            now <= t._2.expiresAt
-          }
-        )
+                 _.filter { t =>
+                   now <= t._2.expiresAt
+                 }
+               )
       } yield out
 
     override def evictAll: F[Unit] = ref.set(Map.empty)
@@ -129,37 +129,37 @@ object CookieJar {
   }
 
   private[middleware] final case class CookieKey(
-      name: String,
+      name:   String,
       domain: String,
-      path: Option[String],
+      path:   Option[String],
   )
 
   private[middleware] final class CookieValue(
-      val setAt: HttpDate,
+      val setAt:     HttpDate,
       val expiresAt: HttpDate,
-      val cookie: ResponseCookie,
+      val cookie:    ResponseCookie,
   ) {
     override def equals(obj: Any): Boolean =
       obj match {
         case c: CookieValue =>
-          setAt == c.setAt &&
+          setAt     == c.setAt &&
           expiresAt == c.expiresAt &&
-          cookie == c.cookie
+          cookie    == c.cookie
         case _ => false
       }
   }
 
   private[middleware] object CookieValue {
     def apply(
-        setAt: HttpDate,
+        setAt:     HttpDate,
         expiresAt: HttpDate,
-        cookie: ResponseCookie,
+        cookie:    ResponseCookie,
     ): CookieValue = new CookieValue(setAt, expiresAt, cookie)
   }
 
   private[middleware] def expiresAt(
-      now: HttpDate,
-      c: ResponseCookie,
+      now:     HttpDate,
+      c:       ResponseCookie,
       default: HttpDate,
   ): HttpDate =
     c.expires
@@ -169,9 +169,9 @@ object CookieJar {
       .getOrElse(default)
 
   private[middleware] def extractFromResponseCookies[G[_]: Foldable](
-      m: Map[CookieKey, CookieValue]
+      m:        Map[CookieKey, CookieValue]
   )(
-      cookies: G[(ResponseCookie, Uri)],
+      cookies:  G[(ResponseCookie, Uri)],
       httpDate: HttpDate,
   ): Map[CookieKey, CookieValue] =
     cookies
@@ -182,15 +182,15 @@ object CookieJar {
 
   private[middleware] def extractFromResponseCookie(
       m: Map[CookieKey, CookieValue]
-  )(c: ResponseCookie, httpDate: HttpDate, uri: Uri): Map[CookieKey, CookieValue] =
+  )(c:   ResponseCookie, httpDate: HttpDate, uri: Uri): Map[CookieKey, CookieValue] =
     c.domain.orElse(uri.host.map(_.value)) match {
       case Some(domainS) =>
-        val key = CookieKey(c.name, domainS, c.path)
+        val key       = CookieKey(c.name, domainS, c.path)
         val newCookie = c.copy(domain = domainS.some)
         val expires: HttpDate = expiresAt(httpDate, c, HttpDate.MaxValue)
         val value = CookieValue(httpDate, expires, newCookie)
         m + (key -> value)
-      case None => // Ignore Cookies We Can't get a domain for
+      case None          => // Ignore Cookies We Can't get a domain for
         m
     }
 
@@ -206,7 +206,7 @@ object CookieJar {
         authority.renderString.contains(s)
       }
     )
-    val pathApplies = c.path.forall(s => r.uri.path.renderString.contains(s))
+    val pathApplies   = c.path.forall(s => r.uri.path.renderString.contains(s))
 
     val secureSatisfied =
       if (c.secure)

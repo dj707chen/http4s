@@ -58,9 +58,9 @@ package object server {
     @deprecated(
       message =
         "Please use IPv4Host or IPv6Host. This value can change depending on Platform specific settings and can be either the canonical IPv4 or IPv6 address. If you require this behavior please call `InetAddress.getLoopbackAddress` directly.",
-      since = "0.21.23",
+      since   = "0.21.23",
     )
-    def Host = InetAddress.getLoopbackAddress.getHostAddress
+    def Host     = InetAddress.getLoopbackAddress.getHostAddress
     val HttpPort = 8080
 
     def IPv4SocketAddress: InetSocketAddress =
@@ -76,14 +76,14 @@ package object server {
     @deprecated(
       message =
         "Please use IPv4SocketAddress or IPv6SocketAddress. This value can change depending on Platform specific settings and can be either the canonical IPv4 or IPv6 address. If you require this behavior please call `InetAddress.getLoopbackAddress` directly.",
-      since = "0.21.23",
+      since   = "0.21.23",
     )
     def SocketAddress = InetSocketAddress.createUnresolved(Host, HttpPort)
 
     @deprecated("Renamed to ResponseTimeout", "0.21.0-M3")
-    def AsyncTimeout: Duration = ResponseTimeout
+    def AsyncTimeout:    Duration = ResponseTimeout
     val ResponseTimeout: Duration = 30.seconds
-    val IdleTimeout: Duration = 60.seconds
+    val IdleTimeout:     Duration = 60.seconds
 
     /** The time to wait for a graceful shutdown */
     val ShutdownTimeout: Duration = 30.seconds
@@ -139,14 +139,14 @@ package object server {
       _.compose(Kleisli((r: Request[F]) => authUser(r).map(AuthedRequest(_, r))))
 
     def noSpider[F[_]: Monad, T](
-        authUser: Kleisli[OptionT[F, *], Request[F], T],
+        authUser:      Kleisli[OptionT[F, *], Request[F], T],
         onAuthFailure: Request[F] => F[Response[F]],
     ): AuthMiddleware[F, T] = { service =>
       Kleisli { (r: Request[F]) =>
         val resp = authUser(r).value.flatMap {
           case Some(authReq) =>
             service(AuthedRequest(authReq, r)).getOrElse(Response[F](Status.NotFound))
-          case None => onAuthFailure(r)
+          case None          => onAuthFailure(r)
         }
         OptionT.liftF(resp)
       }
@@ -156,14 +156,14 @@ package object server {
       _ => F.pure(Response[F](Status.Unauthorized))
 
     def apply[F[_], Err, T](
-        authUser: Kleisli[F, Request[F], Either[Err, T]],
+        authUser:  Kleisli[F, Request[F], Either[Err, T]],
         onFailure: AuthedRoutes[Err, F],
-    )(implicit F: Monad[F]): AuthMiddleware[F, T] =
+    )(implicit F:  Monad[F]): AuthMiddleware[F, T] =
       (routes: AuthedRoutes[T, F]) =>
         Kleisli { (req: Request[F]) =>
           OptionT {
             authUser(req).flatMap {
-              case Left(err) => onFailure(AuthedRequest(err, req)).value
+              case Left(err)  => onFailure(AuthedRequest(err, req)).value
               case Right(suc) => routes(AuthedRequest(suc, req)).value
             }
           }
@@ -171,7 +171,7 @@ package object server {
   }
 
   private[this] val messageFailureLogger = getLogger("org.http4s.server.message-failures")
-  private[this] val serviceErrorLogger = getLogger("org.http4s.server.service-errors")
+  private[this] val serviceErrorLogger   = getLogger("org.http4s.server.service-errors")
 
   type ServiceErrorHandler[F[_]] = Request[F] => PartialFunction[Throwable, F[Response[F]]]
 

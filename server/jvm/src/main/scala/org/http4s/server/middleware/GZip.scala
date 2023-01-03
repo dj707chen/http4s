@@ -32,16 +32,16 @@ object GZip {
   // TODO: It could be possible to look for F.pure type bodies, and change the Content-Length header after
   // TODO      zipping and buffering all the input. Just a thought.
   def apply[F[_]: Functor, G[_]: Sync](
-      http: Http[F, G],
+      http:       Http[F, G],
       bufferSize: Int = 32 * 1024,
-      level: DeflateParams.Level = DeflateParams.Level.DEFAULT,
+      level:      DeflateParams.Level = DeflateParams.Level.DEFAULT,
       isZippable: Response[G] => Boolean = defaultIsZippable[G](_: Response[G]),
   ): Http[F, G] =
     Kleisli { (req: Request[G]) =>
       req.headers.get[`Accept-Encoding`] match {
         case Some(acceptEncoding) if satisfiedByGzip(acceptEncoding) =>
           http(req).map(zipOrPass(_, bufferSize, level, isZippable))
-        case _ => http(req)
+        case _                                                       => http(req)
       }
     }
 
@@ -59,30 +59,30 @@ object GZip {
     )
 
   private def zipOrPass[F[_]: Sync](
-      response: Response[F],
+      response:   Response[F],
       bufferSize: Int,
-      level: DeflateParams.Level,
+      level:      DeflateParams.Level,
       isZippable: Response[F] => Boolean,
   ): Response[F] =
     response match {
       case resp if isZippable(resp) => zipResponse(bufferSize, level, resp)
-      case resp => resp // Don't touch it, Content-Encoding already set
+      case resp                     => resp // Don't touch it, Content-Encoding already set
     }
 
   private def zipResponse[F[_]: Sync](
       bufferSize: Int,
-      level: DeflateParams.Level,
-      resp: Response[F],
+      level:      DeflateParams.Level,
+      resp:       Response[F],
   ): Response[F] = {
     val compressPipe =
       Compression[F].gzip(
-        fileName = None,
+        fileName         = None,
         modificationTime = None,
-        comment = None,
+        comment          = None,
         DeflateParams(
           bufferSize = bufferSize,
-          level = level,
-          header = ZLibParams.Header.GZIP,
+          level      = level,
+          header     = ZLibParams.Header.GZIP,
         ),
       )
     logger.trace("GZip middleware encoding content")

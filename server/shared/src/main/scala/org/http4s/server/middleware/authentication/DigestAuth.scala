@@ -63,11 +63,11 @@ object DigestAuth {
     * @param nonceBits The number of random bits a nonce should consist of.
     */
   def apply[F[_]: Sync, A](
-      realm: String,
-      store: AuthenticationStore[F, A],
+      realm:                String,
+      store:                AuthenticationStore[F, A],
       nonceCleanupInterval: Duration = 1.hour,
-      nonceStaleTime: Duration = 1.hour,
-      nonceBits: Int = 160,
+      nonceStaleTime:       Duration = 1.hour,
+      nonceBits:            Int = 160,
   ): AuthMiddleware[F, A] = {
     val nonceKeeper =
       new NonceKeeper(nonceStaleTime.toMillis, nonceCleanupInterval.toMillis, nonceBits)
@@ -77,8 +77,8 @@ object DigestAuth {
   /** Side-effect of running the returned task: If req contains a valid
     * AuthorizationHeader, the corresponding nonce counter (nc) is increased.
     */
-  def challenge[F[_], A](realm: String, store: AuthenticationStore[F, A], nonceKeeper: NonceKeeper)(
-      implicit F: Sync[F]
+  def challenge[F[_], A](realm: String, store: AuthenticationStore[F, A], nonceKeeper: NonceKeeper)(implicit
+      F:                        Sync[F]
   ): Kleisli[F, Request[F], Either[Challenge, AuthedRequest[F, A]]] =
     Kleisli { req =>
       def paramsToChallenge(params: Map[String, String]) =
@@ -86,32 +86,32 @@ object DigestAuth {
 
       checkAuth(realm, store, nonceKeeper, req).flatMap {
         case OK(authInfo) => F.pure(Either.right(AuthedRequest(authInfo, req)))
-        case StaleNonce => getChallengeParams(nonceKeeper, staleNonce = true).map(paramsToChallenge)
-        case _ => getChallengeParams(nonceKeeper, staleNonce = false).map(paramsToChallenge)
+        case StaleNonce   => getChallengeParams(nonceKeeper, staleNonce = true).map(paramsToChallenge)
+        case _            => getChallengeParams(nonceKeeper, staleNonce = false).map(paramsToChallenge)
       }
     }
 
   private def checkAuth[F[_]: Hash, A](
-      realm: String,
-      store: AuthenticationStore[F, A],
+      realm:       String,
+      store:       AuthenticationStore[F, A],
       nonceKeeper: NonceKeeper,
-      req: Request[F],
-  )(implicit F: Monad[F]): F[AuthReply[A]] =
+      req:         Request[F],
+  )(implicit F:    Monad[F]): F[AuthReply[A]] =
     req.headers.get[Authorization] match {
       case Some(Authorization(Credentials.AuthParams(AuthScheme.Digest, params))) =>
         checkAuthParams(realm, store, nonceKeeper, req, params)
-      case Some(_) =>
+      case Some(_)                                                                =>
         F.pure(NoCredentials)
-      case None =>
+      case None                                                                   =>
         F.pure(NoAuthorizationHeader)
     }
 
   private def getChallengeParams[F[_]](nonceKeeper: NonceKeeper, staleNonce: Boolean)(implicit
-      F: Sync[F]
+      F:                                            Sync[F]
   ): F[Map[String, String]] =
     F.delay {
       val nonce = nonceKeeper.newNonce()
-      val m = Map("qop" -> "auth", "nonce" -> nonce)
+      val m     = Map("qop" -> "auth", "nonce" -> nonce)
       if (staleNonce)
         m + ("stale" -> "TRUE")
       else
@@ -119,30 +119,30 @@ object DigestAuth {
     }
 
   private def checkAuthParams[F[_]: Hash, A](
-      realm: String,
-      store: AuthenticationStore[F, A],
+      realm:       String,
+      store:       AuthenticationStore[F, A],
       nonceKeeper: NonceKeeper,
-      req: Request[F],
-      paramsNel: NonEmptyList[(String, String)],
-  )(implicit F: Monad[F]): F[AuthReply[A]] = {
+      req:         Request[F],
+      paramsNel:   NonEmptyList[(String, String)],
+  )(implicit F:    Monad[F]): F[AuthReply[A]] = {
     val params = paramsNel.toList.toMap
     if (!Set("realm", "nonce", "nc", "username", "cnonce", "qop").subsetOf(params.keySet))
       return F.pure(BadParameters)
 
     val method = req.method.toString
-    val uri = req.uri.toString
+    val uri    = req.uri.toString
 
     if (params.get("realm") != Some(realm))
       return F.pure(BadParameters)
 
     val nonce = params("nonce")
-    val nc = params("nc")
+    val nc    = params("nc")
     nonceKeeper.receiveNonce(nonce, Integer.parseInt(nc, 16)) match {
       case NonceKeeper.StaleReply => F.pure(StaleNonce)
       case NonceKeeper.BadNCReply => F.pure(BadNC)
-      case NonceKeeper.OKReply =>
+      case NonceKeeper.OKReply    =>
         store(params("username")).flatMap {
-          case None => F.pure(UserUnknown)
+          case None                       => F.pure(UserUnknown)
           case Some((authInfo, password)) =>
             DigestUtil
               .computeResponse(

@@ -70,13 +70,12 @@ object Header {
   }
 
   object Raw {
-    implicit lazy val catsInstancesForHttp4sHeaderRaw
-        : Order[Raw] with Hash[Raw] with Show[Raw] with Renderer[Raw] = new Order[Raw]
+    implicit lazy val catsInstancesForHttp4sHeaderRaw: Order[Raw] with Hash[Raw] with Show[Raw] with Renderer[Raw] = new Order[Raw]
       with Hash[Raw]
       with Show[Raw]
       with Renderer[Raw] {
       def show(h: Raw): String = s"${h.name.show}: ${h.value}"
-      def hash(h: Raw): Int = h.hashCode
+      def hash(h: Raw): Int    = h.hashCode
 
       def compare(x: Raw, y: Raw): Int =
         x.name.compare(y.name) match {
@@ -96,7 +95,7 @@ object Header {
     * times.
     */
   sealed trait Type
-  case class Single() extends Type // scalafix:ok Http4sGeneralLinters; bincompat until 1.0
+  case class Single() extends Type    // scalafix:ok Http4sGeneralLinters; bincompat until 1.0
   case class Recurring() extends Type // scalafix:ok Http4sGeneralLinters; bincompat until 1.0
 
   def apply[A](implicit ev: Header[A, _]): ev.type = ev
@@ -105,22 +104,22 @@ object Header {
   def apply(name: String, value: String): Header.Raw = Raw(CIString(name), value)
 
   def create[A, T <: Header.Type](
-      name_ : CIString,
+      name_  : CIString,
       value_ : A => String,
       parse_ : String => Either[ParseFailure, A],
   ): Header[A, T] = new Header[A, T] {
-    def name: CIString = name_
-    def value(a: A): String = value_(a)
+    def name:             CIString                = name_
+    def value(a: A):      String                  = value_(a)
     def parse(s: String): Either[ParseFailure, A] = parse_(s)
   }
 
   def createRendered[A, T <: Header.Type, B: Renderer](
-      name_ : CIString,
+      name_  : CIString,
       value_ : A => B,
       parse_ : String => Either[ParseFailure, A],
   ): Header[A, T] = new Header[A, T] {
-    def name: CIString = name_
-    def value(a: A): String = Renderer.renderString(value_(a))
+    def name:             CIString                = name_
+    def value(a: A):      String                  = Renderer.renderString(value_(a))
     def parse(s: String): Either[ParseFailure, A] = parse_(s)
   }
 
@@ -140,11 +139,10 @@ object Header {
   sealed trait ToRaw {
     def values: List[Header.Raw]
   }
-  object ToRaw {
+  object ToRaw       {
     trait Primitive
 
-    implicit def identityToRaw(h: Header.ToRaw): Header.ToRaw with Primitive = new Header.ToRaw
-    with Primitive {
+    implicit def identityToRaw(h: Header.ToRaw): Header.ToRaw with Primitive = new Header.ToRaw with Primitive {
       val values: List[Raw] = h.values
     }
 
@@ -164,21 +162,21 @@ object Header {
       }
 
     implicit def modelledHeadersToRaw[H](
-        h: H
+        h:        H
     )(implicit H: Header[H, _]): Header.ToRaw with Primitive =
       new Header.ToRaw with Primitive {
         val values = List(Header.Raw(H.name, H.value(h)))
       }
 
     implicit def foldablesToRaw[F[_]: Foldable, H](
-        h: F[H]
+        h:              F[H]
     )(implicit convert: H => ToRaw with Primitive): Header.ToRaw = new Header.ToRaw {
       val values: List[Raw] = h.toList.foldMap(v => convert(v).values)
     }
 
     // Required for 2.12 to convert variadic args.
     implicit def scalaCollectionSeqToRaw[H](
-        h: collection.Seq[H]
+        h:              collection.Seq[H]
     )(implicit convert: H => ToRaw with Primitive): Header.ToRaw = new Header.ToRaw {
       val values: List[Raw] = h.toList.foldMap(v => convert(v).values)
     }
@@ -186,7 +184,7 @@ object Header {
 
   /** Abstracts over Single and Recurring Headers
     */
-  sealed trait Select[A] {
+  sealed trait Select[A]        {
     type F[_]
 
     /** Transform this header into a [[Header.Raw]]
@@ -200,7 +198,7 @@ object Header {
       */
     def from(headers: List[Header.Raw]): Option[Ior[NonEmptyList[ParseFailure], F[A]]]
   }
-  trait LowPrio {
+  trait LowPrio                 {
     implicit def recurringHeadersNoMerge[A](implicit
         h: Header[A, Header.Recurring]
     ): Select[A] { type F[B] = NonEmptyList[B] } =
@@ -214,12 +212,11 @@ object Header {
           as.map(a => Header.Raw(h.name, h.value(a)))
 
         def from(headers: List[Raw]): Option[Ior[NonEmptyList[ParseFailure], NonEmptyList[A]]] =
-          headers.foldLeft(Option.empty[Ior[NonEmptyList[ParseFailure], NonEmptyList[A]]]) {
-            (a, raw) =>
-              Select.fromRaw(raw) match {
-                case Some(aa) => a |+| aa.bimap(NonEmptyList.one, NonEmptyList.one).some
-                case None => a
-              }
+          headers.foldLeft(Option.empty[Ior[NonEmptyList[ParseFailure], NonEmptyList[A]]]) { (a, raw) =>
+            Select.fromRaw(raw) match {
+              case Some(aa) => a |+| aa.bimap(NonEmptyList.one, NonEmptyList.one).some
+              case None     => a
+            }
           }
       }
   }
@@ -261,7 +258,7 @@ object Header {
           headers.foldLeft(Option.empty[Ior[NonEmptyList[ParseFailure], F[A]]]) { (a, raw) =>
             fromRaw(raw) match {
               case Some(aa) => a |+| aa.leftMap(NonEmptyList.one).some
-              case None => a
+              case None     => a
             }
           }
       }

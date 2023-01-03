@@ -45,9 +45,7 @@ import scala.collection.mutable.ListBuffer
   * When rendered, the resulting `String` will have the pairs separated
   * by '&' while the key is separated from the value with '='
   */
-final class Query private (value: Either[Vector[KeyValue], String])
-    extends QueryOps
-    with Renderable {
+final class Query private (value: Either[Vector[KeyValue], String]) extends QueryOps with Renderable {
   private[this] var _pairs: Vector[KeyValue] = null
 
   def pairs: Vector[KeyValue] = {
@@ -116,8 +114,8 @@ final class Query private (value: Either[Vector[KeyValue], String])
         UriCoding.encode(
           s,
           spaceIsPlus = false,
-          charset = StandardCharsets.UTF_8,
-          toSkip = UriCoding.QueryNoEncode,
+          charset     = StandardCharsets.UTF_8,
+          toSkip      = UriCoding.QueryNoEncode,
         )
 
       pairs.foreach {
@@ -156,7 +154,7 @@ final class Query private (value: Either[Vector[KeyValue], String])
     else {
       val m = mutable.Map.empty[String, ListBuffer[String]]
       toVector.foreach {
-        case (k, None) => m.getOrElseUpdate(k, new ListBuffer)
+        case (k, None)    => m.getOrElseUpdate(k, new ListBuffer)
         case (k, Some(v)) => m.getOrElseUpdate(k, new ListBuffer) += v
       }
       CollectionCompat.mapValues(m.toMap)(_.toList)
@@ -172,9 +170,9 @@ final class Query private (value: Either[Vector[KeyValue], String])
 
   // ///////////////////// QueryOps methods and types /////////////////////////
   override protected type Self = Query
-  override protected val query: Query = this
-  override protected def self: Self = this
-  override protected def replaceQuery(query: Query): Self = query
+  override protected val query:                      Query = this
+  override protected def self:                       Self  = this
+  override protected def replaceQuery(query: Query): Self  = query
   // //////////////////////////////////////////////////////////////////////////
 }
 
@@ -209,7 +207,7 @@ object Query {
     else
       QueryParser.parseQueryString(query) match {
         case Right(query) => query
-        case Left(_) => Query.empty
+        case Left(_)      => Query.empty
       }
 
   @deprecated(message = "Use unsafeFromString instead", since = "0.22.0-M6")
@@ -220,7 +218,7 @@ object Query {
   def fromMap(map: collection.Map[String, collection.Seq[String]]): Query =
     new Query(map.foldLeft(Vector.empty[KeyValue]) {
       case (m, (k, Seq())) => m :+ (k -> None)
-      case (m, (k, vs)) => vs.toList.foldLeft(m) { case (m, v) => m :+ (k -> Some(v)) }
+      case (m, (k, vs))    => vs.toList.foldLeft(m) { case (m, v) => m :+ (k -> Some(v)) }
     })
 
   private def parse(query: String): Vector[KeyValue] =
@@ -228,7 +226,7 @@ object Query {
     else
       QueryParser.parseQueryStringVector(query) match {
         case Right(query) => query
-        case Left(_) => Vector.empty
+        case Left(_)      => Vector.empty
       }
 
   /* query       = *( pchar / "/" / "?" )

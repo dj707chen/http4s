@@ -41,7 +41,7 @@ object Caching {
     Kleisli { (a: A) =>
       for {
         resp <- http(a)
-        out <- `no-store-response`[G](resp)
+        out  <- `no-store-response`[G](resp)
       } yield out
     }
 
@@ -74,7 +74,7 @@ object Caching {
     def defaultStatusToSetOn(s: Status): Boolean =
       s match {
         case Status.NotModified => true
-        case otherwise => otherwise.isSuccess
+        case otherwise          => otherwise.isSuccess
       }
 
     def defaultMethodsToSetOn(m: Method): Boolean =
@@ -109,8 +109,8 @@ object Caching {
     * 10 years for support of Http1 caches.
     */
   def privateCache[G[_]: Temporal, F[_]](
-      lifetime: Duration,
-      http: Http[G, F],
+      lifetime:   Duration,
+      http:       Http[G, F],
       fieldNames: List[CIString] = Nil,
   ): Http[G, F] =
     cache(
@@ -127,7 +127,7 @@ object Caching {
     * 10 years for support of Http1 caches.
     */
   def privateCacheResponse[G[_]](
-      lifetime: Duration,
+      lifetime:   Duration,
       fieldNames: List[CIString] = Nil,
   ): PartiallyAppliedCache[G] =
     cacheResponse(lifetime, Either.right(CacheDirective.`private`(fieldNames)))
@@ -140,11 +140,11 @@ object Caching {
     * 10 years for support of Http1 caches.
     */
   def cache[G[_]: Temporal, F[_]](
-      lifetime: Duration,
-      isPublic: Either[CacheDirective.public.type, CacheDirective.`private`],
+      lifetime:      Duration,
+      isPublic:      Either[CacheDirective.public.type, CacheDirective.`private`],
       methodToSetOn: Method => Boolean,
       statusToSetOn: Status => Boolean,
-      http: Http[G, F],
+      http:          Http[G, F],
   ): Http[G, F] = {
     val cacher = cacheResponse[G](lifetime, isPublic)
     Kleisli { (req: Request[F]) =>
@@ -177,16 +177,16 @@ object Caching {
         // Http1 caches do not respect max-age headers, so to work globally it is recommended
         // to explicitly set an Expire which requires some time interval to work
       }
-      val cacheControl = {
+      val cacheControl   = {
         val cacheDirective = isPublic.fold(identity, identity)
-        val maxAge = CacheDirective.`max-age`(actualLifetime)
+        val maxAge         = CacheDirective.`max-age`(actualLifetime)
         `Cache-Control`(NonEmptyList.of(cacheDirective, maxAge))
       }
 
       override def apply[F[_]](resp: Response[F])(implicit G: Temporal[G]): G[Response[F]] =
         for {
-          now <- HttpDate.current[G]
-          eps = now.epochSecond + actualLifetime.toSeconds
+          now     <- HttpDate.current[G]
+          eps      = now.epochSecond + actualLifetime.toSeconds
           expires <- HttpDate.fromEpochSecond(eps).liftTo[G]
         } yield resp.putHeaders(cacheControl, HDate(now), Expires(expires))
     }

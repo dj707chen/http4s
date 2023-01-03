@@ -33,9 +33,9 @@ object ErrorAction {
     }
 
   def log[F[_]: ApplicativeThrow, G[_], B](
-      http: Kleisli[F, Request[G], B],
+      http:                    Kleisli[F, Request[G], B],
       messageFailureLogAction: (Throwable, => String) => F[Unit],
-      serviceErrorLogAction: (Throwable, => String) => F[Unit],
+      serviceErrorLogAction:   (Throwable, => String) => F[Unit],
   ): Kleisli[F, Request[G], B] =
     apply(
       http,
@@ -46,7 +46,7 @@ object ErrorAction {
             s"""Message failure handling request: ${req.method} ${req.pathInfo} from ${req.remoteAddr
                 .getOrElse("<unknown>")}""",
           )
-        case (req, e) =>
+        case (req, e)                  =>
           serviceErrorLogAction(
             e,
             s"""Error servicing request: ${req.method} ${req.pathInfo} from ${req.remoteAddr
@@ -58,14 +58,14 @@ object ErrorAction {
   object httpApp {
     def apply[F[_]: ApplicativeThrow](
         httpApp: HttpApp[F],
-        f: (Request[F], Throwable) => F[Unit],
+        f:       (Request[F], Throwable) => F[Unit],
     ): HttpApp[F] =
       ErrorAction(httpApp, f)
 
     def log[F[_]: ApplicativeThrow, G[_], B](
-        httpApp: HttpApp[F],
+        httpApp:                 HttpApp[F],
         messageFailureLogAction: (Throwable, => String) => F[Unit],
-        serviceErrorLogAction: (Throwable, => String) => F[Unit],
+        serviceErrorLogAction:   (Throwable, => String) => F[Unit],
     ): HttpApp[F] =
       ErrorAction.log(httpApp, messageFailureLogAction, serviceErrorLogAction)
   }
@@ -73,14 +73,14 @@ object ErrorAction {
   object httpRoutes {
     def apply[F[_]: MonadThrow](
         httpRoutes: HttpRoutes[F],
-        f: (Request[F], Throwable) => F[Unit],
+        f:          (Request[F], Throwable) => F[Unit],
     ): HttpRoutes[F] =
       ErrorAction(httpRoutes, (t, msg) => OptionT.liftF(f(t, msg)))
 
     def log[F[_]: MonadThrow](
-        httpRoutes: HttpRoutes[F],
+        httpRoutes:              HttpRoutes[F],
         messageFailureLogAction: (Throwable, => String) => F[Unit],
-        serviceErrorLogAction: (Throwable, => String) => F[Unit],
+        serviceErrorLogAction:   (Throwable, => String) => F[Unit],
     ): HttpRoutes[F] =
       ErrorAction.log(
         httpRoutes,

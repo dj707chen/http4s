@@ -106,7 +106,7 @@ trait ReadSerializer[I] extends TailStage[I] {
   // /  channel reading bits //////////////////////////////////////////////
 
   override def channelRead(size: Int = -1, timeout: Duration = Duration.Inf): Future[I] = {
-    val p = Promise[I]()
+    val p       = Promise[I]()
     val pending = serializerReadRef.getAndSet(p.future)
 
     if (pending == null) serializerDoRead(p, size, timeout) // no queue, just do a read

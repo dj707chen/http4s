@@ -17,7 +17,7 @@
 package org.http4s.ember.core.h2
 
 private[h2] class HpackPlatform {
-  type Encoder = com.twitter.hpack.Encoder
-  type Decoder = com.twitter.hpack.Decoder
+  type Encoder        = com.twitter.hpack.Encoder
+  type Decoder        = com.twitter.hpack.Decoder
   type HeaderListener = com.twitter.hpack.HeaderListener
 }

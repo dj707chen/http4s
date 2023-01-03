@@ -74,7 +74,7 @@ object AsyncHttpClient {
   /** Allocates a Client and its shutdown mechanism for freeing resources.
     */
   def allocate[F[_]](config: AsyncHttpClientConfig = defaultConfig)(implicit
-      F: Async[F]
+      F:                     Async[F]
   ): F[(Client[F], F[Unit])] =
     resource(config).allocated
 
@@ -83,11 +83,10 @@ object AsyncHttpClient {
     * @param config configuration for the client
     */
   def resource[F[_]](
-      config: AsyncHttpClientConfig = defaultConfig
+      config:   AsyncHttpClientConfig = defaultConfig
   )(implicit F: Async[F]): Resource[F, Client[F]] =
-    Resource.make(F.delay(new DefaultAsyncHttpClient(config)))(c => F.delay(c.close())).flatMap {
-      httpClient =>
-        fromClient(httpClient)
+    Resource.make(F.delay(new DefaultAsyncHttpClient(config)))(c => F.delay(c.close())).flatMap { httpClient =>
+      fromClient(httpClient)
     }
 
   /** Create a bracketed HTTP client based on the AsyncHttpClient library.
@@ -97,7 +96,7 @@ object AsyncHttpClient {
     * shutdown when the stream terminates.
     */
   def stream[F[_]](config: AsyncHttpClientConfig = defaultConfig)(implicit
-      F: Async[F]
+      F:                   Async[F]
   ): Stream[F, Client[F]] =
     Stream.resource(resource(config))
 
@@ -113,14 +112,14 @@ object AsyncHttpClient {
     configurationFn(defaultConfigBuilder).build()
   }
 
-  private def asyncHandler[F[_]](cb: Callback[(Response[F], F[Unit])], dispatcher: Dispatcher[F])(
-      implicit F: Async[F]
+  private def asyncHandler[F[_]](cb: Callback[(Response[F], F[Unit])], dispatcher: Dispatcher[F])(implicit
+      F:                             Async[F]
   ) =
     new StreamedAsyncHandler[Unit] {
-      var state: State = State.CONTINUE
-      var response: Response[F] = Response()
-      val dispose: F[Unit] = F.delay { state = State.ABORT }
-      val onStreamCalled: Ref[F, Boolean] = Ref.unsafe[F, Boolean](false)
+      var state:             State                  = State.CONTINUE
+      var response:          Response[F]            = Response()
+      val dispose:           F[Unit]                = F.delay { state = State.ABORT }
+      val onStreamCalled:    Ref[F, Boolean]        = Ref.unsafe[F, Boolean](false)
       val deferredThrowable: Deferred[F, Throwable] = Deferred.unsafe[F, Throwable]
 
       override def onStream(publisher: Publisher[HttpResponseBodyPart]): State = {
@@ -132,8 +131,8 @@ object AsyncHttpClient {
           subscribeF = F.delay(publisher.subscribe(subscriber))
 
           bodyDisposal <- Ref.of[F, F[Unit]] {
-            subscriber.stream(subscribeF).pull.uncons.void.stream.compile.drain
-          }
+                            subscriber.stream(subscribeF).pull.uncons.void.stream.compile.drain
+                          }
 
           body =
             subscriber
@@ -168,7 +167,7 @@ object AsyncHttpClient {
       override def onThrowable(throwable: Throwable): Unit = {
         val fa = onStreamCalled.get
           .ifM(
-            ifTrue = deferredThrowable.complete(throwable).void,
+            ifTrue  = deferredThrowable.complete(throwable).void,
             ifFalse = invokeCallbackF(cb(Left(throwable))),
           )
 
@@ -188,7 +187,7 @@ object AsyncHttpClient {
     F.start(F.delay(invoked)).flatMap(_.joinWithNever)
 
   private def toAsyncRequest[F[_]: Async](
-      request: Request[F],
+      request:    Request[F],
       dispatcher: Dispatcher[F],
   ): AsyncRequest = {
     val headers = new DefaultHttpHeaders
@@ -202,7 +201,7 @@ object AsyncHttpClient {
   }
 
   private def getBodyGenerator[F[_]: Async](
-      req: Request[F],
+      req:        Request[F],
       dispatcher: Dispatcher[F],
   ): BodyGenerator = {
     val publisher = StreamUnicastPublisher(
@@ -213,7 +212,7 @@ object AsyncHttpClient {
     else
       req.contentLength match {
         case Some(len) => new ReactiveStreamsBodyGenerator(publisher, len)
-        case None => EmptyBodyGenerator
+        case None      => EmptyBodyGenerator
       }
   }
 

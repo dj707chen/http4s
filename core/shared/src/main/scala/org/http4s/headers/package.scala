@@ -21,14 +21,14 @@ import org.http4s.util.Writer
 import java.lang.{Long => JLong}
 
 package object headers {
-  private val XB3Id64BitCharLength: Int = 16
-  private val XB3Id128BitCharLength: Int = XB3Id64BitCharLength * 2
-  private val XB3IdFormatZeroPad: String = Vector.fill(XB3Id128BitCharLength)("0").mkString
-  private val BitsToNibbleRatio: Int = 4
+  private val XB3Id64BitCharLength:  Int    = 16
+  private val XB3Id128BitCharLength: Int    = XB3Id64BitCharLength * 2
+  private val XB3IdFormatZeroPad:    String = Vector.fill(XB3Id128BitCharLength)("0").mkString
+  private val BitsToNibbleRatio:     Int    = 4
 
   private[headers] def xB3RenderValueImpl(
-      writer: Writer,
-      idMostSigBits: Long,
+      writer:         Writer,
+      idMostSigBits:  Long,
       idLeastSigBits: Option[Long] = None,
   ): writer.type =
     idLeastSigBits match {
@@ -56,7 +56,7 @@ package object headers {
             .append(XB3IdFormatZeroPad.take(leadingLsbHexZeroCount))
             .append(idLsb.toHexString)
         }
-      case None =>
+      case None        =>
         if (idMostSigBits == 0L)
           writer.append(XB3IdFormatZeroPad.take(XB3Id64BitCharLength))
         else {

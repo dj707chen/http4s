@@ -55,7 +55,7 @@ trait EntityEncoder[F[_], A] { self =>
   def contramap[B](f: B => A): EntityEncoder[F, B] =
     new EntityEncoder[F, B] {
       override def toEntity(a: B): Entity[F] = self.toEntity(f(a))
-      override def headers: Headers = self.headers
+      override def headers:        Headers   = self.headers
     }
 
   /** Get the [[org.http4s.headers.`Content-Type`]] of the body encoded by this [[EntityEncoder]],
@@ -70,7 +70,7 @@ trait EntityEncoder[F[_], A] { self =>
   def withContentType(tpe: `Content-Type`): EntityEncoder[F, A] =
     new EntityEncoder[F, A] {
       override def toEntity(a: A): Entity[F] = self.toEntity(a)
-      override val headers: Headers = self.headers.put(tpe)
+      override val headers:        Headers   = self.headers.put(tpe)
     }
 }
 
@@ -84,7 +84,7 @@ object EntityEncoder {
   def encodeBy[F[_], A](hs: Headers)(f: A => Entity[F]): EntityEncoder[F, A] =
     new EntityEncoder[F, A] {
       override def toEntity(a: A): Entity[F] = f(a)
-      override def headers: Headers = hs
+      override def headers:        Headers   = hs
     }
 
   /** Create a new [[EntityEncoder]] */
@@ -106,7 +106,7 @@ object EntityEncoder {
   /** Encodes a value from its Show instance.  Too broad to be implicit, too useful to not exist. */
   def showEncoder[F[_], A](implicit
       charset: Charset = `UTF-8`,
-      show: Show[A],
+      show:    Show[A],
   ): EntityEncoder[F, A] = {
     val hdr = `Content-Type`(MediaType.text.plain).withCharset(charset)
     simple[F, A](hdr)(a => Chunk.array(show.show(a).getBytes(charset.nioCharset)))
@@ -115,7 +115,7 @@ object EntityEncoder {
   def emptyEncoder[F[_], A]: EntityEncoder[F, A] =
     new EntityEncoder[F, A] {
       def toEntity(a: A): Entity[F] = Entity.empty
-      def headers: Headers = Headers.empty
+      def headers:        Headers   = Headers.empty
     }
 
   /** A stream encoder is intended for streaming, and does not calculate its
@@ -133,7 +133,7 @@ object EntityEncoder {
         W.headers.get[`Transfer-Encoding`] match {
           case Some(transferCoding) if transferCoding.hasChunked =>
             W.headers
-          case _ =>
+          case _                                                 =>
             W.headers.add(`Transfer-Encoding`(TransferCoding.chunked.pure[NonEmptyList]))
         }
     }
@@ -194,7 +194,7 @@ object EntityEncoder {
 
   // TODO parameterize chunk size
   implicit def readerEncoder[F[_], R <: Reader](implicit
-      F: Sync[F],
+      F:       Sync[F],
       charset: Charset = `UTF-8`,
   ): EntityEncoder[F, F[R]] =
     entityBodyEncoder[F].contramap { (fr: F[R]) =>
@@ -214,7 +214,7 @@ object EntityEncoder {
             // Encode to bytes according to the charset
             val bb = charset.nioCharset.encode(charBuffer)
             // Read into a Chunk
-            val b = new Array[Byte](bb.remaining())
+            val b  = new Array[Byte](bb.remaining())
             bb.get(b)
             Some(Chunk.array(b))
           }

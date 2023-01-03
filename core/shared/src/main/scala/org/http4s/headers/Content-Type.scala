@@ -25,30 +25,28 @@ import org.typelevel.ci._
 object `Content-Type` {
   def apply(mediaType: MediaType, charset: Charset): `Content-Type` =
     apply(mediaType, Some(charset))
-  def apply(mediaType: MediaType): `Content-Type` = apply(mediaType, None)
+  def apply(mediaType: MediaType):                   `Content-Type` = apply(mediaType, None)
 
   def parse(s: String): ParseResult[`Content-Type`] =
     ParseResult.fromParser(parser, "Invalid Content-Type header")(s)
 
   private[http4s] val parser: Parser[`Content-Type`] =
-    (MediaRange.parser ~ MediaRange.mediaTypeExtensionParser.rep0).flatMap {
-      case (range: MediaRange, exts: Seq[(String, String)]) =>
-        val mediaTypeParser = range match {
-          case m: MediaType => Parser.pure(m)
-          case _ =>
-            Parser.failWith("Content-Type header doesn't support media ranges")
+    (MediaRange.parser ~ MediaRange.mediaTypeExtensionParser.rep0).flatMap { case (range: MediaRange, exts: Seq[(String, String)]) =>
+      val mediaTypeParser = range match {
+        case m: MediaType => Parser.pure(m)
+        case _ =>
+          Parser.failWith("Content-Type header doesn't support media ranges")
+      }
+
+      val (ext, charset) =
+        exts.foldLeft((Map.empty[String, String], None: Option[Charset])) { case ((ext, charset), p @ (k, v)) =>
+          if (k == "charset") (ext, Charset.fromString(v).toOption)
+          else (ext + p, charset)
         }
 
-        val (ext, charset) =
-          exts.foldLeft((Map.empty[String, String], None: Option[Charset])) {
-            case ((ext, charset), p @ (k, v)) =>
-              if (k == "charset") (ext, Charset.fromString(v).toOption)
-              else (ext + p, charset)
-          }
-
-        mediaTypeParser.map { mediaType =>
-          `Content-Type`(if (ext.isEmpty) mediaType else mediaType.withExtensions(ext), charset)
-        }
+      mediaTypeParser.map { mediaType =>
+        `Content-Type`(if (ext.isEmpty) mediaType else mediaType.withExtensions(ext), charset)
+      }
     }
 
   implicit val headerInstance: Header[`Content-Type`, Header.Single] =
@@ -59,7 +57,7 @@ object `Content-Type` {
           def render(writer: Writer): writer.type =
             h.charset match {
               case Some(cs) => writer << h.mediaType << "; charset=" << cs
-              case _ => MediaRange.http4sHttpCodecForMediaRange.render(writer, h.mediaType)
+              case _        => MediaRange.http4sHttpCodecForMediaRange.render(writer, h.mediaType)
             }
         },
       parse,
@@ -79,9 +77,9 @@ object `Content-Type` {
 final case class `Content-Type` private (mediaType: MediaType, charset: Option[Charset]) { // scalafix:ok; private for API ergonomics, not correctness
   def withMediaType(mediaType: MediaType): `Content-Type` =
     if (mediaType != this.mediaType) copy(mediaType = mediaType) else this
-  def withCharset(charset: Charset): `Content-Type` =
+  def withCharset(charset: Charset):       `Content-Type` =
     if (noCharsetDefined || charset != this.charset.get) copy(charset = Some(charset)) else this
-  def withoutDefinedCharset: `Content-Type` =
+  def withoutDefinedCharset:               `Content-Type` =
     if (isCharsetDefined) copy(charset = None) else this
 
   def isCharsetDefined: Boolean = charset.isDefined

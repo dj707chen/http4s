@@ -34,7 +34,7 @@ import java.io.StringWriter
  * metrics for, allowing custom metric registration.
  */
 final class PrometheusExportService[F[_]] private (
-    val routes: HttpRoutes[F],
+    val routes:            HttpRoutes[F],
     val collectorRegistry: CollectorRegistry,
 )
 
@@ -48,7 +48,7 @@ object PrometheusExportService {
   def build[F[_]: Sync]: Resource[F, PrometheusExportService[F]] =
     for {
       cr <- Prometheus.collectorRegistry[F]
-      _ <- addDefaults(cr)
+      _  <- addDefaults(cr)
     } yield new PrometheusExportService[F](service(cr), cr)
 
   def generateResponse[F[_]: Sync](collectorRegistry: CollectorRegistry): F[Response[F]] =

@@ -82,7 +82,7 @@ object Dropwizard {
     * @param prefix a prefix that will be added to all metrics
     */
   def apply[F[_]](registry: MetricRegistry, prefix: String = "org.http4s.server")(implicit
-      F: Sync[F]
+      F:                    Sync[F]
   ): MetricsOps[F] =
     new MetricsOps[F] {
       override def increaseActiveRequests(classifier: Option[String]): F[Unit] =
@@ -96,8 +96,8 @@ object Dropwizard {
         }
 
       override def recordHeadersTime(
-          method: Method,
-          elapsed: Long,
+          method:     Method,
+          elapsed:    Long,
           classifier: Option[String],
       ): F[Unit] =
         F.delay {
@@ -107,9 +107,9 @@ object Dropwizard {
         }
 
       override def recordTotalTime(
-          method: Method,
-          status: Status,
-          elapsed: Long,
+          method:     Method,
+          status:     Status,
+          elapsed:    Long,
           classifier: Option[String],
       ): F[Unit] =
         F.delay {
@@ -123,15 +123,15 @@ object Dropwizard {
         }
 
       override def recordAbnormalTermination(
-          elapsed: Long,
+          elapsed:         Long,
           terminationType: TerminationType,
-          classifier: Option[String],
+          classifier:      Option[String],
       ): F[Unit] =
         terminationType match {
           case Abnormal(_) => recordAbnormal(elapsed, classifier)
-          case Error(_) => recordError(elapsed, classifier)
-          case Canceled => recordCanceled(elapsed, classifier)
-          case Timeout => recordTimeout(elapsed, classifier)
+          case Error(_)    => recordError(elapsed, classifier)
+          case Canceled    => recordCanceled(elapsed, classifier)
+          case Timeout     => recordTimeout(elapsed, classifier)
         }
 
       private def recordCanceled(elapsed: Long, classifier: Option[String]): F[Unit] =
@@ -167,29 +167,29 @@ object Dropwizard {
 
       private def registerStatusCode(status: Status, elapsed: Long, classifier: Option[String]) =
         (status.code match {
-          case hundreds if hundreds < 200 =>
+          case hundreds if hundreds < 200           =>
             registry.timer(s"${namespace(prefix, classifier)}.1xx-responses")
-          case twohundreds if twohundreds < 300 =>
+          case twohundreds if twohundreds < 300     =>
             registry.timer(s"${namespace(prefix, classifier)}.2xx-responses")
           case threehundreds if threehundreds < 400 =>
             registry.timer(s"${namespace(prefix, classifier)}.3xx-responses")
-          case fourhundreds if fourhundreds < 500 =>
+          case fourhundreds if fourhundreds < 500   =>
             registry.timer(s"${namespace(prefix, classifier)}.4xx-responses")
-          case _ => registry.timer(s"${namespace(prefix, classifier)}.5xx-responses")
+          case _                                    => registry.timer(s"${namespace(prefix, classifier)}.5xx-responses")
         }).update(elapsed, TimeUnit.NANOSECONDS)
 
       private def requestTimer(method: Method): String =
         method match {
-          case Method.GET => "get-requests"
-          case Method.POST => "post-requests"
-          case Method.PUT => "put-requests"
-          case Method.HEAD => "head-requests"
-          case Method.MOVE => "move-requests"
+          case Method.GET     => "get-requests"
+          case Method.POST    => "post-requests"
+          case Method.PUT     => "put-requests"
+          case Method.HEAD    => "head-requests"
+          case Method.MOVE    => "move-requests"
           case Method.OPTIONS => "options-requests"
-          case Method.TRACE => "trace-requests"
+          case Method.TRACE   => "trace-requests"
           case Method.CONNECT => "connect-requests"
-          case Method.DELETE => "delete-requests"
-          case _ => "other-requests"
+          case Method.DELETE  => "delete-requests"
+          case _              => "other-requests"
         }
     }
 }

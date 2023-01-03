@@ -51,11 +51,11 @@ import scala.concurrent.duration._
 
 private[client] object ClientHelpers extends ClientHelpersPlatform {
   def requestToSocketWithKey[F[_]: Sync](
-      request: Request[F],
-      tlsContextOpt: Option[TLSContext[F]],
+      request:                  Request[F],
+      tlsContextOpt:            Option[TLSContext[F]],
       enableEndpointValidation: Boolean,
-      sg: SocketGroup[F],
-      additionalSocketOptions: List[SocketOption],
+      sg:                       SocketGroup[F],
+      additionalSocketOptions:  List[SocketOption],
   ): Resource[F, RequestKeySocket[F]] = {
     val requestKey = RequestKey.fromRequest(request)
     requestKeyToSocketWithKey[F](
@@ -68,9 +68,9 @@ private[client] object ClientHelpers extends ClientHelpersPlatform {
   }
 
   def unixSocket[F[_]: Async](
-      request: Request[F],
-      unixSockets: fs2.io.net.unixsocket.UnixSockets[F],
-      address: fs2.io.net.unixsocket.UnixSocketAddress,
+      request:       Request[F],
+      unixSockets:   fs2.io.net.unixsocket.UnixSockets[F],
+      address:       fs2.io.net.unixsocket.UnixSocketAddress,
       tlsContextOpt: Option[TLSContext[F]],
   ): Resource[F, RequestKeySocket[F]] = {
     val requestKey = RequestKey.fromRequest(request)
@@ -84,35 +84,35 @@ private[client] object ClientHelpers extends ClientHelpersPlatform {
   }
 
   def requestKeyToSocketWithKey[F[_]: Sync](
-      requestKey: RequestKey,
-      tlsContextOpt: Option[TLSContext[F]],
+      requestKey:               RequestKey,
+      tlsContextOpt:            Option[TLSContext[F]],
       enableEndpointValidation: Boolean,
-      sg: SocketGroup[F],
-      additionalSocketOptions: List[SocketOption],
+      sg:                       SocketGroup[F],
+      additionalSocketOptions:  List[SocketOption],
   ): Resource[F, RequestKeySocket[F]] =
     Resource
       .eval(getAddress(requestKey))
       .flatMap { address =>
         val s = sg.client(address, options = additionalSocketOptions)
         elevateSocket(
-          requestKey: RequestKey,
-          s: Resource[F, Socket[F]],
-          tlsContextOpt: Option[TLSContext[F]],
+          requestKey:               RequestKey,
+          s:                        Resource[F, Socket[F]],
+          tlsContextOpt:            Option[TLSContext[F]],
           enableEndpointValidation: Boolean,
           Some(address),
         )
       }
 
   def elevateSocket[F[_]: Sync](
-      requestKey: RequestKey,
-      initSocket: Resource[F, Socket[F]],
-      tlsContextOpt: Option[TLSContext[F]],
+      requestKey:               RequestKey,
+      initSocket:               Resource[F, Socket[F]],
+      tlsContextOpt:            Option[TLSContext[F]],
       enableEndpointValidation: Boolean,
-      optionNames: Option[SocketAddress[Host]],
+      optionNames:              Option[SocketAddress[Host]],
   ): Resource[F, RequestKeySocket[F]] =
     for {
       iSocket <- initSocket
-      socket <- {
+      socket  <- {
         if (requestKey.scheme === Uri.Scheme.https) {
           tlsContextOpt.fold[Resource[F, Socket[F]]] {
             ApplicativeThrow[Resource[F, *]].raiseError(
@@ -130,13 +130,13 @@ private[client] object ClientHelpers extends ClientHelpersPlatform {
     } yield RequestKeySocket(socket, requestKey)
 
   def request[F[_]: Async](
-      request: Request[F],
-      connection: EmberConnection[F],
-      chunkSize: Int,
+      request:               Request[F],
+      connection:            EmberConnection[F],
+      chunkSize:             Int,
       maxResponseHeaderSize: Int,
-      idleTimeout: Duration,
-      timeout: Duration,
-      userAgent: Option[`User-Agent`],
+      idleTimeout:           Duration,
+      timeout:               Duration,
+      userAgent:             Option[`User-Agent`],
   ): F[(Response[F], F[Option[Array[Byte]]])] = {
 
     def writeRequestToSocket(req: Request[F], socket: Socket[F]): F[Unit] =
@@ -168,7 +168,7 @@ private[client] object ClientHelpers extends ClientHelpersPlatform {
 
     for {
       processedReq <- preprocessRequest(request, userAgent)
-      res <- writeRead(processedReq)
+      res          <- writeRead(processedReq)
     } yield res
   }.adaptError { case e: EmberException.EmptyStream =>
     new ClosedChannelException() {
@@ -180,7 +180,7 @@ private[client] object ClientHelpers extends ClientHelpersPlatform {
   }
 
   private[internal] def preprocessRequest[F[_]: Monad: Clock](
-      req: Request[F],
+      req:       Request[F],
       userAgent: Option[`User-Agent`],
   ): F[Request[F]] = {
     val connection = req.headers
@@ -195,20 +195,20 @@ private[client] object ClientHelpers extends ClientHelpersPlatform {
   }
 
   private[ember] def postProcessResponse[F[_]](
-      req: Request[F],
-      resp: Response[F],
-      drain: F[Option[Array[Byte]]],
-      nextBytes: Ref[F, Array[Byte]],
+      req:         Request[F],
+      resp:        Response[F],
+      drain:       F[Option[Array[Byte]]],
+      nextBytes:   Ref[F, Array[Byte]],
       canBeReused: Ref[F, Reusable],
-  )(implicit F: Concurrent[F]): F[Unit] =
+  )(implicit F:    Concurrent[F]): F[Unit] =
     drain.flatMap {
       case Some(bytes) =>
-        val requestClose = connectionFor(req.httpVersion, req.headers).hasClose
+        val requestClose  = connectionFor(req.httpVersion, req.headers).hasClose
         val responseClose = connectionFor(resp.httpVersion, resp.headers).hasClose
 
         if (requestClose || responseClose) F.unit
         else nextBytes.set(bytes) >> canBeReused.set(Reusable.Reuse)
-      case None => F.unit
+      case None        => F.unit
     }
 
   // https://github.com/http4s/http4s/blob/main/blaze-client/src/main/scala/org/http4s/client/blaze/Http1Support.scala#L86
@@ -224,7 +224,7 @@ private[client] object ClientHelpers extends ClientHelpersPlatform {
 
   // Assumes that the request doesn't have fancy finalizers besides shutting down the pool
   private[client] def getValidManaged[F[_]: Sync](
-      pool: KeyPool[F, RequestKey, EmberConnection[F]],
+      pool:    KeyPool[F, RequestKey, EmberConnection[F]],
       request: Request[F],
   ): Resource[F, Managed[F, EmberConnection[F]]] =
     pool.take(RequestKey.fromRequest(request)).flatMap { managed =>
@@ -255,19 +255,19 @@ private[client] object ClientHelpers extends ClientHelpersPlatform {
     }
 
     def emberDeadFromPoolPolicy[F[_]](
-        req: Request[F],
+        req:    Request[F],
         result: Either[Throwable, Response[F]],
     ): Boolean =
       req.isIdempotent && isRetryableError(result)
 
     def isRetryableError[F[_]](result: Either[Throwable, Response[F]]): Boolean =
       result match {
-        case Right(_) => false
+        case Right(_)                        => false
         case Left(_: ClosedChannelException) => true
-        case Left(ex: IOException) =>
+        case Left(ex: IOException)           =>
           val msg = ex.getMessage()
           msg == "Connection reset by peer" || msg == "Broken pipe"
-        case _ => false
+        case _                               => false
       }
   }
 }

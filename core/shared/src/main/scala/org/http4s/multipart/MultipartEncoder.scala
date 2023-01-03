@@ -53,8 +53,7 @@ private[http4s] class MultipartEncoder[F[_]] extends EntityEncoder[F, Multipart[
 
   /** encapsulation := delimiter CRLF body-part
     */
-  val encapsulationWithoutBody: Boundary => String = boundary =>
-    s"${Boundary.CRLF}${dashBoundary(boundary)}${Boundary.CRLF}"
+  val encapsulationWithoutBody: Boundary => String = boundary => s"${Boundary.CRLF}${dashBoundary(boundary)}${Boundary.CRLF}"
 
   val renderHeaders: Headers => Chunk[Byte] = headers =>
     headers.headers

@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit
 @State(Scope.Benchmark)
 class EncodeHexBench {
   val bytes = {
-    val r = new scala.util.Random(2597)
+    val r  = new scala.util.Random(2597)
     val bs = new Array[Byte](8192)
     r.nextBytes(bs)
     bs

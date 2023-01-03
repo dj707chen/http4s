@@ -40,74 +40,73 @@ import org.typelevel.vault.Key
 import scala.concurrent.duration._
 
 final class EmberServerBuilder[F[_]: Async] private (
-    val host: Option[Host],
-    val port: Port,
-    private val httpApp: WebSocketBuilder2[F] => HttpApp[F],
-    private val tlsInfoOpt: Option[(TLSContext[F], TLSParameters)],
-    private val sgOpt: Option[SocketGroup[F]],
-    private val errorHandler: Throwable => F[Response[F]],
-    private val onWriteFailure: (Option[Request[F]], Response[F], Throwable) => F[Unit],
-    val maxConnections: Int,
-    val receiveBufferSize: Int,
-    val maxHeaderSize: Int,
+    val host:                        Option[Host],
+    val port:                        Port,
+    private val httpApp:             WebSocketBuilder2[F] => HttpApp[F],
+    private val tlsInfoOpt:          Option[(TLSContext[F], TLSParameters)],
+    private val sgOpt:               Option[SocketGroup[F]],
+    private val errorHandler:        Throwable => F[Response[F]],
+    private val onWriteFailure:      (Option[Request[F]], Response[F], Throwable) => F[Unit],
+    val maxConnections:              Int,
+    val receiveBufferSize:           Int,
+    val maxHeaderSize:               Int,
     val requestHeaderReceiveTimeout: Duration,
-    val idleTimeout: Duration,
-    val shutdownTimeout: Duration,
-    val additionalSocketOptions: List[SocketOption],
-    private val logger: Logger[F],
-    private val unixSocketConfig: Option[(UnixSockets[F], UnixSocketAddress, Boolean, Boolean)],
-    private val enableHttp2: Boolean,
+    val idleTimeout:                 Duration,
+    val shutdownTimeout:             Duration,
+    val additionalSocketOptions:     List[SocketOption],
+    private val logger:              Logger[F],
+    private val unixSocketConfig:    Option[(UnixSockets[F], UnixSocketAddress, Boolean, Boolean)],
+    private val enableHttp2:         Boolean,
 ) { self =>
 
   @deprecated("Use org.http4s.ember.server.EmberServerBuilder.maxConnections", "0.22.3")
   val maxConcurrency: Int = maxConnections
 
   private def copy(
-      host: Option[Host] = self.host,
-      port: Port = self.port,
-      httpApp: WebSocketBuilder2[F] => HttpApp[F] = self.httpApp,
-      tlsInfoOpt: Option[(TLSContext[F], TLSParameters)] = self.tlsInfoOpt,
-      sgOpt: Option[SocketGroup[F]] = self.sgOpt,
-      errorHandler: Throwable => F[Response[F]] = self.errorHandler,
-      onWriteFailure: (Option[Request[F]], Response[F], Throwable) => F[Unit] = self.onWriteFailure,
-      maxConnections: Int = self.maxConnections,
-      receiveBufferSize: Int = self.receiveBufferSize,
-      maxHeaderSize: Int = self.maxHeaderSize,
+      host:                        Option[Host] = self.host,
+      port:                        Port = self.port,
+      httpApp:                     WebSocketBuilder2[F] => HttpApp[F] = self.httpApp,
+      tlsInfoOpt:                  Option[(TLSContext[F], TLSParameters)] = self.tlsInfoOpt,
+      sgOpt:                       Option[SocketGroup[F]] = self.sgOpt,
+      errorHandler:                Throwable => F[Response[F]] = self.errorHandler,
+      onWriteFailure:              (Option[Request[F]], Response[F], Throwable) => F[Unit] = self.onWriteFailure,
+      maxConnections:              Int = self.maxConnections,
+      receiveBufferSize:           Int = self.receiveBufferSize,
+      maxHeaderSize:               Int = self.maxHeaderSize,
       requestHeaderReceiveTimeout: Duration = self.requestHeaderReceiveTimeout,
-      idleTimeout: Duration = self.idleTimeout,
-      shutdownTimeout: Duration = self.shutdownTimeout,
-      additionalSocketOptions: List[SocketOption] = self.additionalSocketOptions,
-      logger: Logger[F] = self.logger,
-      unixSocketConfig: Option[(UnixSockets[F], UnixSocketAddress, Boolean, Boolean)] =
-        self.unixSocketConfig,
-      enableHttp2: Boolean = self.enableHttp2,
+      idleTimeout:                 Duration = self.idleTimeout,
+      shutdownTimeout:             Duration = self.shutdownTimeout,
+      additionalSocketOptions:     List[SocketOption] = self.additionalSocketOptions,
+      logger:                      Logger[F] = self.logger,
+      unixSocketConfig:            Option[(UnixSockets[F], UnixSocketAddress, Boolean, Boolean)] = self.unixSocketConfig,
+      enableHttp2:                 Boolean = self.enableHttp2,
   ): EmberServerBuilder[F] =
     new EmberServerBuilder[F](
-      host = host,
-      port = port,
-      httpApp = httpApp,
-      tlsInfoOpt = tlsInfoOpt,
-      sgOpt = sgOpt,
-      errorHandler = errorHandler,
-      onWriteFailure = onWriteFailure,
-      maxConnections = maxConnections,
-      receiveBufferSize = receiveBufferSize,
-      maxHeaderSize = maxHeaderSize,
+      host                        = host,
+      port                        = port,
+      httpApp                     = httpApp,
+      tlsInfoOpt                  = tlsInfoOpt,
+      sgOpt                       = sgOpt,
+      errorHandler                = errorHandler,
+      onWriteFailure              = onWriteFailure,
+      maxConnections              = maxConnections,
+      receiveBufferSize           = receiveBufferSize,
+      maxHeaderSize               = maxHeaderSize,
       requestHeaderReceiveTimeout = requestHeaderReceiveTimeout,
-      idleTimeout = idleTimeout,
-      shutdownTimeout = shutdownTimeout,
-      additionalSocketOptions = additionalSocketOptions,
-      logger = logger,
-      unixSocketConfig = unixSocketConfig,
-      enableHttp2 = enableHttp2,
+      idleTimeout                 = idleTimeout,
+      shutdownTimeout             = shutdownTimeout,
+      additionalSocketOptions     = additionalSocketOptions,
+      logger                      = logger,
+      unixSocketConfig            = unixSocketConfig,
+      enableHttp2                 = enableHttp2,
     )
 
   def withHostOption(host: Option[Host]): EmberServerBuilder[F] = copy(host = host)
-  def withHost(host: Host): EmberServerBuilder[F] = withHostOption(Some(host))
-  def withoutHost: EmberServerBuilder[F] = withHostOption(None)
+  def withHost(host: Host):               EmberServerBuilder[F] = withHostOption(Some(host))
+  def withoutHost:                        EmberServerBuilder[F] = withHostOption(None)
 
-  def withPort(port: Port): EmberServerBuilder[F] = copy(port = port)
-  def withHttpApp(httpApp: HttpApp[F]): EmberServerBuilder[F] = copy(httpApp = _ => httpApp)
+  def withPort(port: Port):                                        EmberServerBuilder[F] = copy(port = port)
+  def withHttpApp(httpApp: HttpApp[F]):                            EmberServerBuilder[F] = copy(httpApp = _ => httpApp)
   def withHttpWebSocketApp(f: WebSocketBuilder2[F] => HttpApp[F]): EmberServerBuilder[F] =
     copy(httpApp = f)
 
@@ -115,11 +114,11 @@ final class EmberServerBuilder[F[_]: Async] private (
     copy(sgOpt = sg.pure[Option])
 
   def withTLS(
-      tlsContext: TLSContext[F],
+      tlsContext:    TLSContext[F],
       tlsParameters: TLSParameters = TLSParameters.Default,
   ): EmberServerBuilder[F] =
     copy(tlsInfoOpt = (tlsContext, tlsParameters).pure[Option])
-  def withoutTLS: EmberServerBuilder[F] =
+  def withoutTLS:                          EmberServerBuilder[F] =
     copy(tlsInfoOpt = None)
 
   def withIdleTimeout(idleTimeout: Duration): EmberServerBuilder[F] =
@@ -151,23 +150,23 @@ final class EmberServerBuilder[F[_]: Async] private (
 
   def withReceiveBufferSize(receiveBufferSize: Int): EmberServerBuilder[F] =
     copy(receiveBufferSize = receiveBufferSize)
-  def withMaxHeaderSize(maxHeaderSize: Int): EmberServerBuilder[F] =
+  def withMaxHeaderSize(maxHeaderSize: Int):         EmberServerBuilder[F] =
     copy(maxHeaderSize = maxHeaderSize)
   def withRequestHeaderReceiveTimeout(
       requestHeaderReceiveTimeout: Duration
   ): EmberServerBuilder[F] =
     copy(requestHeaderReceiveTimeout = requestHeaderReceiveTimeout)
-  def withLogger(l: Logger[F]): EmberServerBuilder[F] = copy(logger = l)
+  def withLogger(l: Logger[F]):                      EmberServerBuilder[F] = copy(logger = l)
 
-  def withHttp2 = copy(enableHttp2 = true)
+  def withHttp2    = copy(enableHttp2 = true)
   def withoutHttp2 = copy(enableHttp2 = false)
 
   // If used will bind to UnixSocket
   def withUnixSocketConfig(
-      unixSockets: UnixSockets[F],
+      unixSockets:       UnixSockets[F],
       unixSocketAddress: UnixSocketAddress,
-      deleteIfExists: Boolean = true,
-      deleteOnClose: Boolean = true,
+      deleteIfExists:    Boolean = true,
+      deleteOnClose:     Boolean = true,
   ) =
     copy(unixSocketConfig = Some((unixSockets, unixSocketAddress, deleteIfExists, deleteOnClose)))
   def withoutUnixSocketConfig =
@@ -175,96 +174,96 @@ final class EmberServerBuilder[F[_]: Async] private (
 
   def build: Resource[F, Server] =
     for {
-      sg <- sgOpt.getOrElse(Network[F]).pure[Resource[F, *]]
-      ready <- Resource.eval(Deferred[F, Either[Throwable, SocketAddress[IpAddress]]])
-      shutdown <- Resource.eval(Shutdown[F](shutdownTimeout))
-      wsKey <- Resource.eval(Key.newKey[F, WebSocketContext[F]])
-      _ <- unixSocketConfig.fold(
-        Concurrent[F].background(
-          ServerHelpers
-            .server(
-              host,
-              port,
-              additionalSocketOptions,
-              sg,
-              httpApp(WebSocketBuilder2(wsKey)),
-              tlsInfoOpt,
-              ready,
-              shutdown,
-              errorHandler,
-              onWriteFailure,
-              maxConnections,
-              receiveBufferSize,
-              maxHeaderSize,
-              requestHeaderReceiveTimeout,
-              idleTimeout,
-              logger,
-              wsKey,
-              enableHttp2,
-            )
-            .compile
-            .drain
-        )
-      ) { case (unixSockets, unixSocketAddress, deleteIfExists, deleteOnClose) =>
-        ServerHelpers
-          .unixSocketServer(
-            unixSockets,
-            unixSocketAddress,
-            deleteIfExists,
-            deleteOnClose,
-            httpApp(WebSocketBuilder2(wsKey)),
-            tlsInfoOpt,
-            ready,
-            shutdown,
-            errorHandler,
-            onWriteFailure,
-            maxConnections,
-            receiveBufferSize,
-            maxHeaderSize,
-            requestHeaderReceiveTimeout,
-            idleTimeout,
-            logger,
-            wsKey,
-            enableHttp2,
-          )
-          .compile
-          .drain
-          .background
-      }
-      _ <- Resource.onFinalize(shutdown.await)
+      sg          <- sgOpt.getOrElse(Network[F]).pure[Resource[F, *]]
+      ready       <- Resource.eval(Deferred[F, Either[Throwable, SocketAddress[IpAddress]]])
+      shutdown    <- Resource.eval(Shutdown[F](shutdownTimeout))
+      wsKey       <- Resource.eval(Key.newKey[F, WebSocketContext[F]])
+      _           <- unixSocketConfig.fold(
+                       Concurrent[F].background(
+                         ServerHelpers
+                           .server(
+                             host,
+                             port,
+                             additionalSocketOptions,
+                             sg,
+                             httpApp(WebSocketBuilder2(wsKey)),
+                             tlsInfoOpt,
+                             ready,
+                             shutdown,
+                             errorHandler,
+                             onWriteFailure,
+                             maxConnections,
+                             receiveBufferSize,
+                             maxHeaderSize,
+                             requestHeaderReceiveTimeout,
+                             idleTimeout,
+                             logger,
+                             wsKey,
+                             enableHttp2,
+                           )
+                           .compile
+                           .drain
+                       )
+                     ) { case (unixSockets, unixSocketAddress, deleteIfExists, deleteOnClose) =>
+                       ServerHelpers
+                         .unixSocketServer(
+                           unixSockets,
+                           unixSocketAddress,
+                           deleteIfExists,
+                           deleteOnClose,
+                           httpApp(WebSocketBuilder2(wsKey)),
+                           tlsInfoOpt,
+                           ready,
+                           shutdown,
+                           errorHandler,
+                           onWriteFailure,
+                           maxConnections,
+                           receiveBufferSize,
+                           maxHeaderSize,
+                           requestHeaderReceiveTimeout,
+                           idleTimeout,
+                           logger,
+                           wsKey,
+                           enableHttp2,
+                         )
+                         .compile
+                         .drain
+                         .background
+                     }
+      _           <- Resource.onFinalize(shutdown.await)
       bindAddress <- Resource.eval(ready.get.rethrow)
-      _ <- Resource.eval(logger.info(s"Ember-Server service bound to address: ${bindAddress}"))
+      _           <- Resource.eval(logger.info(s"Ember-Server service bound to address: ${bindAddress}"))
     } yield new Ip4sServer {
       def ip4sAddress: SocketAddress[IpAddress] = bindAddress
-      def isSecure: Boolean = tlsInfoOpt.isDefined
+      def isSecure:    Boolean                  = tlsInfoOpt.isDefined
     }
 }
 
 object EmberServerBuilder extends EmberServerBuilderCompanionPlatform {
   def default[F[_]: Async]: EmberServerBuilder[F] =
     new EmberServerBuilder[F](
-      host = Host.fromString(Defaults.host),
-      port = Port.fromInt(Defaults.port).get,
-      httpApp = _ => Defaults.httpApp[F],
-      tlsInfoOpt = None,
-      sgOpt = None,
-      errorHandler = Defaults.errorHandler[F],
-      onWriteFailure = Defaults.onWriteFailure[F],
-      maxConnections = Defaults.maxConnections,
-      receiveBufferSize = Defaults.receiveBufferSize,
-      maxHeaderSize = Defaults.maxHeaderSize,
+      host                        = Host.fromString(Defaults.host),
+      port                        = Port.fromInt(Defaults.port).get,
+      httpApp                     = _ => Defaults.httpApp[F],
+      tlsInfoOpt                  = None,
+      sgOpt                       = None,
+      errorHandler                = Defaults.errorHandler[F],
+      onWriteFailure              = Defaults.onWriteFailure[F],
+      maxConnections              = Defaults.maxConnections,
+      receiveBufferSize           = Defaults.receiveBufferSize,
+      maxHeaderSize               = Defaults.maxHeaderSize,
       requestHeaderReceiveTimeout = Defaults.requestHeaderReceiveTimeout,
-      idleTimeout = Defaults.idleTimeout,
-      shutdownTimeout = Defaults.shutdownTimeout,
-      additionalSocketOptions = Defaults.additionalSocketOptions,
-      logger = defaultLogger[F],
+      idleTimeout                 = Defaults.idleTimeout,
+      shutdownTimeout             = Defaults.shutdownTimeout,
+      additionalSocketOptions     = Defaults.additionalSocketOptions,
+      logger                      = defaultLogger[F],
       None,
       false,
     )
 
   private object Defaults {
     val host: String = server.defaults.IPv4Host
-    val port: Int = server.defaults.HttpPort
+    val port: Int    = server.defaults.HttpPort
 
     def httpApp[F[_]: Applicative]: HttpApp[F] = HttpApp.notFound[F]
 
@@ -281,16 +280,15 @@ object EmberServerBuilder extends EmberServerBuilderCompanionPlatform {
       serverFailure.covary[F]
     }
 
-    def onWriteFailure[F[_]: Applicative]
-        : (Option[Request[F]], Response[F], Throwable) => F[Unit] = {
+    def onWriteFailure[F[_]: Applicative]: (Option[Request[F]], Response[F], Throwable) => F[Unit] = {
       case _: (Option[Request[F]], Response[F], Throwable) => Applicative[F].unit
     }
-    val maxConnections: Int = server.defaults.MaxConnections
-    val receiveBufferSize: Int = 256 * 1024
-    val maxHeaderSize: Int = server.defaults.MaxHeadersSize
-    val requestHeaderReceiveTimeout: Duration = 5.seconds
-    val idleTimeout: Duration = server.defaults.IdleTimeout
-    val shutdownTimeout: Duration = server.defaults.ShutdownTimeout
+    val maxConnections:                    Int                                                     = server.defaults.MaxConnections
+    val receiveBufferSize:                 Int                                                     = 256 * 1024
+    val maxHeaderSize:                     Int                                                     = server.defaults.MaxHeadersSize
+    val requestHeaderReceiveTimeout:       Duration                                                = 5.seconds
+    val idleTimeout:                       Duration                                                = server.defaults.IdleTimeout
+    val shutdownTimeout:                   Duration                                                = server.defaults.ShutdownTimeout
     val additionalSocketOptions = List.empty[SocketOption]
   }
 }

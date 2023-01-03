@@ -33,11 +33,11 @@ import scala.concurrent.duration._
 
 private[ember] object Util {
 
-  private[this] val closeCi = ci"close"
-  private[this] val keepAliveCi = ci"keep-alive"
+  private[this] val closeCi      = ci"close"
+  private[this] val keepAliveCi  = ci"keep-alive"
   private[this] val connectionCi = ci"connection"
-  private[this] val close = Connection(NonEmptyList.of(closeCi))
-  private[this] val keepAlive = Connection(NonEmptyList.one(keepAliveCi))
+  private[this] val close        = Connection(NonEmptyList.of(closeCi))
+  private[this] val keepAlive    = Connection(NonEmptyList.one(keepAliveCi))
 
   private def streamCurrentTimeMillis[F[_]](clock: Clock[F]): Stream[F, Long] =
     Stream
@@ -57,13 +57,13 @@ private[ember] object Util {
     * to then not timeout on the remaining body.
     */
   def readWithTimeout[F[_]](
-      socket: Socket[F],
-      started: Long,
-      timeout: FiniteDuration,
+      socket:       Socket[F],
+      started:      Long,
+      timeout:      FiniteDuration,
       shallTimeout: F[Boolean],
-      chunkSize: Int,
-  )(implicit F: ApplicativeThrow[F], C: Clock[F]): Stream[F, Byte] = {
-    def whenWontTimeout: Stream[F, Byte] =
+      chunkSize:    Int,
+  )(implicit F:     ApplicativeThrow[F], C: Clock[F]): Stream[F, Byte] = {
+    def whenWontTimeout:                         Stream[F, Byte] =
       socket.reads
     def whenMayTimeout(remains: FiniteDuration): Stream[F, Byte] =
       if (remains <= 0.millis)
@@ -76,15 +76,15 @@ private[ember] object Util {
       else
         for {
           start <- streamCurrentTimeMillis(C)
-          read <- Stream.eval(socket.read(chunkSize)) //  Each Read Yields
-          end <- streamCurrentTimeMillis(C)
-          out <- read.fold[Stream[F, Byte]](
-            Stream.empty
-          )(
-            Stream.chunk(_) ++ go(remains - (end - start).millis)
-          )
+          read  <- Stream.eval(socket.read(chunkSize)) //  Each Read Yields
+          end   <- streamCurrentTimeMillis(C)
+          out   <- read.fold[Stream[F, Byte]](
+                     Stream.empty
+                   )(
+                     Stream.chunk(_) ++ go(remains - (end - start).millis)
+                   )
         } yield out
-    def go(remains: FiniteDuration): Stream[F, Byte] =
+    def go(remains: FiniteDuration):             Stream[F, Byte] =
       Stream
         .eval(shallTimeout)
         .ifM(
@@ -125,7 +125,7 @@ private[ember] object Util {
     httpVersion match {
       case HttpVersion.`HTTP/1.0` => hasConnection(keepAliveCi.toString)
       case HttpVersion.`HTTP/1.1` => !hasConnection(closeCi.toString)
-      case _ => sys.error("unsupported http version")
+      case _                      => sys.error("unsupported http version")
     }
   }
 

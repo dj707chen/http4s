@@ -84,7 +84,7 @@ class ExampleService[F[_]](implicit F: Async[F]) extends Http4sDsl[F] {
 
       // /////////////////////////////////////////////////////////////
       // ////////////// Dealing with the message body ////////////////
-      case req @ POST -> Root / "echo" =>
+      case req @ POST -> Root / "echo"   =>
         // The body can be used in the response
         Ok(req.body).map(_.putHeaders(`Content-Type`(MediaType.text.plain)))
 
@@ -118,7 +118,7 @@ class ExampleService[F[_]](implicit F: Async[F]) extends Http4sDsl[F] {
             case e: NumberFormatException => BadRequest("Not an int: " + e.getMessage)
           }
 
-      case GET -> Root / "sum" =>
+      case GET -> Root / "sum"          =>
         // disabled until twirl supports dotty
         // Ok(html.submissionForm("sum"))
         Ok("Hello World")
@@ -128,23 +128,23 @@ class ExampleService[F[_]](implicit F: Async[F]) extends Http4sDsl[F] {
 
       // You can use the same service for GET and HEAD. For HEAD request,
       // only the Content-Length is sent (if static content)
-      case GET -> Root / "helloworld" =>
+      case GET -> Root / "helloworld"   =>
         helloWorldService
-      case HEAD -> Root / "helloworld" =>
+      case HEAD -> Root / "helloworld"  =>
         helloWorldService
 
       // HEAD responses with Content-Length, but empty content
-      case HEAD -> Root / "head" =>
+      case HEAD -> Root / "head"        =>
         Ok("", `Content-Length`.unsafeFromLong(1024))
 
       // Response with invalid Content-Length header generates
       // an error (underflow causes the connection to be closed)
-      case GET -> Root / "underflow" =>
+      case GET -> Root / "underflow"    =>
         Ok("foo", `Content-Length`.unsafeFromLong(4))
 
       // Response with invalid Content-Length header generates
       // an error (overflow causes the extra bytes to be ignored)
-      case GET -> Root / "overflow" =>
+      case GET -> Root / "overflow"     =>
         Ok("foo", `Content-Length`.unsafeFromLong(2))
 
       // /////////////////////////////////////////////////////////////
@@ -163,7 +163,7 @@ class ExampleService[F[_]](implicit F: Async[F]) extends Http4sDsl[F] {
 
       // /////////////////////////////////////////////////////////////
       // ////////////////////// Server Push //////////////////////////
-      case req @ GET -> Root / "push" =>
+      case req @ GET -> Root / "push"          =>
         // http4s intends to be a forward looking library made with http2.0 in mind
         val data = <html><body><img src="image.jpg"/></body></html>
         Ok(data)
@@ -177,7 +177,7 @@ class ExampleService[F[_]](implicit F: Async[F]) extends Http4sDsl[F] {
 
       // /////////////////////////////////////////////////////////////
       // ////////////////////// Multi Part //////////////////////////
-      case GET -> Root / "form" =>
+      case GET -> Root / "form"            =>
         // disabled until twirl supports dotty
         // Ok(html.form())
         Ok("Hello World")
@@ -193,7 +193,7 @@ class ExampleService[F[_]](implicit F: Async[F]) extends Http4sDsl[F] {
   // This is a mock data source, but could be a Process representing results from a database
   def dataStream(n: Int)(implicit clock: Clock[F]): Stream[F, String] = {
     val interval = 100.millis
-    val stream = Stream
+    val stream   = Stream
       .awakeEvery[F](interval)
       .evalMap(_ => clock.realTime)
       .map(time => s"Current system time: $time ms\n")

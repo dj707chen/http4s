@@ -25,15 +25,15 @@ import java.util.concurrent.atomic.AtomicInteger
 private[asynchttpclient] class NoOpCookieStore extends CookieStore {
   private def empty: java.util.List[Cookie] = java.util.Collections.emptyList[Cookie]
 
-  override def add(uri: Uri, cookie: Cookie): Unit = ()
-  override def get(uri: Uri): java.util.List[Cookie] = empty
-  override def getAll(): java.util.List[Cookie] = empty
-  override def remove(pred: java.util.function.Predicate[Cookie]): Boolean = false
-  override def clear(): Boolean = false
-  override def evictExpired(): Unit = ()
+  override def add(uri: Uri, cookie: Cookie):                      Unit                   = ()
+  override def get(uri: Uri):                                      java.util.List[Cookie] = empty
+  override def getAll():                                           java.util.List[Cookie] = empty
+  override def remove(pred: java.util.function.Predicate[Cookie]): Boolean                = false
+  override def clear():                                            Boolean                = false
+  override def evictExpired():                                     Unit                   = ()
 
   private val counter = new AtomicInteger(0)
-  override def count(): Int = counter.get
+  override def count():           Int = counter.get
   override def decrementAndGet(): Int = counter.decrementAndGet()
   override def incrementAndGet(): Int = counter.incrementAndGet()
 }

@@ -44,7 +44,7 @@ package object dropwizard {
   /** Returns an OK response with a JSON dump of a MetricRegistry */
   def metricsResponse[F[_]: Applicative](
       registry: MetricRegistry,
-      mapper: ObjectMapper = defaultMapper,
+      mapper:   ObjectMapper = defaultMapper,
   ): F[Response[F]] = {
     implicit val encoder: EntityEncoder[F, MetricRegistry] = metricRegistryEncoder[F](mapper)
     Response[F](Status.Ok).withEntity[MetricRegistry](registry).pure[F]
@@ -53,7 +53,7 @@ package object dropwizard {
   /** Returns an OK response with a JSON dump of a MetricRegistry */
   def metricsService[F[_]: Sync](
       registry: MetricRegistry,
-      mapper: ObjectMapper = defaultMapper,
+      mapper:   ObjectMapper = defaultMapper,
   ): HttpRoutes[F] =
     HttpRoutes.of {
       case req if req.method == Method.GET => metricsResponse(registry, mapper)

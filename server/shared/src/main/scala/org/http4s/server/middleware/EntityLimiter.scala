@@ -29,20 +29,20 @@ object EntityLimiter {
 
   val DefaultMaxEntitySize: Long = 2L * 1024L * 1024L // 2 MB default
 
-  def apply[F[_], G[_], B](http: Kleisli[F, Request[G], B], limit: Long = DefaultMaxEntitySize)(
-      implicit G: ApplicativeThrow[G]
+  def apply[F[_], G[_], B](http: Kleisli[F, Request[G], B], limit: Long = DefaultMaxEntitySize)(implicit
+      G:                         ApplicativeThrow[G]
   ): Kleisli[F, Request[G], B] =
     http.local(_.pipeBodyThrough(takeLimited(limit)))
 
   def httpRoutes[F[_]: ApplicativeThrow](
       httpRoutes: HttpRoutes[F],
-      limit: Long = DefaultMaxEntitySize,
+      limit:      Long = DefaultMaxEntitySize,
   ): HttpRoutes[F] =
     apply(httpRoutes, limit)
 
   def httpApp[F[_]: ApplicativeThrow](
       httpApp: HttpApp[F],
-      limit: Long = DefaultMaxEntitySize,
+      limit:   Long = DefaultMaxEntitySize,
   ): HttpApp[F] =
     apply(httpApp, limit)
 
@@ -51,7 +51,7 @@ object EntityLimiter {
       .take(n)
       .flatMap {
         case Some(_) => Pull.raiseError[F](EntityTooLarge(n))
-        case None => Pull.done
+        case None    => Pull.done
       }
       .stream
 }

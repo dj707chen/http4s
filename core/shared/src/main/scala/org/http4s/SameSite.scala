@@ -26,8 +26,8 @@ sealed trait SameSite extends Renderable {
   override def render(writer: Writer): writer.type = {
     val str = this match {
       case Strict => "Strict"
-      case Lax => "Lax"
-      case None => "None"
+      case Lax    => "Lax"
+      case None   => "None"
     }
     writer.append(str)
   }

@@ -33,8 +33,8 @@ object DNT {
    * `DNT = 0 | 1 | null`
    */
   private[http4s] val parser: Parser[DNT] = {
-    val nullParser = string("null").as(NoPreference)
-    val allowTrackingParser = char('0').as(AllowTracking)
+    val nullParser             = string("null").as(NoPreference)
+    val allowTrackingParser    = char('0').as(AllowTracking)
     val disallowTrackingParser = char('1').as(DisallowTracking)
     (allowTrackingParser | disallowTrackingParser | nullParser)
   }

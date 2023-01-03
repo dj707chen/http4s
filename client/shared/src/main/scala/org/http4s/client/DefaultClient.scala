@@ -27,8 +27,7 @@ import org.http4s.Status.Successful
 import org.http4s.headers.Accept
 import org.http4s.headers.MediaRangeAndQValue
 
-private[http4s] abstract class DefaultClient[F[_]](implicit F: MonadCancelThrow[F])
-    extends Client[F] {
+private[http4s] abstract class DefaultClient[F[_]](implicit F: MonadCancelThrow[F]) extends Client[F] {
   def run(req: Request[F]): Resource[F, Response[F]]
 
   /** Submits a request, and provides a callback to process the response.
@@ -88,7 +87,7 @@ private[http4s] abstract class DefaultClient[F[_]](implicit F: MonadCancelThrow[
     Stream.eval(req).flatMap(stream).flatMap(f)
 
   def expectOr[A](
-      req: Request[F]
+      req:   Request[F]
   )(onError: Response[F] => F[Throwable])(implicit d: EntityDecoder[F, A]): F[A] = {
     val r = if (d.consumes.nonEmpty) {
       val m = d.consumes.toList
@@ -98,7 +97,7 @@ private[http4s] abstract class DefaultClient[F[_]](implicit F: MonadCancelThrow[
     run(r).use {
       case Successful(resp) =>
         d.decode(resp, strict = false).leftWiden[Throwable].rethrowT
-      case failedResponse =>
+      case failedResponse   =>
         onError(failedResponse).flatMap(F.raiseError)
     }
   }
@@ -111,7 +110,7 @@ private[http4s] abstract class DefaultClient[F[_]](implicit F: MonadCancelThrow[
     expectOr(req)(defaultOnError(req))
 
   def expectOr[A](req: F[Request[F]])(onError: Response[F] => F[Throwable])(implicit
-      d: EntityDecoder[F, A]
+      d:               EntityDecoder[F, A]
   ): F[A] =
     req.flatMap(expectOr(_)(onError))
 
@@ -119,7 +118,7 @@ private[http4s] abstract class DefaultClient[F[_]](implicit F: MonadCancelThrow[
     req.flatMap(req => expectOr(req)(defaultOnError(req)))
 
   def expectOr[A](uri: Uri)(onError: Response[F] => F[Throwable])(implicit
-      d: EntityDecoder[F, A]
+      d:               EntityDecoder[F, A]
   ): F[A] =
     expectOr(Request[F](Method.GET, uri))(onError)
 
@@ -131,7 +130,7 @@ private[http4s] abstract class DefaultClient[F[_]](implicit F: MonadCancelThrow[
     expectOr(uri)(defaultOnError(Request[F](uri = uri)))
 
   def expectOr[A](s: String)(onError: Response[F] => F[Throwable])(implicit
-      d: EntityDecoder[F, A]
+      d:             EntityDecoder[F, A]
   ): F[A] =
     Uri.fromString(s).fold(F.raiseError, uri => expectOr[A](uri)(onError))
 
@@ -143,7 +142,7 @@ private[http4s] abstract class DefaultClient[F[_]](implicit F: MonadCancelThrow[
     expectOr(s)(defaultOnError(Request[F](uri = Uri.unsafeFromString(s))))
 
   def expectOptionOr[A](
-      req: Request[F]
+      req:   Request[F]
   )(onError: Response[F] => F[Throwable])(implicit d: EntityDecoder[F, A]): F[Option[A]] = {
     val r = if (d.consumes.nonEmpty) {
       val m = d.consumes.toList
@@ -153,11 +152,11 @@ private[http4s] abstract class DefaultClient[F[_]](implicit F: MonadCancelThrow[
     run(r).use {
       case Successful(resp) =>
         d.decode(resp, strict = false).leftWiden[Throwable].rethrowT.map(_.some)
-      case failedResponse =>
+      case failedResponse   =>
         failedResponse.status match {
           case Status.NotFound => Option.empty[A].pure[F]
-          case Status.Gone => Option.empty[A].pure[F]
-          case _ => onError(failedResponse).flatMap(F.raiseError)
+          case Status.Gone     => Option.empty[A].pure[F]
+          case _               => onError(failedResponse).flatMap(F.raiseError)
         }
     }
   }
@@ -234,7 +233,7 @@ private[http4s] abstract class DefaultClient[F[_]](implicit F: MonadCancelThrow[
     Uri.fromString(s).fold(F.raiseError, uri => get(uri)(f))
 
   private def defaultOnError(req: Request[F])(resp: Response[F])(implicit
-      F: Applicative[F]
+      F:                          Applicative[F]
   ): F[Throwable] =
     F.pure(UnexpectedStatus(resp.status, req.method, req.uri))
 }

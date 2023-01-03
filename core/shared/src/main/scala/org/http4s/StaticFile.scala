@@ -51,16 +51,16 @@ object StaticFile {
     fromPath(Path(url), req)
 
   def fromResource[F[_]: Sync](
-      name: String,
-      req: Option[Request[F]] = None,
+      name:          String,
+      req:           Option[Request[F]] = None,
       preferGzipped: Boolean = false,
-      classloader: Option[ClassLoader] = None,
+      classloader:   Option[ClassLoader] = None,
   ): OptionT[F, Response[F]] = {
     val loader = classloader.getOrElse(getClass.getClassLoader)
 
     val acceptEncodingHeader: Option[`Accept-Encoding`] =
       req.flatMap(_.headers.get[`Accept-Encoding`])
-    val tryGzipped =
+    val tryGzipped     =
       preferGzipped && acceptEncodingHeader.exists { acceptEncoding =>
         acceptEncoding.satisfiedBy(ContentCoding.gzip) || acceptEncoding.satisfiedBy(
           ContentCoding.`x-gzip`
@@ -91,10 +91,10 @@ object StaticFile {
   }
 
   def fromURL[F[_]](url: URL, req: Option[Request[F]] = None)(implicit
-      F: Sync[F]
+      F:                 Sync[F]
   ): OptionT[F, Response[F]] = {
     val fileUrl = url.getFile()
-    val file = new File(fileUrl)
+    val file    = new File(fileUrl)
     OptionT.apply(F.defer {
       if (url.getProtocol === "file" && file.isDirectory())
         F.pure(none[Response[F]])
@@ -106,7 +106,7 @@ object StaticFile {
         val expired = (ifModifiedSince, lastmod).mapN(_.date < _).getOrElse(true)
 
         if (expired) {
-          val len = urlConn.getContentLengthLong
+          val len     = urlConn.getContentLengthLong
           val headers = Headers(
             lastmod.map(`Last-Modified`(_)),
             nameToContentType(url.getPath),
@@ -120,11 +120,11 @@ object StaticFile {
                 case _: FileNotFoundException => None
                 case other => throw other
               },
-              f = { inputStream =>
+              f       = { inputStream =>
                 Some(
                   Response(
                     headers = headers,
-                    body = readInputStream[F](F.pure(inputStream), DefaultBufferSize),
+                    body    = readInputStream[F](F.pure(inputStream), DefaultBufferSize),
                   )
                 )
               },
@@ -142,9 +142,7 @@ object StaticFile {
     f =>
       Files[F]
         .isRegularFile(Path.fromNioPath(f.toPath()))
-        .map(isFile =>
-          if (isFile) s"${f.lastModified().toHexString}-${f.length().toHexString}" else ""
-        )
+        .map(isFile => if (isFile) s"${f.lastModified().toHexString}-${f.length().toHexString}" else "")
 
   def calculateETag[F[_]: Files: ApplicativeThrow]: Path => F[String] =
     f =>
@@ -158,21 +156,21 @@ object StaticFile {
 
   @deprecated("Use fromPath", "0.23.5")
   def fromFile[F[_]: Files: MonadThrow](
-      f: File,
+      f:   File,
       req: Option[Request[F]] = None,
   ): OptionT[F, Response[F]] =
     fromPath(Path.fromNioPath(f.toPath()), DefaultBufferSize, req, calculateETag[F])
 
   def fromPath[F[_]: Files: MonadThrow](
-      f: Path,
+      f:   Path,
       req: Option[Request[F]] = None,
   ): OptionT[F, Response[F]] =
     fromPath(f, DefaultBufferSize, req, calculateETag[F])
 
   @deprecated("Use fromPath", "0.23.5")
   def fromFile[F[_]: Files: MonadThrow](
-      f: File,
-      req: Option[Request[F]],
+      f:              File,
+      req:            Option[Request[F]],
       etagCalculator: File => F[String],
   ): OptionT[F, Response[F]] =
     fromPath(
@@ -183,17 +181,17 @@ object StaticFile {
     )
 
   def fromPath[F[_]: Files: MonadThrow](
-      f: Path,
-      req: Option[Request[F]],
+      f:              Path,
+      req:            Option[Request[F]],
       etagCalculator: Path => F[String],
   ): OptionT[F, Response[F]] =
     fromPath(f, DefaultBufferSize, req, etagCalculator)
 
   @deprecated("Use fromPath", "0.23.5")
   def fromFile[F[_]: Files: MonadThrow](
-      f: File,
-      buffsize: Int,
-      req: Option[Request[F]],
+      f:              File,
+      buffsize:       Int,
+      req:            Option[Request[F]],
       etagCalculator: File => F[String],
   ): OptionT[F, Response[F]] =
     fromPath(
@@ -206,9 +204,9 @@ object StaticFile {
     )
 
   def fromPath[F[_]: Files: MonadThrow](
-      f: Path,
-      buffsize: Int,
-      req: Option[Request[F]],
+      f:              Path,
+      buffsize:       Int,
+      req:            Option[Request[F]],
       etagCalculator: Path => F[String],
   ): OptionT[F, Response[F]] =
     OptionT
@@ -222,14 +220,14 @@ object StaticFile {
 
   @deprecated("Use fromPath", "0.23.5")
   def fromFile[F[_]: Files](
-      f: File,
-      start: Long,
-      end: Long,
-      buffsize: Int,
-      req: Option[Request[F]],
+      f:              File,
+      start:          Long,
+      end:            Long,
+      buffsize:       Int,
+      req:            Option[Request[F]],
       etagCalculator: File => F[String],
   )(implicit
-      F: MonadError[F, Throwable]
+      F:              MonadError[F, Throwable]
   ): OptionT[F, Response[F]] =
     fromPath(
       Path.fromNioPath(f.toPath()),
@@ -241,68 +239,68 @@ object StaticFile {
     )
 
   def fromPath[F[_]: Files](
-      f: Path,
-      start: Long,
-      end: Long,
-      buffsize: Int,
-      req: Option[Request[F]],
+      f:              Path,
+      start:          Long,
+      end:            Long,
+      buffsize:       Int,
+      req:            Option[Request[F]],
       etagCalculator: Path => F[String],
   )(implicit
-      F: MonadError[F, Throwable]
+      F:              MonadError[F, Throwable]
   ): OptionT[F, Response[F]] =
     OptionT(for {
       etagCalc <- etagCalculator(f).map(et => ETag(et))
-      res <- Files[F].isRegularFile(f).flatMap[Option[Response[F]]] { isFile =>
-        if (isFile) {
-          if (start >= 0 && end >= start && buffsize > 0) {
-            Files[F]
-              .getBasicFileAttributes(f)
-              .flatMap { attr =>
-                val lastModified =
-                  HttpDate.fromEpochSecond(attr.lastModifiedTime.toSeconds).toOption
+      res      <- Files[F].isRegularFile(f).flatMap[Option[Response[F]]] { isFile =>
+                    if (isFile) {
+                      if (start >= 0 && end >= start && buffsize > 0) {
+                        Files[F]
+                          .getBasicFileAttributes(f)
+                          .flatMap { attr =>
+                            val lastModified =
+                              HttpDate.fromEpochSecond(attr.lastModifiedTime.toSeconds).toOption
 
-                F.pure(notModified(req, etagCalc, lastModified).orElse {
-                  val (body, contentLength) =
-                    if (attr.size < end) (Stream.empty, 0L)
-                    else (fileToBody[F](f, start, end), end - start)
+                            F.pure(notModified(req, etagCalc, lastModified).orElse {
+                              val (body, contentLength) =
+                                if (attr.size < end) (Stream.empty, 0L)
+                                else (fileToBody[F](f, start, end), end - start)
 
-                  val contentType = nameToContentType(f.fileName.toString)
-                  val hs =
-                    Headers(
-                      lastModified.map(`Last-Modified`(_)),
-                      `Content-Length`.fromLong(contentLength).toOption,
-                      contentType,
-                      etagCalc,
-                    )
+                              val contentType = nameToContentType(f.fileName.toString)
+                              val hs          =
+                                Headers(
+                                  lastModified.map(`Last-Modified`(_)),
+                                  `Content-Length`.fromLong(contentLength).toOption,
+                                  contentType,
+                                  etagCalc,
+                                )
 
-                  val r = Response(
-                    headers = hs,
-                    body = body,
-                    attributes = Vault.empty.insert(staticPathKey, f),
-                  )
+                              val r = Response(
+                                headers    = hs,
+                                body       = body,
+                                attributes = Vault.empty.insert(staticPathKey, f),
+                              )
 
-                  logger.trace(s"Static file generated response: $r")
-                  r.some
-                })
-              }
-          } else {
-            F.raiseError[Option[Response[F]]](
-              new IllegalArgumentException(
-                s"requirement failed: start: $start, end: $end, buffsize: $buffsize"
-              )
-            )
-          }
+                              logger.trace(s"Static file generated response: $r")
+                              r.some
+                            })
+                          }
+                      } else {
+                        F.raiseError[Option[Response[F]]](
+                          new IllegalArgumentException(
+                            s"requirement failed: start: $start, end: $end, buffsize: $buffsize"
+                          )
+                        )
+                      }
 
-        } else {
-          F.pure(none[Response[F]])
-        }
+                    } else {
+                      F.pure(none[Response[F]])
+                    }
 
-      }
+                  }
     } yield res)
 
   private def notModified[F[_]](
-      req: Option[Request[F]],
-      etagCalc: ETag,
+      req:          Option[Request[F]],
+      etagCalc:     ETag,
       lastModified: Option[HttpDate],
   ): Option[Response[F]] = {
     implicit val conjunction: Semigroup[Boolean] = new Semigroup[Boolean] {
@@ -316,23 +314,23 @@ object StaticFile {
 
   private def etagMatch[F[_]](req: Option[Request[F]], etagCalc: ETag) =
     for {
-      r <- req
+      r          <- req
       etagHeader <- r.headers.get[`If-None-Match`]
-      etagMatch = etagHeader.tags.exists(_.exists(_ == etagCalc.tag))
-      _ = logger.trace(
-        s"Matches `If-None-Match`: $etagMatch Previous ETag: ${etagHeader.value}, New ETag: $etagCalc"
-      )
+      etagMatch   = etagHeader.tags.exists(_.exists(_ == etagCalc.tag))
+      _           = logger.trace(
+                      s"Matches `If-None-Match`: $etagMatch Previous ETag: ${etagHeader.value}, New ETag: $etagCalc"
+                    )
     } yield etagMatch
 
   private def notModifiedSince[F[_]](req: Option[Request[F]], lastModified: Option[HttpDate]) =
     for {
-      r <- req
-      h <- r.headers.get[`If-Modified-Since`]
-      lm <- lastModified
+      r          <- req
+      h          <- r.headers.get[`If-Modified-Since`]
+      lm         <- lastModified
       notModified = h.date >= lm
-      _ = logger.trace(
-        s"Matches `If-Modified-Since`: $notModified. Request age: ${h.date}, Modified: $lm"
-      )
+      _           = logger.trace(
+                      s"Matches `If-Modified-Since`: $notModified. Request age: ${h.date}, Modified: $lm"
+                    )
     } yield notModified
 
   private def fileToBody[F[_]: Files](f: Path, start: Long, end: Long): EntityBody[F] =
@@ -341,7 +339,7 @@ object StaticFile {
   private def nameToContentType(name: String): Option[`Content-Type`] =
     name.lastIndexOf('.') match {
       case -1 => None
-      case i => MediaType.forExtension(name.substring(i + 1)).map(`Content-Type`(_))
+      case i  => MediaType.forExtension(name.substring(i + 1)).map(`Content-Type`(_))
     }
 
   private[http4s] val staticPathKey = Key.newKey[SyncIO, Path].unsafeRunSync()

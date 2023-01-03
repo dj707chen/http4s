@@ -29,19 +29,19 @@ trait HeaderSyntax {
     new SelectOpsOne(a)
 
   implicit def http4sSelectSyntaxMultiple[A, H[_]](a: H[A])(implicit
-      select: Header.Select.Aux[A, H]
+      select:                                         Header.Select.Aux[A, H]
   ): SelectOpsMultiple[A, H] =
     new SelectOpsMultiple[A, H](a)
 }
 
 final class HeaderOps[A](val a: A, header: Header[A, _]) {
-  def value: String = header.value(a)
-  def name: CIString = header.name
+  def value: String   = header.value(a)
+  def name:  CIString = header.name
 }
 
 final class SelectOpsOne[A](val a: A)(implicit ev: Header.Select[A]) {
-  def toRaw1: Header.Raw = ev.toRaw1(a)
-  def renderString: String = Renderer.renderString(a)
+  def toRaw1:       Header.Raw = ev.toRaw1(a)
+  def renderString: String     = Renderer.renderString(a)
 }
 
 final class SelectOpsMultiple[A, H[_]](val a: H[A])(implicit ev: Header.Select.Aux[A, H]) {

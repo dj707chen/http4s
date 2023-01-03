@@ -43,7 +43,7 @@ trait TwirlInstances {
     contentEncoder(MediaType.text.plain)
 
   private def contentEncoder[F[_], C <: Content](
-      mediaType: MediaType
+      mediaType:      MediaType
   )(implicit charset: Charset): EntityEncoder[F, C] =
     EntityEncoder
       .stringEncoder[F]

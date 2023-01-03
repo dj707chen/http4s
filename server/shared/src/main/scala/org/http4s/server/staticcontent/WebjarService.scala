@@ -37,18 +37,18 @@ import scala.util.control.NoStackTrace
   */
 class WebjarServiceBuilder[F[_]] private (
     webjarAssetFilter: WebjarServiceBuilder.WebjarAssetFilter,
-    cacheStrategy: CacheStrategy[F],
-    classLoader: Option[ClassLoader],
-    preferGzipped: Boolean,
+    cacheStrategy:     CacheStrategy[F],
+    classLoader:       Option[ClassLoader],
+    preferGzipped:     Boolean,
 ) {
 
-  import WebjarServiceBuilder.{WebjarAsset, WebjarAssetFilter, serveWebjarAsset}
+  import WebjarServiceBuilder.{serveWebjarAsset, WebjarAsset, WebjarAssetFilter}
 
   private def copy(
       webjarAssetFilter: WebjarAssetFilter = webjarAssetFilter,
-      cacheStrategy: CacheStrategy[F] = cacheStrategy,
-      classLoader: Option[ClassLoader] = classLoader,
-      preferGzipped: Boolean = preferGzipped,
+      cacheStrategy:     CacheStrategy[F] = cacheStrategy,
+      classLoader:       Option[ClassLoader] = classLoader,
+      preferGzipped:     Boolean = preferGzipped,
   ) =
     new WebjarServiceBuilder[F](webjarAssetFilter, cacheStrategy, classLoader, preferGzipped)
 
@@ -75,7 +75,7 @@ class WebjarServiceBuilder[F[_]] private (
           .liftF(F.catchNonFatal {
             segments.foldLeft(Root) {
               case (_, "" | "." | "..") => throw BadTraversal
-              case (path, segment) =>
+              case (path, segment)      =>
                 path.resolve(segment)
             }
           })
@@ -99,7 +99,7 @@ class WebjarServiceBuilder[F[_]] private (
     if (count > 2) {
       val library = p.getName(0).toString
       val version = p.getName(1).toString
-      val asset = asScalaIterator(p.subpath(2, count).iterator()).mkString("/")
+      val asset   = asScalaIterator(p.subpath(2, count).iterator()).mkString("/")
       Some(WebjarAsset(library, version, asset))
     } else
       None
@@ -114,7 +114,7 @@ class WebjarServiceBuilder[F[_]] private (
   private def asScalaIterator[A](underlying: java.util.Iterator[A]): Iterator[A] =
     new Iterator[A] {
       override def hasNext: Boolean = underlying.hasNext
-      override def next(): A = underlying.next()
+      override def next():  A       = underlying.next()
     }
 
 }
@@ -123,9 +123,9 @@ object WebjarServiceBuilder {
   def apply[F[_]] =
     new WebjarServiceBuilder(
       webjarAssetFilter = _ => true,
-      cacheStrategy = NoopCacheStrategy[F],
-      classLoader = None,
-      preferGzipped = false,
+      cacheStrategy     = NoopCacheStrategy[F],
+      classLoader       = None,
+      preferGzipped     = false,
     )
 
   /** A filter callback for Webjar asset
@@ -159,15 +159,15 @@ object WebjarServiceBuilder {
     */
   private def serveWebjarAsset[F[_]](
       cacheStrategy: CacheStrategy[F],
-      classLoader: Option[ClassLoader],
-      request: Request[F],
+      classLoader:   Option[ClassLoader],
+      request:       Request[F],
       preferGzipped: Boolean,
-  )(webjarAsset: WebjarAsset)(implicit F: Async[F]): OptionT[F, Response[F]] =
+  )(webjarAsset:     WebjarAsset)(implicit F: Async[F]): OptionT[F, Response[F]] =
     StaticFile
       .fromResource(
         webjarAsset.pathInJar,
         Some(request),
-        classloader = classLoader,
+        classloader   = classLoader,
         preferGzipped = preferGzipped,
       )
       .semiflatMap(cacheStrategy.cache(request.pathInfo, _))
@@ -181,7 +181,7 @@ object WebjarService {
     * @param cacheStrategy strategy to use for caching purposes. Default to no caching.
     */
   final case class Config[F[_]](
-      filter: WebjarAssetFilter = _ => true,
+      filter:        WebjarAssetFilter = _ => true,
       cacheStrategy: CacheStrategy[F] = NoopCacheStrategy[F],
   )
 
@@ -224,7 +224,7 @@ object WebjarService {
           .liftF(F.catchNonFatal {
             segments.foldLeft(Root) {
               case (_, "" | "." | "..") => throw BadTraversal
-              case (path, segment) =>
+              case (path, segment)      =>
                 path.resolve(segment)
             }
           })
@@ -248,7 +248,7 @@ object WebjarService {
     if (count > 2) {
       val library = p.getName(0).toString
       val version = p.getName(1).toString
-      val asset = p.subpath(2, count).iterator().asScala.mkString("/")
+      val asset   = p.subpath(2, count).iterator().asScala.mkString("/")
       Some(WebjarAsset(library, version, asset))
     } else
       None

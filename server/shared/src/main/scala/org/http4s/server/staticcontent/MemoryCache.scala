@@ -33,10 +33,10 @@ import java.util.concurrent.ConcurrentHashMap
   */
 class MemoryCache[F[_]] extends CacheStrategy[F] {
   private[this] val logger = getLogger
-  private val cacheMap = new ConcurrentHashMap[Uri.Path, Response[F]]()
+  private val cacheMap     = new ConcurrentHashMap[Uri.Path, Response[F]]()
 
   override def cache(uriPath: Uri.Path, resp: Response[F])(implicit
-      F: Concurrent[F]
+      F:                      Concurrent[F]
   ): F[Response[F]] =
     if (resp.status == Status.Ok)
       Option(cacheMap.get(uriPath)) match {
@@ -53,7 +53,7 @@ class MemoryCache[F[_]] extends CacheStrategy[F] {
   // //////////// private methods //////////////////////////////////////////////
 
   private def collectResource(path: Uri.Path, resp: Response[F])(implicit
-      F: Concurrent[F]
+      F:                            Concurrent[F]
   ): F[Response[F]] =
     resp
       .as[Chunk[Byte]]

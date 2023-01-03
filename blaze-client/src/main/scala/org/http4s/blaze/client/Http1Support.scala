@@ -50,24 +50,24 @@ import scala.util.Success
 /** Provides basic HTTP1 pipeline building
   */
 private final class Http1Support[F[_]](
-    sslContextOption: SSLContextOption,
-    bufferSize: Int,
-    asynchronousChannelGroup: Option[AsynchronousChannelGroup],
-    executionContextConfig: ExecutionContextConfig,
-    scheduler: TickWheelExecutor,
+    sslContextOption:            SSLContextOption,
+    bufferSize:                  Int,
+    asynchronousChannelGroup:    Option[AsynchronousChannelGroup],
+    executionContextConfig:      ExecutionContextConfig,
+    scheduler:                   TickWheelExecutor,
     checkEndpointIdentification: Boolean,
-    maxResponseLineSize: Int,
-    maxHeaderLength: Int,
-    maxChunkSize: Int,
-    chunkBufferMaxSize: Int,
-    parserMode: ParserMode,
-    userAgent: Option[`User-Agent`],
-    channelOptions: ChannelOptions,
-    connectTimeout: Duration,
-    idleTimeout: Duration,
-    dispatcher: Dispatcher[F],
-    getAddress: RequestKey => Either[Throwable, InetSocketAddress],
-)(implicit F: Async[F]) {
+    maxResponseLineSize:         Int,
+    maxHeaderLength:             Int,
+    maxChunkSize:                Int,
+    chunkBufferMaxSize:          Int,
+    parserMode:                  ParserMode,
+    userAgent:                   Option[`User-Agent`],
+    channelOptions:              ChannelOptions,
+    connectTimeout:              Duration,
+    idleTimeout:                 Duration,
+    dispatcher:                  Dispatcher[F],
+    getAddress:                  RequestKey => Either[Throwable, InetSocketAddress],
+)(implicit F:                    Async[F]) {
   private val connectionManager = new ClientChannelFactory(
     bufferSize,
     asynchronousChannelGroup,
@@ -80,16 +80,14 @@ private final class Http1Support[F[_]](
     getAddress(requestKey) match {
       case Right(a) =>
         fromFutureNoShift(
-          executionContextConfig.getExecutionContext.flatMap(ec =>
-            F.delay(buildPipeline(requestKey, a, ec))
-          )
+          executionContextConfig.getExecutionContext.flatMap(ec => F.delay(buildPipeline(requestKey, a, ec)))
         )
-      case Left(t) => F.raiseError(t)
+      case Left(t)  => F.raiseError(t)
     }
 
   private def buildPipeline(
-      requestKey: RequestKey,
-      addr: InetSocketAddress,
+      requestKey:       RequestKey,
+      addr:             InetSocketAddress,
       executionContext: ExecutionContext,
   ): Future[BlazeConnection[F]] =
     connectionManager
@@ -102,34 +100,34 @@ private final class Http1Support[F[_]](
                 head.inboundCommand(Command.Connected)
                 connection
               }
-            case Left(e) =>
+            case Left(e)           =>
               Future.failed(new ConnectionFailure(requestKey, addr, e))
           }
-        case Failure(e) => Future.failed(new ConnectionFailure(requestKey, addr, e))
+        case Failure(e)    => Future.failed(new ConnectionFailure(requestKey, addr, e))
       }(executionContext)
 
   private def buildStages(
-      requestKey: RequestKey,
-      head: HeadStage[ByteBuffer],
+      requestKey:       RequestKey,
+      head:             HeadStage[ByteBuffer],
       executionContext: ExecutionContext,
   ): Either[IllegalStateException, BlazeConnection[F]] = {
 
-    val idleTimeoutStage: Option[IdleTimeoutStage[ByteBuffer]] = makeIdleTimeoutStage(
+    val idleTimeoutStage: Option[IdleTimeoutStage[ByteBuffer]]            = makeIdleTimeoutStage(
       executionContext
     )
-    val ssl: Either[IllegalStateException, Option[SSLStage]] = makeSslStage(requestKey)
+    val ssl:              Either[IllegalStateException, Option[SSLStage]] = makeSslStage(requestKey)
 
     val connection = new Http1Connection(
-      requestKey = requestKey,
-      executionContext = executionContext,
+      requestKey          = requestKey,
+      executionContext    = executionContext,
       maxResponseLineSize = maxResponseLineSize,
-      maxHeaderLength = maxHeaderLength,
-      maxChunkSize = maxChunkSize,
-      chunkBufferMaxSize = chunkBufferMaxSize,
-      parserMode = parserMode,
-      userAgent = userAgent,
-      idleTimeoutStage = idleTimeoutStage,
-      dispatcher = dispatcher,
+      maxHeaderLength     = maxHeaderLength,
+      maxChunkSize        = maxChunkSize,
+      chunkBufferMaxSize  = chunkBufferMaxSize,
+      parserMode          = parserMode,
+      userAgent           = userAgent,
+      idleTimeoutStage    = idleTimeoutStage,
+      dispatcher          = dispatcher,
     )
 
     ssl.map { sslStage =>

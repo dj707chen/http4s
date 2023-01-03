@@ -23,16 +23,16 @@ private[h2] abstract class H2TLSPlatform {
 
   def transform(params: TLSParameters): TLSParameters =
     TLSParameters(
-      requestCert = params.requestCert,
-      rejectUnauthorized = params.rejectUnauthorized,
-      alpnProtocols = List("h2", "http/1.1").some,
-      sniCallback = params.sniCallback,
-      session = params.session,
-      requestOCSP = params.requestOCSP,
-      pskCallback = params.pskCallback,
-      servername = params.servername,
+      requestCert         = params.requestCert,
+      rejectUnauthorized  = params.rejectUnauthorized,
+      alpnProtocols       = List("h2", "http/1.1").some,
+      sniCallback         = params.sniCallback,
+      session             = params.session,
+      requestOCSP         = params.requestOCSP,
+      pskCallback         = params.pskCallback,
+      servername          = params.servername,
       checkServerIdentity = params.checkServerIdentity,
-      minDHSize = params.minDHSize,
+      minDHSize           = params.minDHSize,
     )
 
 }

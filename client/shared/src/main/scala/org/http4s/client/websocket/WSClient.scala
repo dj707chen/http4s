@@ -42,13 +42,13 @@ import scodec.bits.ByteVector
   *   The method of the intial HTTP request. Ignored by some clients.
   */
 sealed abstract class WSRequest {
-  def uri: Uri
+  def uri:     Uri
   def headers: Headers
-  def method: Method
+  def method:  Method
 
-  def withUri(uri: Uri): WSRequest
+  def withUri(uri:         Uri):     WSRequest
   def withHeaders(headers: Headers): WSRequest
-  def withMethod(method: Method): WSRequest
+  def withMethod(method:   Method):  WSRequest
 }
 
 object WSRequest {
@@ -58,13 +58,13 @@ object WSRequest {
     WSRequestImpl(uri, headers, method)
 
   private[this] final case class WSRequestImpl(
-      override val uri: Uri,
+      override val uri:     Uri,
       override val headers: Headers,
-      override val method: Method,
+      override val method:  Method,
   ) extends WSRequest {
-    def withUri(uri: Uri) = copy(uri = uri)
+    def withUri(uri: Uri)             = copy(uri = uri)
     def withHeaders(headers: Headers) = copy(headers = headers)
-    def withMethod(method: Method) = copy(method = method)
+    def withMethod(method: Method)    = copy(method = method)
   }
 
   implicit val catsHashAndOrderForWSRequest: Hash[WSRequest] with Order[WSRequest] =
@@ -123,10 +123,10 @@ trait WSConnection[F[_]] { outer =>
   def subprotocol: Option[String]
 
   def mapK[G[_]](fk: F ~> G): WSConnection[G] = new WSConnection[G] {
-    def send(wsf: WSFrame): G[Unit] = fk(outer.send(wsf))
-    def sendMany[H[_]: Foldable, A <: WSFrame](wsfs: H[A]): G[Unit] = fk(outer.sendMany(wsfs))
-    def receive: G[Option[WSFrame]] = fk(outer.receive)
-    def subprotocol: Option[String] = outer.subprotocol
+    def send(wsf: WSFrame):                                 G[Unit]            = fk(outer.send(wsf))
+    def sendMany[H[_]: Foldable, A <: WSFrame](wsfs: H[A]): G[Unit]            = fk(outer.sendMany(wsfs))
+    def receive:                                            G[Option[WSFrame]] = fk(outer.receive)
+    def subprotocol:                                        Option[String]     = outer.subprotocol
   }
 }
 
@@ -163,12 +163,12 @@ trait WSConnectionHighLevel[F[_]] { outer =>
 
   def mapK[G[_]](fk: F ~> G): WSConnectionHighLevel[G] =
     new WSConnectionHighLevel[G] {
-      def send(wsf: WSDataFrame): G[Unit] = fk(outer.send(wsf))
-      def sendMany[H[_]: Foldable, A <: WSDataFrame](wsfs: H[A]): G[Unit] = fk(outer.sendMany(wsfs))
-      def receive: G[Option[WSDataFrame]] = fk(outer.receive)
-      def subprotocol: Option[String] = outer.subprotocol
-      def closeFrame: DeferredSource[G, WSFrame.Close] = new DeferredSource[G, WSFrame.Close] {
-        def get = fk(outer.closeFrame.get)
+      def send(wsf: WSDataFrame):                                 G[Unit]                          = fk(outer.send(wsf))
+      def sendMany[H[_]: Foldable, A <: WSDataFrame](wsfs: H[A]): G[Unit]                          = fk(outer.sendMany(wsfs))
+      def receive:                                                G[Option[WSDataFrame]]           = fk(outer.receive)
+      def subprotocol:                                            Option[String]                   = outer.subprotocol
+      def closeFrame:                                             DeferredSource[G, WSFrame.Close] = new DeferredSource[G, WSFrame.Close] {
+        def get    = fk(outer.closeFrame.get)
         def tryGet = fk(outer.closeFrame.tryGet)
       }
     }
@@ -186,7 +186,7 @@ trait WSClientHighLevel[F[_]] { outer =>
   def connectHighLevel(request: WSRequest): Resource[F, WSConnectionHighLevel[F]]
 
   def mapK[G[_]](
-      fk: F ~> G
+      fk:       F ~> G
   )(implicit F: MonadCancel[F, _], G: MonadCancel[G, _]): WSClientHighLevel[G] =
     new WSClientHighLevel[G] {
       def connectHighLevel(request: WSRequest): Resource[G, WSConnectionHighLevel[G]] =
@@ -200,7 +200,7 @@ trait WSClient[F[_]] extends WSClientHighLevel[F] { outer =>
   def connect(request: WSRequest): Resource[F, WSConnection[F]]
 
   override def mapK[G[_]](
-      fk: F ~> G
+      fk:       F ~> G
   )(implicit F: MonadCancel[F, _], G: MonadCancel[G, _]): WSClient[G] =
     new WSClient[G] {
       def connectHighLevel(request: WSRequest): Resource[G, WSConnectionHighLevel[G]] =
@@ -214,19 +214,19 @@ trait WSClient[F[_]] extends WSClientHighLevel[F] { outer =>
 object WSClient {
   def apply[F[_]](
       respondToPings: Boolean
-  )(f: WSRequest => Resource[F, WSConnection[F]])(implicit F: Concurrent[F]): WSClient[F] =
+  )(f:                WSRequest => Resource[F, WSConnection[F]])(implicit F: Concurrent[F]): WSClient[F] =
     new WSClient[F] {
-      override def connect(request: WSRequest) = f(request)
+      override def connect(request: WSRequest)          = f(request)
       override def connectHighLevel(request: WSRequest) =
         for {
           recvCloseFrame <- Resource.eval(Deferred[F, WSFrame.Close])
-          conn <- f(request)
+          conn           <- f(request)
         } yield new WSConnectionHighLevel[F] {
           override def send(wsf: WSDataFrame) = conn.send(wsf)
-          override def sendMany[G[_]: Foldable, A <: WSDataFrame](wsfs: G[A]): F[Unit] =
+          override def sendMany[G[_]: Foldable, A <: WSDataFrame](wsfs: G[A]): F[Unit]                          =
             conn.sendMany(wsfs)
-          override def receive: F[Option[WSDataFrame]] = {
-            def receiveDataFrame: OptionT[F, WSDataFrame] =
+          override def receive:                                                F[Option[WSDataFrame]]           = {
+            def receiveDataFrame:                                OptionT[F, WSDataFrame] =
               OptionT(conn.receive).flatMap { wsf =>
                 OptionT.liftF(wsf match {
                   case WSFrame.Ping(data) if respondToPings => conn.send(WSFrame.Pong(data))
@@ -240,7 +240,7 @@ object WSClient {
               }
             def defrag(text: Chain[String], binary: ByteVector): OptionT[F, WSDataFrame] =
               receiveDataFrame.flatMap {
-                case WSFrame.Text(t, finalFrame) =>
+                case WSFrame.Text(t, finalFrame)   =>
                   val nextText = text :+ t
                   if (finalFrame) {
                     val sb = new StringBuilder(nextText.foldMap(_.length))
@@ -257,8 +257,8 @@ object WSClient {
               }
             defrag(Chain.empty, ByteVector.empty).value
           }
-          override def subprotocol: Option[String] = conn.subprotocol
-          override def closeFrame: DeferredSource[F, WSFrame.Close] = recvCloseFrame
+          override def subprotocol:                                            Option[String]                   = conn.subprotocol
+          override def closeFrame:                                             DeferredSource[F, WSFrame.Close] = recvCloseFrame
         }
     }
 }

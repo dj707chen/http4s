@@ -19,8 +19,7 @@ package websocket
 
 import fs2.io.net.ProtocolException
 
-final class ReservedOpcodeException(opcode: Int)
-    extends ProtocolException(s"Opcode $opcode is reserved for future use as per RFC 6455")
+final class ReservedOpcodeException(opcode: Int) extends ProtocolException(s"Opcode $opcode is reserved for future use as per RFC 6455")
 
 final class UnknownOpcodeException(opcode: Int)
     extends ProtocolException(

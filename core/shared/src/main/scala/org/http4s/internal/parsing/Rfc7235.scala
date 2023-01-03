@@ -41,9 +41,9 @@ private[http4s] object Rfc7235 {
 
   val token68: Parser[String] = (t68Chars.rep ~ charIn('=').rep0).string
 
-  val authParamValue: Parser0[String] = token.orElse(quotedString)
+  val authParamValue: Parser0[String]          = token.orElse(quotedString)
   // auth-param = token BWS "=" BWS ( token / quoted-string )
-  val authParam: Parser[(String, String)] =
+  val authParam:      Parser[(String, String)] =
     (token <* char('=').void.surroundedBy(bws)) ~ authParamValue
 
   // auth-scheme = token
@@ -69,6 +69,6 @@ private[http4s] object Rfc7235 {
     ((scheme <* sp) ~ headerRep1(authParam.backtrack).map(Right(_)).orElse(token68.map(Left(_))))
       .map {
         case (scheme, Left(token)) => Credentials.Token(scheme, token)
-        case (scheme, Right(nel)) => Credentials.AuthParams(scheme, nel)
+        case (scheme, Right(nel))  => Credentials.AuthParams(scheme, nel)
       }
 }

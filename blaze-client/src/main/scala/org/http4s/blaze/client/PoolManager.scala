@@ -40,29 +40,29 @@ final case class WaitQueueFullFailure() extends RuntimeException {
   * and still be borrowed
   */
 private final class PoolManager[F[_], A <: Connection[F]](
-    builder: ConnectionBuilder[F, A],
-    maxTotal: Int,
-    maxWaitQueueLimit: Int,
-    maxConnectionsPerRequestKey: RequestKey => Int,
-    responseHeaderTimeout: Duration,
-    requestTimeout: Duration,
-    semaphore: Semaphore[F],
+    builder:                               ConnectionBuilder[F, A],
+    maxTotal:                              Int,
+    maxWaitQueueLimit:                     Int,
+    maxConnectionsPerRequestKey:           RequestKey => Int,
+    responseHeaderTimeout:                 Duration,
+    requestTimeout:                        Duration,
+    semaphore:                             Semaphore[F],
     implicit private val executionContext: ExecutionContext,
-    maxIdleDuration: Duration,
-)(implicit F: Async[F])
+    maxIdleDuration:                       Duration,
+)(implicit F:                              Async[F])
     extends ConnectionManager.Stateful[F, A] { self =>
 
   @deprecated("Preserved for binary compatibility", "0.23.8")
   private[PoolManager] def this(
-      builder: ConnectionBuilder[F, A],
-      maxTotal: Int,
-      maxWaitQueueLimit: Int,
+      builder:                     ConnectionBuilder[F, A],
+      maxTotal:                    Int,
+      maxWaitQueueLimit:           Int,
       maxConnectionsPerRequestKey: RequestKey => Int,
-      responseHeaderTimeout: Duration,
-      requestTimeout: Duration,
-      semaphore: Semaphore[F],
-      executionContext: ExecutionContext,
-      F: Async[F],
+      responseHeaderTimeout:       Duration,
+      requestTimeout:              Duration,
+      semaphore:                   Semaphore[F],
+      executionContext:            ExecutionContext,
+      F:                           Async[F],
   ) = this(
     builder,
     maxTotal,
@@ -78,18 +78,18 @@ private final class PoolManager[F[_], A <: Connection[F]](
   private sealed case class PooledConnection(conn: A, borrowDeadline: Option[Deadline])
 
   private sealed case class Waiting(
-      key: RequestKey,
+      key:      RequestKey,
       callback: Callback[NextConnection],
-      at: Instant,
+      at:       Instant,
   )
 
   private[this] val logger = getLogger
 
-  private var isClosed = false
-  private var curTotal = 0
-  private val allocated = mutable.Map.empty[RequestKey, Int]
+  private var isClosed   = false
+  private var curTotal   = 0
+  private val allocated  = mutable.Map.empty[RequestKey, Int]
   private val idleQueues = mutable.Map.empty[RequestKey, mutable.Queue[PooledConnection]]
-  private var waitQueue = mutable.Queue.empty[Waiting]
+  private var waitQueue  = mutable.Queue.empty[Waiting]
 
   private def stats =
     s"curAllocated=$curTotal idleQueues.size=${idleQueues.size} waitQueue.size=${waitQueue.size} maxWaitQueueLimit=$maxWaitQueueLimit closed=${isClosed}"
@@ -177,7 +177,7 @@ private final class PoolManager[F[_], A <: Connection[F]](
         case finite: FiniteDuration => Some(Deadline.now + finite)
         case _ => None
       }
-      val q = idleQueues.getOrElse(key, mutable.Queue.empty[PooledConnection])
+      val q              = idleQueues.getOrElse(key, mutable.Queue.empty[PooledConnection])
       q.enqueue(PooledConnection(conn, borrowDeadline))
       idleQueues.update(key, q)
     }
@@ -241,14 +241,13 @@ private final class PoolManager[F[_], A <: Connection[F]](
                       s"No connections available for the desired key, $key. Evicting random and creating a new connection: $stats"
                     )
                   ) *>
-                    F.delay(keys.iterator.drop(Random.nextInt(keys.size)).next()).flatMap {
-                      randKey =>
-                        getConnectionFromQueue(randKey).map(
-                          _.fold(
-                            logger.warn(s"No connection to evict from the idleQueue for $randKey")
-                          )(_.conn.shutdown())
-                        ) *>
-                          decrConnection(randKey)
+                    F.delay(keys.iterator.drop(Random.nextInt(keys.size)).next()).flatMap { randKey =>
+                      getConnectionFromQueue(randKey).map(
+                        _.fold(
+                          logger.warn(s"No connection to evict from the idleQueue for $randKey")
+                        )(_.conn.shutdown())
+                      ) *>
+                        decrConnection(randKey)
                     } *>
                     createConnection(key, callback)
                 else
@@ -441,13 +440,12 @@ private final class PoolManager[F[_], A <: Connection[F]](
 
   def state: BlazeClientState[F] =
     new BlazeClientState[F] {
-      def isClosed: F[Boolean] = F.delay(self.isClosed)
-      def allocated: F[Map[RequestKey, Int]] = F.delay(self.allocated.toMap)
+      def isClosed:       F[Boolean]              = F.delay(self.isClosed)
+      def allocated:      F[Map[RequestKey, Int]] = F.delay(self.allocated.toMap)
       def idleQueueDepth: F[Map[RequestKey, Int]] =
         F.delay(CollectionCompat.mapValues(self.idleQueues.toMap)(_.size))
-      def waitQueueDepth: F[Int] = F.delay(self.waitQueue.size)
+      def waitQueueDepth: F[Int]                  = F.delay(self.waitQueue.size)
     }
 }
 
-final case class NoConnectionAllowedException(key: RequestKey)
-    extends IllegalArgumentException(s"No client connections allowed to $key")
+final case class NoConnectionAllowedException(key: RequestKey) extends IllegalArgumentException(s"No client connections allowed to $key")

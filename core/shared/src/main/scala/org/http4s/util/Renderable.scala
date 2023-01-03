@@ -82,7 +82,7 @@ object Renderer {
     new Renderer[Either[A, B]] {
       override def render(writer: Writer, e: Either[A, B]): writer.type =
         e match {
-          case Left(a) => ra.render(writer, a)
+          case Left(a)  => ra.render(writer, a)
           case Right(b) => rb.render(writer, b)
         }
     }
@@ -146,19 +146,19 @@ object Writer {
 /** Efficiently accumulate [[Renderable]] representations */
 trait Writer { self =>
   def append(s: String): this.type
-  def append(ci: CIString): this.type = append(ci.toString)
-  def append(char: Char): this.type = append(char.toString)
-  def append(float: Float): this.type = append(float.toString)
+  def append(ci: CIString):   this.type = append(ci.toString)
+  def append(char: Char):     this.type = append(char.toString)
+  def append(float: Float):   this.type = append(float.toString)
   def append(double: Double): this.type = append(double.toString)
-  def append(int: Int): this.type = append(int.toString)
-  def append(long: Long): this.type = append(long.toString)
+  def append(int: Int):       this.type = append(int.toString)
+  def append(long: Long):     this.type = append(long.toString)
 
   def append[T](r: T)(implicit R: Renderer[T]): this.type = R.render(this, r)
 
   def quote(
-      s: String,
+      s:            String,
       escapedChars: BitSet = Writer.HeaderValueDQuote,
-      escapeChar: Char = '\\',
+      escapeChar:   Char = '\\',
   ): this.type = {
     this << '"'
 
@@ -187,10 +187,10 @@ trait Writer { self =>
   }
 
   def addStrings(
-      s: collection.Seq[String],
-      sep: String = "",
+      s:     collection.Seq[String],
+      sep:   String = "",
       start: String = "",
-      end: String = "",
+      end:   String = "",
   ): this.type = {
     append(start)
     if (s.nonEmpty) {
@@ -201,23 +201,23 @@ trait Writer { self =>
   }
 
   def addList[T: Renderer](
-      s: List[T],
-      sep: String = ", ",
+      s:     List[T],
+      sep:   String = ", ",
       start: String = "",
-      end: String = "",
+      end:   String = "",
   ): this.type =
     NonEmptyList.fromList(s) match {
       case Some(s) => addNel(s, sep, start, end)
-      case None =>
+      case None    =>
         append(start)
         append(end)
     }
 
   def addNel[T: Renderer](
-      s: NonEmptyList[T],
-      sep: String = ", ",
+      s:     NonEmptyList[T],
+      sep:   String = ", ",
       start: String = "",
-      end: String = "",
+      end:   String = "",
   ): this.type = {
     append(start)
     append(s.head)
@@ -226,10 +226,10 @@ trait Writer { self =>
   }
 
   def addSet[T: Renderer](
-      s: collection.Set[T],
-      sep: String = ", ",
+      s:     collection.Set[T],
+      sep:   String = ", ",
       start: String = "",
-      end: String = "",
+      end:   String = "",
   ): this.type = {
     append(start)
     if (s.nonEmpty) {
@@ -239,19 +239,19 @@ trait Writer { self =>
     append(end)
   }
 
-  final def <<(s: String): this.type = append(s)
-  final def <<#(s: String): this.type = quote(s)
-  final def <<(s: CIString): this.type = append(s)
-  final def <<(char: Char): this.type = append(char)
-  final def <<(float: Float): this.type = append(float)
-  final def <<(double: Double): this.type = append(double)
-  final def <<(int: Int): this.type = append(int)
-  final def <<(long: Long): this.type = append(long)
+  final def <<(s: String):         this.type = append(s)
+  final def <<#(s: String):        this.type = quote(s)
+  final def <<(s: CIString):       this.type = append(s)
+  final def <<(char: Char):        this.type = append(char)
+  final def <<(float: Float):      this.type = append(float)
+  final def <<(double: Double):    this.type = append(double)
+  final def <<(int: Int):          this.type = append(int)
+  final def <<(long: Long):        this.type = append(long)
   final def <<[T: Renderer](r: T): this.type = append(r)
 
   def sanitize(f: Writer => Writer): this.type = {
     val w = new Writer {
-      def append(s: String): this.type = {
+      def append(s: String):        this.type = {
         s.foreach(append(_))
         this
       }
@@ -274,16 +274,16 @@ trait Writer { self =>
 class StringWriter(size: Int = StringWriter.InitialCapacity) extends Writer { self =>
   private val sb = new java.lang.StringBuilder(size)
 
-  def append(s: String): this.type = { sb.append(s); this }
-  override def append(char: Char): this.type = { sb.append(char); this }
-  override def append(float: Float): this.type = { sb.append(float); this }
+  def append(s: String):               this.type = { sb.append(s); this }
+  override def append(char: Char):     this.type = { sb.append(char); this }
+  override def append(float: Float):   this.type = { sb.append(float); this }
   override def append(double: Double): this.type = { sb.append(double); this }
-  override def append(int: Int): this.type = { sb.append(int); this }
-  override def append(long: Long): this.type = { sb.append(long); this }
+  override def append(int: Int):       this.type = { sb.append(int); this }
+  override def append(long: Long):     this.type = { sb.append(long); this }
 
   override def sanitize(f: Writer => Writer): this.type = {
     val w = new Writer {
-      def append(s: String): this.type = {
+      def append(s: String):        this.type = {
         val start = sb.length
         self.append(s)
         for (i <- start until sb.length) {

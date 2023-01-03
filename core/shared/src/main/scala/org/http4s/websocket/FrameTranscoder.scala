@@ -121,7 +121,7 @@ class FrameTranscoder(val isClient: Boolean) {
 
     // If we are a client, we need to mask the data, else just wrap it in a buffer and done
     if (isClient && in.length > 0) { // need to mask outgoing bytes
-      val mask = (Math.random * Integer.MAX_VALUE).toInt
+      val mask     = (Math.random * Integer.MAX_VALUE).toInt
       val maskBits = Array(
         ((mask >>> 24) & 0xff).toByte,
         ((mask >>> 16) & 0xff).toByte,
@@ -155,9 +155,9 @@ class FrameTranscoder(val isClient: Boolean) {
     if (in.remaining < 2 || FrameTranscoder.getMsgLength(in) < 0)
       null
     else {
-      val opcode = in.get(0) & OP_CODE
+      val opcode   = in.get(0) & OP_CODE
       val finished = (in.get(0) & FINISHED) != 0
-      val masked = (in.get(1) & MASK) != 0
+      val masked   = (in.get(1) & MASK) != 0
 
       if (masked && isClient)
         throw new FrameTranscoder.TranscodeError("Client received a masked message")
@@ -170,7 +170,7 @@ class FrameTranscoder(val isClient: Boolean) {
       } else
         null
 
-      val oldLim = in.limit()
+      val oldLim  = in.limit()
       val bodylen = FrameTranscoder.bodyLength(in)
 
       in.position(bodyOffset)

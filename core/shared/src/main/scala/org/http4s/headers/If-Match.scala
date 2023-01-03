@@ -45,7 +45,7 @@ object `If-Match` {
     Header.create(
       ci"If-Match",
       _.tags match {
-        case None => "*"
+        case None      => "*"
         case Some(nel) => nel.mkString_("", ",", "")
 
       },

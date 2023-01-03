@@ -24,12 +24,12 @@ import org.http4s.Charset.`UTF-8`
 import org.http4s.headers._
 
 trait Media[F[_]] {
-  def body: EntityBody[F]
-  def headers: Headers
+  def body:                  EntityBody[F]
+  def headers:               Headers
   def covary[F2[x] >: F[x]]: Media[F2]
 
   final def bodyText(implicit
-      RT: RaiseThrowable[F],
+      RT:             RaiseThrowable[F],
       defaultCharset: Charset = `UTF-8`,
   ): Stream[F, String] = {
     val cs = charset.getOrElse(defaultCharset).nioCharset

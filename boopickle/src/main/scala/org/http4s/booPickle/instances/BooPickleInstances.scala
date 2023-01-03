@@ -35,7 +35,7 @@ import scala.util.Success
   */
 trait BooPickleInstances {
   private def booDecoderByteBuffer[F[_]: Concurrent, A](
-      m: Media[F]
+      m:              Media[F]
   )(implicit pickler: Pickler[A]): DecodeResult[F, A] =
     EntityDecoder.collectBinary(m).subflatMap { chunk =>
       val bb = ByteBuffer.wrap(chunk.toArray)

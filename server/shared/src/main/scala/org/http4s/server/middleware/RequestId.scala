@@ -48,30 +48,30 @@ object RequestId {
 
   def apply[G[_], F[_]](
       headerName: CIString
-  )(http: Http[G, F])(implicit G: Sync[G]): Http[G, F] =
+  )(http:         Http[G, F])(implicit G: Sync[G]): Http[G, F] =
     Kleisli[G, Request[F], Response[F]] { req =>
       for {
-        header <- req.headers.get(headerName).map(_.head) match {
-          case None => G.delay(Header.Raw(headerName, UUID.randomUUID().toString()))
-          case Some(header) => G.pure(header)
-        }
-        reqId = header.value
+        header   <- req.headers.get(headerName).map(_.head) match {
+                      case None         => G.delay(Header.Raw(headerName, UUID.randomUUID().toString()))
+                      case Some(header) => G.pure(header)
+                    }
+        reqId     = header.value
         response <- http(req.withAttribute(requestIdAttrKey, reqId).putHeaders(header))
       } yield response.withAttribute(requestIdAttrKey, reqId).putHeaders(header)
     }
 
   def apply[G[_], F[_]](
-      fk: F ~> G,
+      fk:         F ~> G,
       headerName: CIString = requestIdHeader,
-      genReqId: F[UUID],
-  )(http: Http[G, F])(implicit G: FlatMap[G], F: Sync[F]): Http[G, F] =
+      genReqId:   F[UUID],
+  )(http:         Http[G, F])(implicit G: FlatMap[G], F: Sync[F]): Http[G, F] =
     Kleisli[G, Request[F], Response[F]] { req =>
       for {
-        header <- fk(req.headers.get(headerName) match {
-          case None => genReqId.map(reqId => Header.Raw(headerName, reqId.show))
-          case Some(NonEmptyList(header, _)) => F.pure(header)
-        })
-        reqId = header.value
+        header   <- fk(req.headers.get(headerName) match {
+                      case None                          => genReqId.map(reqId => Header.Raw(headerName, reqId.show))
+                      case Some(NonEmptyList(header, _)) => F.pure(header)
+                    })
+        reqId     = header.value
         response <- http(req.withAttribute(requestIdAttrKey, reqId).putHeaders(header))
       } yield response.withAttribute(requestIdAttrKey, reqId).putHeaders(header)
     }
@@ -82,13 +82,13 @@ object RequestId {
 
     def apply[F[_]: Sync](
         headerName: CIString
-    )(httpApp: HttpApp[F]): HttpApp[F] =
+    )(httpApp:      HttpApp[F]): HttpApp[F] =
       RequestId.apply(headerName)(httpApp)
 
     def apply[F[_]: Sync](
         headerName: CIString = requestIdHeader,
-        genReqId: F[UUID],
-    )(httpApp: HttpApp[F]): HttpApp[F] =
+        genReqId:   F[UUID],
+    )(httpApp:      HttpApp[F]): HttpApp[F] =
       RequestId.apply(FunctionK.id[F], headerName, genReqId)(httpApp)
   }
 
@@ -98,13 +98,13 @@ object RequestId {
 
     def apply[F[_]: Sync](
         headerName: CIString
-    )(httpRoutes: HttpRoutes[F]): HttpRoutes[F] =
+    )(httpRoutes:   HttpRoutes[F]): HttpRoutes[F] =
       RequestId.apply(headerName)(httpRoutes)
 
     def apply[F[_]: Sync](
         headerName: CIString = requestIdHeader,
-        genReqId: F[UUID],
-    )(httpRoutes: HttpRoutes[F]): HttpRoutes[F] =
+        genReqId:   F[UUID],
+    )(httpRoutes:   HttpRoutes[F]): HttpRoutes[F] =
       RequestId.apply(OptionT.liftK[F], headerName, genReqId)(httpRoutes)
   }
 }

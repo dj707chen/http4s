@@ -23,16 +23,16 @@ import java.nio.charset.{Charset => JCharset}
 
 /* Exists to work around circular dependencies */
 private[http4s] object UriCoding {
-  val Unreserved: CharPredicate = AlphaNum ++ "-_.~"
+  val Unreserved:    CharPredicate = AlphaNum ++ "-_.~"
   val QueryNoEncode: CharPredicate = Unreserved ++ "?/"
 
   def encode(
-      toEncode: String,
-      charset: JCharset,
+      toEncode:    String,
+      charset:     JCharset,
       spaceIsPlus: Boolean,
-      toSkip: Char => Boolean,
+      toSkip:      Char => Boolean,
   ): String = {
-    val in = charset.encode(toEncode)
+    val in  = charset.encode(toEncode)
     val out = CharBuffer.allocate((in.remaining() * 3).toInt)
     while (in.hasRemaining) {
       val c = in.get().toChar

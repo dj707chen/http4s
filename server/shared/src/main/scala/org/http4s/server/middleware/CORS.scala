@@ -44,25 +44,25 @@ import scala.util.hashing.MurmurHash3
   "0.21.27",
 )
 final class CORSConfig private (
-    val anyOrigin: Boolean,
+    val anyOrigin:        Boolean,
     val allowCredentials: Boolean,
-    val maxAge: FiniteDuration,
-    val anyMethod: Boolean,
-    val allowedOrigins: String => Boolean,
-    val allowedMethods: Option[Set[Method]],
-    val allowedHeaders: Option[Set[String]],
-    val exposedHeaders: Option[Set[String]],
+    val maxAge:           FiniteDuration,
+    val anyMethod:        Boolean,
+    val allowedOrigins:   String => Boolean,
+    val allowedMethods:   Option[Set[Method]],
+    val allowedHeaders:   Option[Set[String]],
+    val exposedHeaders:   Option[Set[String]],
 ) {
 
   private def copy(
-      anyOrigin: Boolean = anyOrigin,
+      anyOrigin:        Boolean = anyOrigin,
       allowCredentials: Boolean = allowCredentials,
-      maxAge: FiniteDuration = maxAge,
-      anyMethod: Boolean = anyMethod,
-      allowedOrigins: String => Boolean = allowedOrigins,
-      allowedMethods: Option[Set[Method]] = allowedMethods,
-      allowedHeaders: Option[Set[String]] = allowedHeaders,
-      exposedHeaders: Option[Set[String]] = exposedHeaders,
+      maxAge:           FiniteDuration = maxAge,
+      anyMethod:        Boolean = anyMethod,
+      allowedOrigins:   String => Boolean = allowedOrigins,
+      allowedMethods:   Option[Set[Method]] = allowedMethods,
+      allowedHeaders:   Option[Set[String]] = allowedHeaders,
+      exposedHeaders:   Option[Set[String]] = exposedHeaders,
   ) = new CORSConfig(
     anyOrigin,
     allowCredentials,
@@ -97,14 +97,14 @@ final class CORSConfig private (
 
   override def equals(x: Any): Boolean = x match {
     case config: CORSConfig =>
-      anyOrigin === config.anyOrigin &&
+      anyOrigin        === config.anyOrigin &&
       allowCredentials === config.allowCredentials &&
-      maxAge === config.maxAge &&
-      anyMethod === config.anyMethod &&
-      allowedOrigins == config.allowedOrigins &&
-      allowedMethods === config.allowedMethods &&
-      allowedHeaders === config.allowedHeaders &&
-      exposedHeaders === config.exposedHeaders
+      maxAge           === config.maxAge &&
+      anyMethod        === config.anyMethod &&
+      allowedOrigins    == config.allowedOrigins &&
+      allowedMethods   === config.allowedMethods &&
+      allowedHeaders   === config.allowedHeaders &&
+      exposedHeaders   === config.exposedHeaders
     case _ => false
   }
 
@@ -133,14 +133,14 @@ object CORSConfig {
   private val hashSeed = MurmurHash3.stringHash("CORSConfig")
 
   val default: CORSConfig = new CORSConfig(
-    anyOrigin = true,
+    anyOrigin        = true,
     allowCredentials = true,
-    maxAge = 1.day,
-    anyMethod = true,
-    allowedOrigins = _ => false,
-    allowedMethods = None,
-    allowedHeaders = Set("Content-Type", "Authorization", "*").some,
-    exposedHeaders = Set("*").some,
+    maxAge           = 1.day,
+    anyMethod        = true,
+    allowedOrigins   = _ => false,
+    allowedMethods   = None,
+    allowedHeaders   = Set("Content-Type", "Authorization", "*").some,
+    exposedHeaders   = Set("*").some,
   )
 }
 
@@ -150,7 +150,7 @@ object CORSConfig {
   * @see [[CORSPolicy]]
   * @see [[https://fetch.spec.whatwg.org/#http-cors-protocol CORS protocol specification]]
   */
-object CORS {
+object CORS       {
   private[CORS] val logger = getLogger
 
   /** The default CORS policy:
@@ -197,7 +197,7 @@ object CORS {
   )
   @nowarn("cat=deprecation")
   def apply[F[_], G[_]](http: Http[F, G], config: CORSConfig = CORSConfig.default)(implicit
-      F: Applicative[F]
+      F:                      Applicative[F]
   ): Http[F, G] = {
     if (config.anyOrigin && config.allowCredentials)
       logger.warn(
@@ -207,7 +207,7 @@ object CORS {
       // In the case of an options request we want to return a simple response with the correct Headers set.
       def createOptionsResponse(
           origin: Origin,
-          acrm: `Access-Control-Request-Method`,
+          acrm:   `Access-Control-Request-Method`,
       ): Response[G] =
         corsHeaders(origin, acrm.method, isPreflight = true)(Response())
 
@@ -220,7 +220,7 @@ object CORS {
       def varyHeader(response: Response[G]): Response[G] =
         response.headers.get(ci"Vary") match {
           case None => response.putHeaders(defaultVaryHeader)
-          case _ => response
+          case _    => response
         }
 
       def allowCredentialsHeader(resp: Response[G]): Response[G] =
@@ -230,7 +230,7 @@ object CORS {
           resp
 
       def corsHeaders(origin: Origin, method: Method, isPreflight: Boolean)(
-          resp: Response[G]
+          resp:               Response[G]
       ): Response[G] = {
         val withMethodBasedHeader = methodBasedHeader(isPreflight)
           .fold(resp)(h => resp.putHeaders(h))
@@ -265,7 +265,7 @@ object CORS {
         case (OPTIONS, Some(origin), Some(acrm)) if allowCORS(origin, acrm.method) =>
           logger.debug(s"Serving OPTIONS with CORS headers for $acrm ${req.uri}")
           createOptionsResponse(origin, acrm).pure[F]
-        case (_, Some(origin), _) =>
+        case (_, Some(origin), _)                                                  =>
           if (allowCORS(origin, req.method))
             http(req).map { resp =>
               logger.debug(s"Adding CORS headers to ${req.method} ${req.uri}")
@@ -275,7 +275,7 @@ object CORS {
             logger.debug(s"CORS headers were denied for ${req.method} ${req.uri}")
             Response(status = Status.Forbidden).pure[F]
           }
-        case _ =>
+        case _                                                                     =>
           // This request is out of scope for CORS
           http(req)
       }
@@ -313,12 +313,12 @@ object CORS {
   * across origins according to the CORS protocol.
   */
 sealed class CORSPolicy(
-    allowOrigin: CORSPolicy.AllowOrigin,
+    allowOrigin:      CORSPolicy.AllowOrigin,
     allowCredentials: CORSPolicy.AllowCredentials,
-    exposeHeaders: CORSPolicy.ExposeHeaders,
-    allowMethods: CORSPolicy.AllowMethods,
-    allowHeaders: CORSPolicy.AllowHeaders,
-    maxAge: CORSPolicy.MaxAge,
+    exposeHeaders:    CORSPolicy.ExposeHeaders,
+    allowMethods:     CORSPolicy.AllowMethods,
+    allowHeaders:     CORSPolicy.AllowHeaders,
+    maxAge:           CORSPolicy.MaxAge,
 ) {
   import CORSPolicy._
 
@@ -343,23 +343,23 @@ sealed class CORSPolicy(
       allowCredentials match {
         case AllowCredentials.Allow =>
           CommonHeaders.someAllowCredentials
-        case AllowCredentials.Deny =>
+        case AllowCredentials.Deny  =>
           None
       }
 
     val exposeHeadersHeader =
       exposeHeaders match {
-        case ExposeHeaders.All =>
+        case ExposeHeaders.All       =>
           CommonHeaders.someExposeHeadersWildcard
         case ExposeHeaders.In(names) =>
           Header.Raw(Header[`Access-Control-Expose-Headers`].name, names.mkString(", ")).some
-        case ExposeHeaders.None =>
+        case ExposeHeaders.None      =>
           None
       }
 
     val someAllowMethodsSpecificHeader =
       allowMethods match {
-        case AllowMethods.All => None
+        case AllowMethods.All         => None
         case AllowMethods.In(methods) =>
           Header
             .Raw(ci"Access-Control-Allow-Methods", methods.map(_.renderString).mkString(", "))
@@ -370,9 +370,9 @@ sealed class CORSPolicy(
       maxAge match {
         case MaxAge.Some(deltaSeconds) =>
           Header.Raw(ci"Access-Control-Max-Age", deltaSeconds.toString).some
-        case MaxAge.Default =>
+        case MaxAge.Default            =>
           None
-        case MaxAge.DisableCaching =>
+        case MaxAge.DisableCaching     =>
           Header.Raw(ci"Access-Control-Max-Age", "-1").some
       }
 
@@ -380,17 +380,17 @@ sealed class CORSPolicy(
       allowOrigin match {
         case AllowOrigin.Match(_) =>
           Header.Raw(ci"Vary", Header[Origin].name.toString).some
-        case _ =>
+        case _                    =>
           None
       }
 
     val varyHeaderOptions = {
-      def origin = allowOrigin match {
-        case AllowOrigin.All => Nil
+      def origin  = allowOrigin match {
+        case AllowOrigin.All      => Nil
         case AllowOrigin.Match(_) => List(Header[Origin].name)
       }
       def methods = allowMethods match {
-        case AllowMethods.All => Nil
+        case AllowMethods.All   => Nil
         case AllowMethods.In(_) => List(Header[`Access-Control-Request-Method`].name)
       }
       def headers = allowHeaders match {
@@ -399,7 +399,7 @@ sealed class CORSPolicy(
           List(ci"Access-Control-Request-Headers")
       }
       (origin ++ methods ++ headers) match {
-        case Nil =>
+        case Nil      =>
           None
         case nonEmpty =>
           Header.Raw(ci"Vary", nonEmpty.map(_.toString).mkString(", ")).some
@@ -416,17 +416,17 @@ sealed class CORSPolicy(
                   val headers = req.headers.get(ci"Access-Control-Request-Headers") match {
                     case Some(acrHeaders) =>
                       acrHeaders.map(_.value.split("\\s*,\\s*").map(CIString(_)).toSet).fold
-                    case None =>
+                    case None             =>
                       Set.empty[CIString]
                   }
                   preflight(req, origin, acrm.method, headers)
-                case None =>
+                case None       =>
                   nonPreflight(req, origin)
               }
-            case _ =>
+            case _              =>
               nonPreflight(req, origin)
           }
-        case None =>
+        case None         =>
           nonCors(req)
       }
 
@@ -463,7 +463,7 @@ sealed class CORSPolicy(
 
     def allowOriginHeader(origin: Origin) =
       allowOrigin match {
-        case AllowOrigin.All =>
+        case AllowOrigin.All      =>
           CommonHeaders.someAllowOriginWildcard
         case AllowOrigin.Match(p) =>
           if (p(origin))
@@ -474,7 +474,7 @@ sealed class CORSPolicy(
 
     def allowMethodsHeader(method: Method) =
       allowMethods match {
-        case AllowMethods.All =>
+        case AllowMethods.All         =>
           if (allowCredentials == AllowCredentials.Deny || method === wildcardMethod)
             CommonHeaders.someAllowMethodsWildcard
           else
@@ -493,19 +493,19 @@ sealed class CORSPolicy(
 
     def allowHeadersHeader(requestHeaders: Set[CIString]) =
       allowHeaders match {
-        case AllowHeaders.All =>
+        case AllowHeaders.All                    =>
           if (allowCredentials == AllowCredentials.Deny || requestHeaders === wildcardHeadersSet)
             CommonHeaders.someAllowHeadersWildcard
           else
             None
         case AllowHeaders.Static(allowedHeaders) =>
           someAllowHeadersHeader(allowedHeaders)
-        case AllowHeaders.In(allowedHeaders) =>
+        case AllowHeaders.In(allowedHeaders)     =>
           if ((requestHeaders -- allowedHeaders).isEmpty)
             someAllowHeadersHeader(allowedHeaders)
           else
             None
-        case AllowHeaders.Reflect =>
+        case AllowHeaders.Reflect                =>
           someAllowHeadersHeader(requestHeaders)
       }
 
@@ -516,18 +516,18 @@ sealed class CORSPolicy(
     def varyHeader(method: Method)(resp: Response[G]) =
       (method match {
         case Method.OPTIONS => varyHeaderOptions
-        case _ => varyHeaderNonOptions
+        case _              => varyHeaderNonOptions
       }) match {
         case Some(vary) =>
           resp.putHeaders(
             resp.headers.get(ci"Vary") match {
-              case None =>
+              case None          =>
                 vary
               case Some(oldVary) =>
                 Header.Raw(ci"Vary", oldVary.map(_.value).toList.mkString(", ") + ", " + vary.value)
             }
           )
-        case None =>
+        case None       =>
           resp
       }
 
@@ -547,12 +547,12 @@ sealed class CORSPolicy(
     applicatively(httpApp)
 
   private def copy(
-      allowOrigin: AllowOrigin = allowOrigin,
+      allowOrigin:      AllowOrigin = allowOrigin,
       allowCredentials: AllowCredentials = allowCredentials,
-      exposeHeaders: ExposeHeaders = exposeHeaders,
-      allowMethods: AllowMethods = allowMethods,
-      allowHeaders: AllowHeaders = allowHeaders,
-      maxAge: MaxAge = maxAge,
+      exposeHeaders:    ExposeHeaders = exposeHeaders,
+      allowMethods:     AllowMethods = allowMethods,
+      allowHeaders:     AllowHeaders = allowHeaders,
+      maxAge:           MaxAge = maxAge,
   ): CORSPolicy =
     new CORSPolicy(
       allowOrigin,
@@ -595,7 +595,7 @@ sealed class CORSPolicy(
   def withAllowOriginHost(p: Origin.Host => Boolean): CORSPolicy =
     withAllowOriginHeader(_ match {
       case Origin.HostList(NonEmptyList(h, _)) => p(h)
-      case Origin.Null => false
+      case Origin.Null                         => false
     })
 
   /** Allow requests from any origin host whose case-insensitive
@@ -740,19 +740,19 @@ object CORSPolicy {
   private val logger = getLogger
 
   private object CommonHeaders {
-    val someAllowOriginWildcard: Option[Header.Raw] =
+    val someAllowOriginWildcard:   Option[Header.Raw] =
       Header.Raw(ci"Access-Control-Allow-Origin", "*").some
-    val someAllowCredentials: Option[Header.Raw] =
+    val someAllowCredentials:      Option[Header.Raw] =
       Header.Raw(Header[`Access-Control-Allow-Credentials`].name, "true").some
     val someExposeHeadersWildcard: Option[Header.Raw] =
       Header.Raw(Header[`Access-Control-Expose-Headers`].name, "*").some
-    val someAllowMethodsWildcard: Option[Header.Raw] =
+    val someAllowMethodsWildcard:  Option[Header.Raw] =
       Header.Raw(ci"Access-Control-Allow-Methods", "*").some
-    val someAllowHeadersWildcard: Option[Header.Raw] =
+    val someAllowHeadersWildcard:  Option[Header.Raw] =
       Header.Raw(Header[`Access-Control-Allow-Headers`].name, "*").some
   }
 
-  private[middleware] val wildcardMethod =
+  private[middleware] val wildcardMethod     =
     Method.fromString("*").fold(throw _, identity)
   private[middleware] val wildcardHeadersSet =
     Set(CIString("*"))

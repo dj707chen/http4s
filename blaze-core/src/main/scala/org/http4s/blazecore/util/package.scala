@@ -41,7 +41,7 @@ package object util extends ParasiticExecutionContextCompat {
       future.value match {
         case Some(value) =>
           F.fromTry(value)
-        case None =>
+        case None        =>
           F.async_ { cb =>
             future.onComplete {
               case Success(a) => cb(Right(a))

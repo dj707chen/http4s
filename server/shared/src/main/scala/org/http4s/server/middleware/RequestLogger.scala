@@ -40,26 +40,26 @@ object RequestLogger {
   private[this] val logger = getLogger
 
   def apply[G[_], F[_]](
-      logHeaders: Boolean,
-      logBody: Boolean,
-      fk: F ~> G,
+      logHeaders:        Boolean,
+      logBody:           Boolean,
+      fk:                F ~> G,
       redactHeadersWhen: CIString => Boolean = Headers.SensitiveHeaders.contains,
-      logAction: Option[String => F[Unit]] = None,
-  )(http: Http[G, F])(implicit
-      F: Async[F],
-      G: MonadCancelThrow[G],
+      logAction:         Option[String => F[Unit]] = None,
+  )(http:                Http[G, F])(implicit
+      F:                 Async[F],
+      G:                 MonadCancelThrow[G],
   ): Http[G, F] =
     impl[G, F](logHeaders, Left(logBody), fk, redactHeadersWhen, logAction)(http)
 
   private[server] def impl[G[_], F[_]](
-      logHeaders: Boolean,
-      logBodyText: Either[Boolean, Stream[F, Byte] => Option[F[String]]],
-      fk: F ~> G,
+      logHeaders:        Boolean,
+      logBodyText:       Either[Boolean, Stream[F, Byte] => Option[F[String]]],
+      fk:                F ~> G,
       redactHeadersWhen: CIString => Boolean,
-      logAction: Option[String => F[Unit]],
-  )(http: Http[G, F])(implicit
-      F: Async[F],
-      G: MonadCancelThrow[G],
+      logAction:         Option[String => F[Unit]],
+  )(http:                Http[G, F])(implicit
+      F:                 Async[F],
+      G:                 MonadCancelThrow[G],
   ): Http[G, F] = {
     val log = logAction.fold { (s: String) =>
       Sync[F].delay(logger.info(s))
@@ -69,14 +69,14 @@ object RequestLogger {
       logBodyText match {
         case Left(bool) =>
           Logger.logMessage[F, Request[F]](r)(logHeaders, bool, redactHeadersWhen)(log(_))
-        case Right(f) =>
+        case Right(f)   =>
           org.http4s.internal.Logger
             .logMessageWithBodyText[F, Request[F]](r)(logHeaders, f, redactHeadersWhen)(log(_))
       }
 
     val logBody: Boolean = logBodyText match {
       case Left(bool) => bool
-      case Right(_) => true
+      case Right(_)   => true
     }
 
     Kleisli { req =>
@@ -88,7 +88,7 @@ object RequestLogger {
         http(req)
           .guaranteeCase {
             case Outcome.Succeeded(_) => G.unit
-            case _ => fk(logAct)
+            case _                    => fk(logAct)
           } <* fk(logAct)
       } else
         fk(F.ref(Vector.empty[Chunk[Byte]]))
@@ -104,7 +104,7 @@ object RequestLogger {
             http(changedRequest)
               .guaranteeCase {
                 case Outcome.Succeeded(_) => G.unit
-                case _ => fk(logRequest)
+                case _                    => fk(logRequest)
               }
               .map(_.pipeBodyThrough(_.onFinalizeWeak(logRequest)))
           }
@@ -112,35 +112,35 @@ object RequestLogger {
   }
 
   def httpApp[F[_]: Async](
-      logHeaders: Boolean,
-      logBody: Boolean,
+      logHeaders:        Boolean,
+      logBody:           Boolean,
       redactHeadersWhen: CIString => Boolean = Headers.SensitiveHeaders.contains,
-      logAction: Option[String => F[Unit]] = None,
-  )(httpApp: HttpApp[F]): HttpApp[F] =
+      logAction:         Option[String => F[Unit]] = None,
+  )(httpApp:             HttpApp[F]): HttpApp[F] =
     apply(logHeaders, logBody, FunctionK.id[F], redactHeadersWhen, logAction)(httpApp)
 
   def httpRoutes[F[_]: Async](
-      logHeaders: Boolean,
-      logBody: Boolean,
+      logHeaders:        Boolean,
+      logBody:           Boolean,
       redactHeadersWhen: CIString => Boolean = Headers.SensitiveHeaders.contains,
-      logAction: Option[String => F[Unit]] = None,
-  )(httpRoutes: HttpRoutes[F]): HttpRoutes[F] =
+      logAction:         Option[String => F[Unit]] = None,
+  )(httpRoutes:          HttpRoutes[F]): HttpRoutes[F] =
     apply(logHeaders, logBody, OptionT.liftK[F], redactHeadersWhen, logAction)(httpRoutes)
 
   def httpAppLogBodyText[F[_]: Async](
-      logHeaders: Boolean,
-      logBody: Stream[F, Byte] => Option[F[String]],
+      logHeaders:        Boolean,
+      logBody:           Stream[F, Byte] => Option[F[String]],
       redactHeadersWhen: CIString => Boolean = Headers.SensitiveHeaders.contains,
-      logAction: Option[String => F[Unit]] = None,
-  )(httpApp: HttpApp[F]): HttpApp[F] =
+      logAction:         Option[String => F[Unit]] = None,
+  )(httpApp:             HttpApp[F]): HttpApp[F] =
     impl[F, F](logHeaders, Right(logBody), FunctionK.id[F], redactHeadersWhen, logAction)(httpApp)
 
   def httpRoutesLogBodyText[F[_]: Async](
-      logHeaders: Boolean,
-      logBody: Stream[F, Byte] => Option[F[String]],
+      logHeaders:        Boolean,
+      logBody:           Stream[F, Byte] => Option[F[String]],
       redactHeadersWhen: CIString => Boolean = Headers.SensitiveHeaders.contains,
-      logAction: Option[String => F[Unit]] = None,
-  )(httpRoutes: HttpRoutes[F]): HttpRoutes[F] =
+      logAction:         Option[String => F[Unit]] = None,
+  )(httpRoutes:          HttpRoutes[F]): HttpRoutes[F] =
     impl[OptionT[F, *], F](
       logHeaders,
       Right(logBody),

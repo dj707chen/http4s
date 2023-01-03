@@ -37,8 +37,8 @@ import org.log4s.getLogger
 import java.nio.ByteBuffer
 
 private[jetty] final case class ResponseListener[F[_]](
-    queue: Queue[F, Option[Item]],
-    cb: Callback[Resource[F, Response[F]]],
+    queue:    Queue[F, Option[Item]],
+    cb:       Callback[Resource[F, Response[F]]],
 )(implicit F: Async[F], D: Dispatcher[F])
     extends JettyResponse.Listener.Adapter {
   import ResponseListener.logger
@@ -53,14 +53,14 @@ private[jetty] final case class ResponseListener[F[_]](
         responseSent = true
         Resource.pure[F, Response[F]](
           Response(
-            status = s,
+            status      = s,
             httpVersion = getHttpVersion(response.getVersion),
-            headers = getHeaders(response.getHeaders),
-            body = Stream.fromQueueNoneTerminated(queue).repeatPull {
+            headers     = getHeaders(response.getHeaders),
+            body        = Stream.fromQueueNoneTerminated(queue).repeatPull {
               _.uncons1.flatMap {
-                case None => Pull.pure(None)
-                case Some((Item.Done, _)) => Pull.pure(None)
-                case Some((Item.Buf(b), tl)) => Pull.output(Chunk.byteBuffer(b)).as(Some(tl))
+                case None                     => Pull.pure(None)
+                case Some((Item.Done, _))     => Pull.pure(None)
+                case Some((Item.Buf(b), tl))  => Pull.output(Chunk.byteBuffer(b)).as(Some(tl))
                 case Some((Item.Raise(t), _)) => Pull.raiseError[F](t)
               }
             },
@@ -75,9 +75,9 @@ private[jetty] final case class ResponseListener[F[_]](
   private def getHttpVersion(version: JHttpVersion): HttpVersion =
     version match {
       case JHttpVersion.HTTP_1_1 => HttpVersion.`HTTP/1.1`
-      case JHttpVersion.HTTP_2 => HttpVersion.`HTTP/2`
+      case JHttpVersion.HTTP_2   => HttpVersion.`HTTP/2`
       case JHttpVersion.HTTP_1_0 => HttpVersion.`HTTP/1.0`
-      case _ => HttpVersion.`HTTP/1.1`
+      case _                     => HttpVersion.`HTTP/1.1`
     }
 
   private def getHeaders(headers: HttpFields): Headers =
@@ -85,14 +85,14 @@ private[jetty] final case class ResponseListener[F[_]](
 
   override def onContent(
       response: JettyResponse,
-      content: ByteBuffer,
+      content:  ByteBuffer,
       callback: JettyCallback,
   ): Unit = {
     val copy = ByteBuffer.allocate(content.remaining())
     copy.put(content).flip()
     enqueue(Item.Buf(copy)) {
       case Right(_) => F.delay(callback.succeeded())
-      case Left(e) =>
+      case Left(e)  =>
         F.delay(logger.error(e)("Error in asynchronous callback")) >> F.delay(callback.failed(e))
     }
   }
@@ -138,7 +138,7 @@ private[jetty] object ResponseListener {
   private val logger = getLogger
 
   def apply[F[_]](
-      cb: Callback[Resource[F, Response[F]]]
+      cb:       Callback[Resource[F, Response[F]]]
   )(implicit F: Async[F], D: Dispatcher[F]): F[ResponseListener[F]] =
     Queue
       .synchronous[F, Option[Item]]

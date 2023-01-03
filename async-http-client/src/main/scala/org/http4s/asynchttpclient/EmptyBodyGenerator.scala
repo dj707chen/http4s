@@ -22,7 +22,7 @@ import org.asynchttpclient.request.body.generator.BodyGenerator
 
 private[asynchttpclient] object EmptyBodyGenerator extends BodyGenerator {
   override val createBody: Body = new Body {
-    override val getContentLength: Long = 0L
+    override val getContentLength:            Long           = 0L
     override def transferTo(target: ByteBuf): Body.BodyState = Body.BodyState.STOP
     override def close() = {}
   }

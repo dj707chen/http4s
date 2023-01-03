@@ -96,7 +96,7 @@ object QueryParamCodec {
 
   def from[A](decodeA: QueryParamDecoder[A], encodeA: QueryParamEncoder[A]): QueryParamCodec[A] =
     new QueryParamCodec[A] {
-      override def encode(value: A): QueryParameterValue = encodeA.encode(value)
+      override def encode(value: A):                   QueryParameterValue           = encodeA.encode(value)
       override def decode(value: QueryParameterValue): ValidatedNel[ParseFailure, A] =
         decodeA.decode(value)
     }
@@ -220,11 +220,11 @@ object QueryParamEncoder {
     stringQueryParamEncoder.contramap(sh.show)
 
   implicit lazy val booleanQueryParamEncoder: QueryParamEncoder[Boolean] = fromShow[Boolean]
-  implicit lazy val doubleQueryParamEncoder: QueryParamEncoder[Double] = fromShow[Double]
-  implicit lazy val floatQueryParamEncoder: QueryParamEncoder[Float] = fromShow[Float]
-  implicit lazy val shortQueryParamEncoder: QueryParamEncoder[Short] = fromShow[Short]
-  implicit lazy val intQueryParamEncoder: QueryParamEncoder[Int] = fromShow[Int]
-  implicit lazy val longQueryParamEncoder: QueryParamEncoder[Long] = fromShow[Long]
+  implicit lazy val doubleQueryParamEncoder:  QueryParamEncoder[Double]  = fromShow[Double]
+  implicit lazy val floatQueryParamEncoder:   QueryParamEncoder[Float]   = fromShow[Float]
+  implicit lazy val shortQueryParamEncoder:   QueryParamEncoder[Short]   = fromShow[Short]
+  implicit lazy val intQueryParamEncoder:     QueryParamEncoder[Int]     = fromShow[Int]
+  implicit lazy val longQueryParamEncoder:    QueryParamEncoder[Long]    = fromShow[Long]
 
   implicit lazy val stringQueryParamEncoder: QueryParamEncoder[String] =
     new QueryParamEncoder[String] {
@@ -354,7 +354,7 @@ object QueryParamDecoder {
   /** QueryParamDecoder is a MonoidK. */
   implicit val PlusEmptyQueryParamDecoder: MonoidK[QueryParamDecoder] =
     new MonoidK[QueryParamDecoder] {
-      def empty[A]: QueryParamDecoder[A] =
+      def empty[A]:                                                      QueryParamDecoder[A] =
         fail[A]("Decoding failed.", "Empty decoder (always fails).")
       def combineK[A](a: QueryParamDecoder[A], b: QueryParamDecoder[A]): QueryParamDecoder[A] =
         a.orElse(b)
@@ -371,19 +371,19 @@ object QueryParamDecoder {
         ParseFailure(sanitized, detail).invalidNel
     }
 
-  implicit lazy val unitQueryParamDecoder: QueryParamDecoder[Unit] =
+  implicit lazy val unitQueryParamDecoder:    QueryParamDecoder[Unit]    =
     success(())
   implicit lazy val booleanQueryParamDecoder: QueryParamDecoder[Boolean] =
     fromUnsafeCast[Boolean](_.value.toBoolean)("Boolean")
-  implicit lazy val doubleQueryParamDecoder: QueryParamDecoder[Double] =
+  implicit lazy val doubleQueryParamDecoder:  QueryParamDecoder[Double]  =
     fromUnsafeCast[Double](_.value.toDouble)("Double")
-  implicit lazy val floatQueryParamDecoder: QueryParamDecoder[Float] =
+  implicit lazy val floatQueryParamDecoder:   QueryParamDecoder[Float]   =
     fromUnsafeCast[Float](_.value.toFloat)("Float")
-  implicit lazy val shortQueryParamDecoder: QueryParamDecoder[Short] =
+  implicit lazy val shortQueryParamDecoder:   QueryParamDecoder[Short]   =
     fromUnsafeCast[Short](_.value.toShort)("Short")
-  implicit lazy val intQueryParamDecoder: QueryParamDecoder[Int] =
+  implicit lazy val intQueryParamDecoder:     QueryParamDecoder[Int]     =
     fromUnsafeCast[Int](_.value.toInt)("Int")
-  implicit lazy val longQueryParamDecoder: QueryParamDecoder[Long] =
+  implicit lazy val longQueryParamDecoder:    QueryParamDecoder[Long]    =
     fromUnsafeCast[Long](_.value.toLong)("Long")
 
   implicit lazy val charQueryParamDecoder: QueryParamDecoder[Char] = new QueryParamDecoder[Char] {
@@ -459,16 +459,14 @@ object QueryParamDecoder {
     javaTimeQueryParamDecoder(formatter, OffsetDateTime.from, "OffsetDateTime")
 
   private def javaTimeQueryParamDecoder[T](
-      formatter: DateTimeFormatter,
+      formatter:            DateTimeFormatter,
       fromTemporalAccessor: TemporalAccessor => T,
-      displayName: String,
+      displayName:          String,
   ): QueryParamDecoder[T] =
     (value: QueryParameterValue) =>
       Validated
         .catchNonFatal(fromTemporalAccessor(formatter.parse(value.value)))
-        .leftMap(e =>
-          ParseFailure(s"Failed to decode value ${value.value} as $displayName", e.getMessage)
-        )
+        .leftMap(e => ParseFailure(s"Failed to decode value ${value.value} as $displayName", e.getMessage))
         .toValidatedNel
 
   implicit lazy val zoneId: QueryParamDecoder[ZoneId] =
@@ -478,7 +476,7 @@ object QueryParamDecoder {
     javaTimeQueryParamDecoderFromString(Period.parse, "Period")
 
   private def javaTimeQueryParamDecoderFromString[T](
-      parse: String => T,
+      parse:       String => T,
       displayName: String,
   ): QueryParamDecoder[T] = QueryParamDecoder[String].emap(s =>
     Either

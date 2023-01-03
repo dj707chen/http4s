@@ -25,8 +25,8 @@ import org.typelevel.ci._
 
 object `Accept-Ranges` {
   def apply(first: RangeUnit, more: RangeUnit*): `Accept-Ranges` = apply((first +: more).toList)
-  def bytes: `Accept-Ranges` = apply(RangeUnit.Bytes)
-  def none: `Accept-Ranges` = apply(Nil)
+  def bytes:                                     `Accept-Ranges` = apply(RangeUnit.Bytes)
+  def none:                                      `Accept-Ranges` = apply(Nil)
 
   def parse(s: String): ParseResult[`Accept-Ranges`] =
     ParseResult.fromParser(parser, "Invalid Accept-Ranges header")(s)
@@ -58,7 +58,7 @@ object `Accept-Ranges` {
     Header.create(
       ci"Accept-Ranges",
       _.rangeUnits.toNel match {
-        case None => "none"
+        case None      => "none"
         case Some(nel) => Renderer.renderString(nel)
       },
       parse,

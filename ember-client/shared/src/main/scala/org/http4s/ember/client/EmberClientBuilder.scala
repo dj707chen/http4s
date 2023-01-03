@@ -41,66 +41,66 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.duration._
 
 final class EmberClientBuilder[F[_]: Async] private (
-    private val tlsContextOpt: Option[TLSContext[F]],
-    private val sgOpt: Option[SocketGroup[F]],
-    val maxTotal: Int,
-    val maxPerKey: RequestKey => Int,
-    val idleTimeInPool: Duration,
-    private val logger: Logger[F],
-    val chunkSize: Int,
-    val maxResponseHeaderSize: Int,
-    private val idleConnectionTime: Duration,
-    val timeout: Duration,
-    val additionalSocketOptions: List[SocketOption],
-    val userAgent: Option[`User-Agent`],
+    private val tlsContextOpt:       Option[TLSContext[F]],
+    private val sgOpt:               Option[SocketGroup[F]],
+    val maxTotal:                    Int,
+    val maxPerKey:                   RequestKey => Int,
+    val idleTimeInPool:              Duration,
+    private val logger:              Logger[F],
+    val chunkSize:                   Int,
+    val maxResponseHeaderSize:       Int,
+    private val idleConnectionTime:  Duration,
+    val timeout:                     Duration,
+    val additionalSocketOptions:     List[SocketOption],
+    val userAgent:                   Option[`User-Agent`],
     val checkEndpointIdentification: Boolean,
-    val retryPolicy: RetryPolicy[F],
-    private val unixSockets: Option[UnixSockets[F]],
-    private val enableHttp2: Boolean,
-    private val pushPromiseSupport: Option[
+    val retryPolicy:                 RetryPolicy[F],
+    private val unixSockets:         Option[UnixSockets[F]],
+    private val enableHttp2:         Boolean,
+    private val pushPromiseSupport:  Option[
       (Request[fs2.Pure], F[Response[F]]) => F[Outcome[F, Throwable, Unit]]
     ],
 ) { self =>
 
   private def copy(
-      tlsContextOpt: Option[TLSContext[F]] = self.tlsContextOpt,
-      sgOpt: Option[SocketGroup[F]] = self.sgOpt,
-      maxTotal: Int = self.maxTotal,
-      maxPerKey: RequestKey => Int = self.maxPerKey,
-      idleTimeInPool: Duration = self.idleTimeInPool,
-      logger: Logger[F] = self.logger,
-      chunkSize: Int = self.chunkSize,
-      maxResponseHeaderSize: Int = self.maxResponseHeaderSize,
-      idleConnectionTime: Duration = self.idleConnectionTime,
-      timeout: Duration = self.timeout,
-      additionalSocketOptions: List[SocketOption] = self.additionalSocketOptions,
-      userAgent: Option[`User-Agent`] = self.userAgent,
+      tlsContextOpt:               Option[TLSContext[F]] = self.tlsContextOpt,
+      sgOpt:                       Option[SocketGroup[F]] = self.sgOpt,
+      maxTotal:                    Int = self.maxTotal,
+      maxPerKey:                   RequestKey => Int = self.maxPerKey,
+      idleTimeInPool:              Duration = self.idleTimeInPool,
+      logger:                      Logger[F] = self.logger,
+      chunkSize:                   Int = self.chunkSize,
+      maxResponseHeaderSize:       Int = self.maxResponseHeaderSize,
+      idleConnectionTime:          Duration = self.idleConnectionTime,
+      timeout:                     Duration = self.timeout,
+      additionalSocketOptions:     List[SocketOption] = self.additionalSocketOptions,
+      userAgent:                   Option[`User-Agent`] = self.userAgent,
       checkEndpointIdentification: Boolean = self.checkEndpointIdentification,
-      retryPolicy: RetryPolicy[F] = self.retryPolicy,
-      unixSockets: Option[UnixSockets[F]] = self.unixSockets,
-      enableHttp2: Boolean = self.enableHttp2,
-      pushPromiseSupport: Option[
+      retryPolicy:                 RetryPolicy[F] = self.retryPolicy,
+      unixSockets:                 Option[UnixSockets[F]] = self.unixSockets,
+      enableHttp2:                 Boolean = self.enableHttp2,
+      pushPromiseSupport:          Option[
         (Request[fs2.Pure], F[Response[F]]) => F[Outcome[F, Throwable, Unit]]
       ] = self.pushPromiseSupport,
   ): EmberClientBuilder[F] =
     new EmberClientBuilder[F](
-      tlsContextOpt = tlsContextOpt,
-      sgOpt = sgOpt,
-      maxTotal = maxTotal,
-      maxPerKey = maxPerKey,
-      idleTimeInPool = idleTimeInPool,
-      logger = logger,
-      chunkSize = chunkSize,
-      maxResponseHeaderSize = maxResponseHeaderSize,
-      idleConnectionTime = idleConnectionTime,
-      timeout = timeout,
-      additionalSocketOptions = additionalSocketOptions,
-      userAgent = userAgent,
+      tlsContextOpt               = tlsContextOpt,
+      sgOpt                       = sgOpt,
+      maxTotal                    = maxTotal,
+      maxPerKey                   = maxPerKey,
+      idleTimeInPool              = idleTimeInPool,
+      logger                      = logger,
+      chunkSize                   = chunkSize,
+      maxResponseHeaderSize       = maxResponseHeaderSize,
+      idleConnectionTime          = idleConnectionTime,
+      timeout                     = timeout,
+      additionalSocketOptions     = additionalSocketOptions,
+      userAgent                   = userAgent,
       checkEndpointIdentification = checkEndpointIdentification,
-      retryPolicy = retryPolicy,
-      unixSockets = unixSockets,
-      enableHttp2 = enableHttp2,
-      pushPromiseSupport = pushPromiseSupport,
+      retryPolicy                 = retryPolicy,
+      unixSockets                 = unixSockets,
+      enableHttp2                 = enableHttp2,
+      pushPromiseSupport          = pushPromiseSupport,
     )
 
   /** Sets a custom `TLSContext`.
@@ -223,11 +223,11 @@ final class EmberClientBuilder[F[_]: Async] private (
 
   def build: Resource[F, Client[F]] =
     for {
-      sg <- Resource.pure(sgOpt.getOrElse(Network[F]))
+      sg                       <- Resource.pure(sgOpt.getOrElse(Network[F]))
       tlsContextOptWithDefault <- Resource.eval(
-        tlsContextOpt.fold(Network[F].tlsContext.system.attempt.map(_.toOption))(_.some.pure[F])
-      )
-      builder =
+                                    tlsContextOpt.fold(Network[F].tlsContext.system.attempt.map(_.toOption))(_.some.pure[F])
+                                  )
+      builder                   =
         KeyPool.Builder
           .apply[F, RequestKey, EmberConnection[F]](
             (requestKey: RequestKey) =>
@@ -252,58 +252,55 @@ final class EmberClientBuilder[F[_]: Async] private (
           .withMaxPerKey(maxPerKey)
           .withMaxTotal(maxTotal)
           .withOnReaperException(_ => Applicative[F].unit)
-      pool <- builder.build
-      optH2 <- (Alternative[Option].guard(enableHttp2) >> tlsContextOptWithDefault).traverse(
-        context =>
-          H2Client.impl[F](
-            pushPromiseSupport.getOrElse { case (_, _) => Applicative[F].pure(Outcome.canceled) },
-            context,
-            logger,
-            if (pushPromiseSupport.isDefined) default
-            else {
-              default.copy(enablePush =
-                org.http4s.ember.core.h2.H2Frame.Settings.SettingsEnablePush(false)
-              )
-            },
-          )
-      )
+      pool                     <- builder.build
+      optH2                    <- (Alternative[Option].guard(enableHttp2) >> tlsContextOptWithDefault).traverse(context =>
+                                    H2Client.impl[F](
+                                      pushPromiseSupport.getOrElse { case (_, _) => Applicative[F].pure(Outcome.canceled) },
+                                      context,
+                                      logger,
+                                      if (pushPromiseSupport.isDefined) default
+                                      else {
+                                        default.copy(enablePush = org.http4s.ember.core.h2.H2Frame.Settings.SettingsEnablePush(false))
+                                      },
+                                    )
+                                  )
     } yield {
       def webClient(request: Request[F]): Resource[F, Response[F]] =
         for {
-          managed <- ClientHelpers.getValidManaged(pool, request)
-          _ <- Resource.eval(
-            pool.state.flatMap { poolState =>
-              logger.trace(
-                s"Connection Taken - Key: ${managed.value.keySocket.requestKey} - Reused: ${managed.isReused} - PoolState: $poolState"
-              )
-            }
-          )
+          managed          <- ClientHelpers.getValidManaged(pool, request)
+          _                <- Resource.eval(
+                                pool.state.flatMap { poolState =>
+                                  logger.trace(
+                                    s"Connection Taken - Key: ${managed.value.keySocket.requestKey} - Reused: ${managed.isReused} - PoolState: $poolState"
+                                  )
+                                }
+                              )
           responseResource <- Resource.makeCaseFull((poll: Poll[F]) =>
-            poll(
-              ClientHelpers
-                .request[F](
-                  request,
-                  managed.value,
-                  chunkSize,
-                  maxResponseHeaderSize,
-                  idleConnectionTime,
-                  timeout,
-                  userAgent,
-                )
-            )
-          ) { case ((response, drain), exitCase) =>
-            exitCase match {
-              case Resource.ExitCase.Succeeded =>
-                ClientHelpers.postProcessResponse(
-                  request,
-                  response,
-                  drain,
-                  managed.value.nextBytes,
-                  managed.canBeReused,
-                )
-              case _ => Applicative[F].unit
-            }
-          }
+                                poll(
+                                  ClientHelpers
+                                    .request[F](
+                                      request,
+                                      managed.value,
+                                      chunkSize,
+                                      maxResponseHeaderSize,
+                                      idleConnectionTime,
+                                      timeout,
+                                      userAgent,
+                                    )
+                                )
+                              ) { case ((response, drain), exitCase) =>
+                                exitCase match {
+                                  case Resource.ExitCase.Succeeded =>
+                                    ClientHelpers.postProcessResponse(
+                                      request,
+                                      response,
+                                      drain,
+                                      managed.value.nextBytes,
+                                      managed.canBeReused,
+                                    )
+                                  case _                           => Applicative[F].unit
+                                }
+                              }
         } yield responseResource._1
 
       def unixSocketClient(
@@ -356,40 +353,40 @@ object EmberClientBuilder extends EmberClientBuilderCompanionPlatform {
 
   def default[F[_]: Async] =
     new EmberClientBuilder[F](
-      tlsContextOpt = None,
-      sgOpt = None,
-      maxTotal = Defaults.maxTotal,
-      maxPerKey = Defaults.maxPerKey,
-      idleTimeInPool = Defaults.idleTimeInPool,
-      logger = defaultLogger[F],
-      chunkSize = Defaults.chunkSize,
-      maxResponseHeaderSize = Defaults.maxResponseHeaderSize,
-      idleConnectionTime = Defaults.idleConnectionTime,
-      timeout = Defaults.timeout,
-      additionalSocketOptions = Defaults.additionalSocketOptions,
-      userAgent = Defaults.userAgent,
+      tlsContextOpt               = None,
+      sgOpt                       = None,
+      maxTotal                    = Defaults.maxTotal,
+      maxPerKey                   = Defaults.maxPerKey,
+      idleTimeInPool              = Defaults.idleTimeInPool,
+      logger                      = defaultLogger[F],
+      chunkSize                   = Defaults.chunkSize,
+      maxResponseHeaderSize       = Defaults.maxResponseHeaderSize,
+      idleConnectionTime          = Defaults.idleConnectionTime,
+      timeout                     = Defaults.timeout,
+      additionalSocketOptions     = Defaults.additionalSocketOptions,
+      userAgent                   = Defaults.userAgent,
       checkEndpointIdentification = true,
-      retryPolicy = Defaults.retryPolicy,
-      unixSockets = None,
-      enableHttp2 = false,
-      pushPromiseSupport = None,
+      retryPolicy                 = Defaults.retryPolicy,
+      unixSockets                 = None,
+      enableHttp2                 = false,
+      pushPromiseSupport          = None,
     )
 
   private object Defaults {
-    val acgFixedThreadPoolSize: Int = 100
-    val chunkSize: Int = 32 * 1024
-    val maxResponseHeaderSize: Int = 4096
-    val idleConnectionTime: FiniteDuration = org.http4s.client.defaults.RequestTimeout
-    val timeout: Duration = org.http4s.client.defaults.RequestTimeout
+    val acgFixedThreadPoolSize: Int            = 100
+    val chunkSize:              Int            = 32 * 1024
+    val maxResponseHeaderSize:  Int            = 4096
+    val idleConnectionTime:     FiniteDuration = org.http4s.client.defaults.RequestTimeout
+    val timeout:                Duration       = org.http4s.client.defaults.RequestTimeout
 
     // Pool Settings
-    val maxPerKey: RequestKey => Int = { (_: RequestKey) =>
+    val maxPerKey:               RequestKey => Int  = { (_: RequestKey) =>
       100
     }
-    val maxTotal: Int = 100
-    val idleTimeInPool: FiniteDuration = 30.seconds // 30 Seconds in Nanos
+    val maxTotal:                Int                = 100
+    val idleTimeInPool:          FiniteDuration     = 30.seconds // 30 Seconds in Nanos
     val additionalSocketOptions: List[SocketOption] = List.empty[SocketOption]
-    val userAgent: Some[`User-Agent`] = Some(
+    val userAgent:               Some[`User-Agent`] = Some(
       `User-Agent`(ProductId("http4s-ember", Some(org.http4s.BuildInfo.version)))
     )
 

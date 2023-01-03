@@ -61,11 +61,11 @@ private[http4s] object MultipartDecoder {
     *         temporary files.
     */
   def mixedMultipartResource[F[_]: Concurrent: Files](
-      headerLimit: Int = 1024,
+      headerLimit:        Int = 1024,
       maxSizeBeforeWrite: Int = 52428800,
-      maxParts: Int = 50,
-      failOnLimit: Boolean = false,
-      chunkSize: Int = 8192,
+      maxParts:           Int = 50,
+      failOnLimit:        Boolean = false,
+      chunkSize:          Int = 8192,
   ): Resource[F, EntityDecoder[F, Multipart[F]]] =
     Supervisor[F].map { supervisor =>
       makeDecoder(
@@ -109,10 +109,10 @@ private[http4s] object MultipartDecoder {
     */
   @deprecated("Use mixedMultipartResource", "0.23")
   def mixedMultipart[F[_]: Concurrent: Files](
-      headerLimit: Int = 1024,
+      headerLimit:        Int = 1024,
       maxSizeBeforeWrite: Int = 52428800,
-      maxParts: Int = 50,
-      failOnLimit: Boolean = false,
+      maxParts:           Int = 50,
+      failOnLimit:        Boolean = false,
   ): EntityDecoder[F, Multipart[F]] =
     makeDecoder(
       MultipartParser.parseToPartsStreamedFile[F](
@@ -135,15 +135,13 @@ private[http4s] object MultipartDecoder {
               .through(impl(Boundary(boundary)))
               .compile
               .toVector
-              .map[Either[DecodeFailure, Multipart[F]]](parts =>
-                Right(Multipart(parts, Boundary(boundary)))
-              )
+              .map[Either[DecodeFailure, Multipart[F]]](parts => Right(Multipart(parts, Boundary(boundary))))
               .handleError {
                 case e: InvalidMessageBodyFailure => Left(e)
                 case e => Left(InvalidMessageBodyFailure("Invalid multipart body", Some(e)))
               }
           }
-        case None =>
+        case None           =>
           DecodeResult.failureT(
             InvalidMessageBodyFailure("Missing boundary extension to Content-Type")
           )

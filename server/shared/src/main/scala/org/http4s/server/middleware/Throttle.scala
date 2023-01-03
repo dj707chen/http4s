@@ -56,33 +56,32 @@ object Throttle {
       * @return A task to create the [[TokenBucket]].
       */
     def local[F[_]](capacity: Int, refillEvery: FiniteDuration)(implicit
-        F: Temporal[F]
+        F:                    Temporal[F]
     ): F[TokenBucket[F]] = {
       def getTime = F.monotonic.map(_.toNanos)
-      val bucket = getTime.flatMap(time => F.ref((capacity.toDouble, time)))
+      val bucket  = getTime.flatMap(time => F.ref((capacity.toDouble, time)))
 
       bucket.map { counter =>
         new TokenBucket[F] {
           override def takeToken: F[TokenAvailability] = {
-            val attemptUpdate = counter.access.flatMap {
-              case ((previousTokens, previousTime), setter) =>
-                getTime.flatMap { currentTime =>
-                  val timeDifference = currentTime - previousTime
-                  val tokensToAdd = timeDifference.toDouble / refillEvery.toNanos.toDouble
-                  val newTokenTotal = Math.min(previousTokens + tokensToAdd, capacity.toDouble)
+            val attemptUpdate = counter.access.flatMap { case ((previousTokens, previousTime), setter) =>
+              getTime.flatMap { currentTime =>
+                val timeDifference = currentTime - previousTime
+                val tokensToAdd    = timeDifference.toDouble / refillEvery.toNanos.toDouble
+                val newTokenTotal  = Math.min(previousTokens + tokensToAdd, capacity.toDouble)
 
-                  val attemptSet: F[Option[TokenAvailability]] =
-                    if (newTokenTotal >= 1)
-                      setter((newTokenTotal - 1, currentTime))
-                        .map(_.guard[Option].as(TokenAvailable))
-                    else {
-                      val timeToNextToken = refillEvery.toNanos - timeDifference
-                      val successResponse = TokenUnavailable(timeToNextToken.nanos.some)
-                      setter((newTokenTotal, currentTime)).map(_.guard[Option].as(successResponse))
-                    }
+                val attemptSet: F[Option[TokenAvailability]] =
+                  if (newTokenTotal >= 1)
+                    setter((newTokenTotal - 1, currentTime))
+                      .map(_.guard[Option].as(TokenAvailable))
+                  else {
+                    val timeToNextToken = refillEvery.toNanos - timeDifference
+                    val successResponse = TokenUnavailable(timeToNextToken.nanos.some)
+                    setter((newTokenTotal, currentTime)).map(_.guard[Option].as(successResponse))
+                  }
 
-                  attemptSet
-                }
+                attemptSet
+              }
             }
 
             def loop: F[TokenAvailability] =
@@ -104,10 +103,10 @@ object Throttle {
     * @return a task containing the transformed service.
     */
   def apply[F[_], G[_]](amount: Int, per: FiniteDuration)(
-      http: Http[F, G]
-  )(implicit F: Temporal[F]): F[Http[F, G]] = {
+      http:                     Http[F, G]
+  )(implicit F:                 Temporal[F]): F[Http[F, G]] = {
     val refillFrequency = per / amount.toLong
-    val createBucket = TokenBucket.local(amount, refillFrequency)
+    val createBucket    = TokenBucket.local(amount, refillFrequency)
     createBucket.map(bucket => apply(bucket, defaultResponse[G] _)(http))
   }
 
@@ -124,12 +123,12 @@ object Throttle {
     * @return a task containing the transformed service.
     */
   def apply[F[_], G[_]](
-      bucket: TokenBucket[F],
+      bucket:           TokenBucket[F],
       throttleResponse: Option[FiniteDuration] => Response[G] = defaultResponse[G] _,
-  )(http: Http[F, G])(implicit F: Monad[F]): Http[F, G] =
+  )(http:               Http[F, G])(implicit F: Monad[F]): Http[F, G] =
     Kleisli { req =>
       bucket.takeToken.flatMap {
-        case TokenAvailable => http(req)
+        case TokenAvailable               => http(req)
         case TokenUnavailable(retryAfter) => throttleResponse(retryAfter).pure[F]
       }
     }

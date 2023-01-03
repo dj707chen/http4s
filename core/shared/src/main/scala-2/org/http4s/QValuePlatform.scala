@@ -48,7 +48,7 @@ object QValuePlatform {
               e => c.abort(c.enclosingPosition, e.details),
               qValue => q"_root_.org.http4s.QValue.☠(${qValue.thousandths})",
             )
-        case _ =>
+        case _                            =>
           c.abort(c.enclosingPosition, s"literal Double value required")
       }
   }

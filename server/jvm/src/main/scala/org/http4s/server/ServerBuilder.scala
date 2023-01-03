@@ -59,9 +59,9 @@ trait ServerBuilder[F[_]] extends BackendBuilder[F, Server] {
     */
   final def serve: Stream[F, ExitCode] =
     for {
-      signal <- Stream.eval(SignallingRef[F, Boolean](false))
+      signal   <- Stream.eval(SignallingRef[F, Boolean](false))
       exitCode <- Stream.eval(F.ref(ExitCode.Success))
-      serve <- serveWhile(signal, exitCode)
+      serve    <- serveWhile(signal, exitCode)
     } yield serve
 
   /** Runs the server as a Stream that emits only when the terminated signal becomes true.
@@ -69,7 +69,7 @@ trait ServerBuilder[F[_]] extends BackendBuilder[F, Server] {
     */
   final def serveWhile(
       terminateWhenTrue: Signal[F, Boolean],
-      exitWith: Ref[F, ExitCode],
+      exitWith:          Ref[F, ExitCode],
   ): Stream[F, ExitCode] =
     Stream.resource(resource) *> (terminateWhenTrue.discrete
       .takeWhile(_ === false)

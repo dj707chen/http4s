@@ -62,7 +62,7 @@ private[http4s] object Rfc7230 {
   /* quoted-pair    = "\" ( HTAB / SP / VCHAR / obs-text ) */
   val quotedPair: Parser[Char] = char('\\') *> qdPairChar
 
-  private def surroundedBy[A](a: Parser0[A], b: Parser[Any]): Parser[A] =
+  private def surroundedBy[A](a: Parser0[A], b: Parser[Any]):            Parser[A] =
     b *> a <* b
   private def between[A](a: Parser[Any], b: Parser0[A], c: Parser[Any]): Parser[A] =
     a *> b <* c
@@ -91,7 +91,7 @@ private[http4s] object Rfc7230 {
   def headerRep1[A](element: Parser[A]): Parser[NonEmptyList[A]] = {
     val prelude = (char(',') <* ows).rep0
     val tailOpt = (ows.with1 *> char(',') *> (ows.with1 *> element).?).rep0
-    val tail = tailOpt.map(_.collect { case Some(x) => x })
+    val tail    = tailOpt.map(_.collect { case Some(x) => x })
 
     (prelude.with1 *> element ~ tail).map { case (h, t) =>
       NonEmptyList(h, t)

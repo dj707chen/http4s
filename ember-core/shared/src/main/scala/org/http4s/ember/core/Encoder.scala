@@ -28,16 +28,16 @@ import java.nio.charset.StandardCharsets
 
 private[ember] object Encoder {
 
-  private val SPACE = " "
-  private val CRLF = "\r\n"
+  private val SPACE                   = " "
+  private val CRLF                    = "\r\n"
   val chunkedTansferEncodingHeaderRaw = "Transfer-Encoding: chunked"
 
   def respToBytes[F[_]](resp: Response[F], writeBufferSize: Int = 32 * 1024): Stream[F, Byte] = {
-    var chunked = resp.isChunked
+    var chunked     = resp.isChunked
     // resp.status.isEntityAllowed TODO
     val initSection = {
       var appliedContentLength = false
-      val stringBuilder = new StringBuilder()
+      val stringBuilder        = new StringBuilder()
 
       // Response Prelude: HTTP-Version SP STATUS CRLF
       stringBuilder
@@ -85,7 +85,7 @@ private[ember] object Encoder {
     Set(Method.GET, Method.DELETE, Method.CONNECT, Method.TRACE)
 
   def reqToBytes[F[_]: ApplicativeThrow](
-      req: Request[F],
+      req:             Request[F],
       writeBufferSize: Int = 32 * 1024,
   ): Stream[F, Byte] = {
     val uriOriginFormString = req.uri.toOriginForm.renderString
@@ -93,10 +93,10 @@ private[ember] object Encoder {
     if (uriOriginFormString.exists(ForbiddenUriCharacters)) {
       Stream.raiseError(new IllegalArgumentException(s"Invalid URI: ${uriOriginFormString}"))
     } else {
-      var chunked = req.isChunked
+      var chunked     = req.isChunked
       val initSection = {
         var appliedContentLength = false
-        val stringBuilder = new StringBuilder()
+        val stringBuilder        = new StringBuilder()
 
         // Request-Line   = Method SP Request-URI SP HTTP-Version CRLF
         stringBuilder

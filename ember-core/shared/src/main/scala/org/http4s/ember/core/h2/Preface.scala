@@ -21,7 +21,7 @@ import scodec.bits._
 import java.nio.charset.StandardCharsets
 // Preface must always be sent an happens before anything else.
 private[h2] object Preface {
-  val client = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
+  val client   = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
   // This sequence MUST be followed by a SETTINGS frame
   val clientBV = ByteVector(client.getBytes(StandardCharsets.ISO_8859_1))
 

@@ -35,7 +35,7 @@ object JsonDecoder {
 
   implicit def impl[F[_]: Concurrent]: JsonDecoder[F] =
     new JsonDecoder[F] {
-      def asJson(m: Message[F]): F[Json] = m.as[Json]
-      def asJsonDecode[A: Decoder](m: Message[F]): F[A] = m.decodeJson
+      def asJson(m: Message[F]):                   F[Json] = m.as[Json]
+      def asJsonDecode[A: Decoder](m: Message[F]): F[A]    = m.decodeJson
     }
 }

@@ -29,7 +29,7 @@ object Date {
   def apply[G[_]: Temporal, F[_], A](k: Kleisli[G, A, Response[F]]): Kleisli[G, A, Response[F]] =
     Kleisli { a =>
       for {
-        resp <- k(a)
+        resp   <- k(a)
         header <-
           resp.headers
             .get[HDate]

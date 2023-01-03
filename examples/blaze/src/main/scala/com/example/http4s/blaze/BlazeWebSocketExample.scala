@@ -42,11 +42,11 @@ class BlazeWebSocketExampleApp[F[_]](implicit F: Async[F]) extends Http4sDsl[F] 
         Ok("Hello world.")
 
       case GET -> Root / "ws" =>
-        val toClient: Stream[F, WebSocketFrame] =
+        val toClient:   Stream[F, WebSocketFrame]     =
           Stream.awakeEvery[F](1.seconds).map(d => Text(s"Ping! $d"))
         val fromClient: Pipe[F, WebSocketFrame, Unit] = _.evalMap {
           case Text(t, _) => F.delay(println(t))
-          case f => F.delay(println(s"Unknown type: $f"))
+          case f          => F.delay(println(s"Unknown type: $f"))
         }
         wsb.build(toClient, fromClient)
 
@@ -54,7 +54,7 @@ class BlazeWebSocketExampleApp[F[_]](implicit F: Async[F]) extends Http4sDsl[F] 
         val echoReply: Pipe[F, WebSocketFrame, WebSocketFrame] =
           _.collect {
             case Text(msg, _) => Text("You sent the server: " + msg)
-            case _ => Text("Something new")
+            case _            => Text("Something new")
           }
 
         /* Note that this use of a queue is not typical of http4s applications.
@@ -72,7 +72,7 @@ class BlazeWebSocketExampleApp[F[_]](implicit F: Async[F]) extends Http4sDsl[F] 
         Queue
           .unbounded[F, Option[WebSocketFrame]]
           .flatMap { q =>
-            val d: Stream[F, WebSocketFrame] = Stream.fromQueueNoneTerminated(q).through(echoReply)
+            val d: Stream[F, WebSocketFrame]     = Stream.fromQueueNoneTerminated(q).through(echoReply)
             val e: Pipe[F, WebSocketFrame, Unit] = _.enqueueNoneTerminated(q)
             wsb.build(d, e)
           }

@@ -77,19 +77,19 @@ object ContentCoding {
   val `*` : ContentCoding = new ContentCoding("*")
 
   // http://www.iana.org/assignments/http-parameters/http-parameters.xml#http-parameters-1
-  val aes128gcm = new ContentCoding("aes128gcm")
-  val br = new ContentCoding("br")
-  val compress = new ContentCoding("compress")
-  val deflate = new ContentCoding("deflate")
-  val exi = new ContentCoding("exi")
-  val gzip = new ContentCoding("gzip")
-  val identity = new ContentCoding("identity")
+  val aes128gcm      = new ContentCoding("aes128gcm")
+  val br             = new ContentCoding("br")
+  val compress       = new ContentCoding("compress")
+  val deflate        = new ContentCoding("deflate")
+  val exi            = new ContentCoding("exi")
+  val gzip           = new ContentCoding("gzip")
+  val identity       = new ContentCoding("identity")
   val `pack200-gzip` = new ContentCoding("pack200-gzip")
-  val zstd = new ContentCoding("zstd")
+  val zstd           = new ContentCoding("zstd")
 
   // Legacy encodings defined by RFC2616 3.5.
   val `x-compress`: ContentCoding = compress
-  val `x-gzip`: ContentCoding = gzip
+  val `x-gzip`:     ContentCoding = gzip
 
   val standard: Map[String, ContentCoding] =
     List(`*`, aes128gcm, br, compress, deflate, exi, gzip, identity, `pack200-gzip`, zstd)
@@ -115,7 +115,7 @@ object ContentCoding {
   implicit val http4sOrderForContentCoding: Order[ContentCoding] =
     Order.by(c => (c.coding.toLowerCase(ju.Locale.ENGLISH), c.qValue))
 
-  implicit val http4sShowForContentCoding: Show[ContentCoding] =
+  implicit val http4sShowForContentCoding:      Show[ContentCoding]      =
     Show.fromToString
   implicit val http4sHttpCodecForContentCoding: HttpCodec[ContentCoding] =
     new HttpCodec[ContentCoding] {

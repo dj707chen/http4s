@@ -36,5 +36,4 @@ trait ClientTypes {
   type Middleware[F[_]] = Client[F] => Client[F]
 }
 
-case object WaitQueueTimeoutException
-    extends TimeoutException("In wait queue for too long, timing out request.")
+case object WaitQueueTimeoutException extends TimeoutException("In wait queue for too long, timing out request.")

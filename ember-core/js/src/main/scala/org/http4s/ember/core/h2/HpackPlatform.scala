@@ -17,7 +17,7 @@
 package org.http4s.ember.core.h2
 
 private[h2] class HpackPlatform {
-  type Encoder = org.http4s.hpack.Encoder
-  type Decoder = org.http4s.hpack.Decoder
+  type Encoder        = org.http4s.hpack.Encoder
+  type Decoder        = org.http4s.hpack.Decoder
   type HeaderListener = org.http4s.hpack.HeaderListener
 }

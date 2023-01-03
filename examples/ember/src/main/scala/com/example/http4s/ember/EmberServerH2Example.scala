@@ -34,12 +34,12 @@ object EmberServerH2Example extends IOApp {
 
   object ServerTest {
 
-    val resp = Response[fs2.Pure](Status.Ok).withEntity("Hello World!")
+    val resp                                 = Response[fs2.Pure](Status.Ok).withEntity("Hello World!")
     def simpleApp[F[_]: Concurrent: Console] = {
       val dsl = new Http4sDsl[F] {}; import dsl._
       HttpRoutes
         .of[F] {
-          case _ -> Root / "foo" =>
+          case _ -> Root / "foo"            =>
             // println(req)
             Response[F](Status.Ok).withEntity("Foo Endpoint").pure[F]
           case req @ _ -> Root / "trailers" =>
@@ -55,7 +55,7 @@ object EmberServerH2Example extends IOApp {
                 .putHeaders("trailer" -> "x-my-data")
                 .withTrailerHeaders(Headers("x-my-data" -> "Hello from trailers!").pure[F])
                 .pure[F]
-          case _ -> Root / "push-promise" =>
+          case _ -> Root / "push-promise"   =>
             resp
               .covary[F] // URI needs authority scheme, etc
               .withAttribute(
@@ -70,17 +70,17 @@ object EmberServerH2Example extends IOApp {
 
     def testALPN[F[_]: Async: Console] = for {
       sslContext <- Resource.eval(
-        ssl.loadContextFromClasspath(ssl.keystorePassword, ssl.keyManagerPassword)
-      )
-      tlsContext = Network[F].tlsContext.fromSSLContext(sslContext)
-      _ <- EmberServerBuilder
-        .default[F]
-        .withTLS(tlsContext, TLSParameters.Default)
-        .withHttp2
-        .withHost(ipv4"0.0.0.0")
-        .withPort(port"8080")
-        .withHttpApp(simpleApp)
-        .build
+                      ssl.loadContextFromClasspath(ssl.keystorePassword, ssl.keyManagerPassword)
+                    )
+      tlsContext  = Network[F].tlsContext.fromSSLContext(sslContext)
+      _          <- EmberServerBuilder
+                      .default[F]
+                      .withTLS(tlsContext, TLSParameters.Default)
+                      .withHttp2
+                      .withHost(ipv4"0.0.0.0")
+                      .withPort(port"8080")
+                      .withHttpApp(simpleApp)
+                      .build
     } yield ()
 
     // Can Test Both http2-prior-knowledge, and h2c
@@ -95,7 +95,7 @@ object EmberServerH2Example extends IOApp {
 
   }
 
-  implicit val C: Console[IO] = Console.make[IO]
+  implicit val C:              Console[IO]  = Console.make[IO]
   def run(args: List[String]): IO[ExitCode] =
     ServerTest
       .testCleartext[IO]

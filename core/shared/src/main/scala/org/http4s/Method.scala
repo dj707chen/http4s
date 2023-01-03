@@ -43,9 +43,7 @@ import scala.util.hashing.MurmurHash3
   * @see [[https://datatracker.ietf.org/doc/html/rfc7231#section-4 RFC 7321, Section 4, Request Methods]]
   * @see [[http://www.iana.org/assignments/http-methods/http-methods.xhtml IANA HTTP Method Registry]]
   */
-final class Method private (val name: String, val isSafe: Boolean, val isIdempotent: Boolean)
-    extends Renderable
-    with Serializable {
+final class Method private (val name: String, val isSafe: Boolean, val isIdempotent: Boolean) extends Renderable with Serializable {
   override def equals(that: Any): Boolean =
     that match {
       case that: Method => this.name == that.name
@@ -68,52 +66,52 @@ object Method {
   private[http4s] val parser: Parser[Method] =
     Rfc7230.token.map(apply)
 
-  private def apply(name: String) =
+  private def apply(name: String)      =
     new Method(name, isSafe = false, isIdempotent = false)
   private def idempotent(name: String) =
     new Method(name, isSafe = false, isIdempotent = true)
-  private def safe(name: String) =
+  private def safe(name: String)       =
     new Method(name, isSafe = true, isIdempotent = true)
 
-  val ACL: Method = idempotent("ACL")
+  val ACL:                Method = idempotent("ACL")
   val `BASELINE-CONTROL`: Method = idempotent("BASELINE-CONTROL")
-  val BIND: Method = idempotent("BIND")
-  val CHECKIN: Method = idempotent("CHECKIN")
-  val CHECKOUT: Method = idempotent("CHECKOUT")
-  val CONNECT: Method = apply("CONNECT")
-  val COPY: Method = idempotent("COPY")
-  val DELETE: Method = idempotent("DELETE")
-  val GET: Method = safe("GET")
-  val HEAD: Method = safe("HEAD")
-  val LABEL: Method = idempotent("LABEL")
-  val LINK: Method = idempotent("LINK")
-  val LOCK: Method = apply("LOCK")
-  val MERGE: Method = idempotent("MERGE")
-  val MKACTIVITY: Method = idempotent("MKACTIVITY")
-  val MKCALENDAR: Method = idempotent("MKCALENDAR")
-  val MKCOL: Method = idempotent("MKCOL")
-  val MKREDIRECTREF: Method = idempotent("MKREDIRECTREF")
-  val MKWORKSPACE: Method = idempotent("MKWORKSPACE")
-  val MOVE: Method = idempotent("MOVE")
-  val OPTIONS: Method = safe("OPTIONS")
-  val ORDERPATCH: Method = idempotent("ORDERPATCH")
-  val PATCH: Method = apply("PATCH")
-  val POST: Method = apply("POST")
-  val PRI: Method = safe("PRI")
-  val PROPFIND: Method = safe("PROPFIND")
-  val PROPPATCH: Method = idempotent("PROPPATCH")
-  val PUT: Method = idempotent("PUT")
-  val REBIND: Method = idempotent("REBIND")
-  val REPORT: Method = safe("REPORT")
-  val SEARCH: Method = safe("SEARCH")
-  val TRACE: Method = safe("TRACE")
-  val UNBIND: Method = idempotent("UNBIND")
-  val UNCHECKOUT: Method = idempotent("UNCHECKOUT")
-  val UNLINK: Method = idempotent("UNLINK")
-  val UNLOCK: Method = idempotent("UNLOCK")
-  val UPDATE: Method = idempotent("UPDATE")
-  val UPDATEREDIRECTREF: Method = idempotent("UPDATEREDIRECTREF")
-  val `VERSION-CONTROL`: Method = idempotent("VERSION-CONTROL")
+  val BIND:               Method = idempotent("BIND")
+  val CHECKIN:            Method = idempotent("CHECKIN")
+  val CHECKOUT:           Method = idempotent("CHECKOUT")
+  val CONNECT:            Method = apply("CONNECT")
+  val COPY:               Method = idempotent("COPY")
+  val DELETE:             Method = idempotent("DELETE")
+  val GET:                Method = safe("GET")
+  val HEAD:               Method = safe("HEAD")
+  val LABEL:              Method = idempotent("LABEL")
+  val LINK:               Method = idempotent("LINK")
+  val LOCK:               Method = apply("LOCK")
+  val MERGE:              Method = idempotent("MERGE")
+  val MKACTIVITY:         Method = idempotent("MKACTIVITY")
+  val MKCALENDAR:         Method = idempotent("MKCALENDAR")
+  val MKCOL:              Method = idempotent("MKCOL")
+  val MKREDIRECTREF:      Method = idempotent("MKREDIRECTREF")
+  val MKWORKSPACE:        Method = idempotent("MKWORKSPACE")
+  val MOVE:               Method = idempotent("MOVE")
+  val OPTIONS:            Method = safe("OPTIONS")
+  val ORDERPATCH:         Method = idempotent("ORDERPATCH")
+  val PATCH:              Method = apply("PATCH")
+  val POST:               Method = apply("POST")
+  val PRI:                Method = safe("PRI")
+  val PROPFIND:           Method = safe("PROPFIND")
+  val PROPPATCH:          Method = idempotent("PROPPATCH")
+  val PUT:                Method = idempotent("PUT")
+  val REBIND:             Method = idempotent("REBIND")
+  val REPORT:             Method = safe("REPORT")
+  val SEARCH:             Method = safe("SEARCH")
+  val TRACE:              Method = safe("TRACE")
+  val UNBIND:             Method = idempotent("UNBIND")
+  val UNCHECKOUT:         Method = idempotent("UNCHECKOUT")
+  val UNLINK:             Method = idempotent("UNLINK")
+  val UNLOCK:             Method = idempotent("UNLOCK")
+  val UPDATE:             Method = idempotent("UPDATE")
+  val UPDATEREDIRECTREF:  Method = idempotent("UPDATEREDIRECTREF")
+  val `VERSION-CONTROL`:  Method = idempotent("VERSION-CONTROL")
 
   val all = List(
     ACL,

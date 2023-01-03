@@ -25,19 +25,19 @@ import scala.concurrent.duration._
 private[http4s] object threads {
   final case class ThreadPriority(toInt: Int)
   case object ThreadPriority {
-    val Min: ThreadPriority = ThreadPriority(Thread.MIN_PRIORITY)
+    val Min:  ThreadPriority = ThreadPriority(Thread.MIN_PRIORITY)
     val Norm: ThreadPriority = ThreadPriority(Thread.NORM_PRIORITY)
-    val Max: ThreadPriority = ThreadPriority(Thread.MAX_PRIORITY)
+    val Max:  ThreadPriority = ThreadPriority(Thread.MAX_PRIORITY)
   }
 
   def threadFactory(
-      name: Long => String = { l =>
+      name:                     Long => String = { l =>
         s"http4s-$l"
       },
-      daemon: Boolean = false,
-      priority: ThreadPriority = ThreadPriority.Norm,
+      daemon:                   Boolean = false,
+      priority:                 ThreadPriority = ThreadPriority.Norm,
       uncaughtExceptionHandler: PartialFunction[(Thread, Throwable), Unit] = PartialFunction.empty,
-      backingThreadFactory: ThreadFactory = Executors.defaultThreadFactory,
+      backingThreadFactory:     ThreadFactory = Executors.defaultThreadFactory,
   ): ThreadFactory =
     new ThreadFactory {
       val count = new AtomicLong(0)
@@ -47,13 +47,12 @@ private[http4s] object threads {
         thread.setDaemon(daemon)
         thread.setPriority(priority.toInt)
         thread.setUncaughtExceptionHandler(new UncaughtExceptionHandler {
-          override def uncaughtException(t: Thread, e: Throwable): Unit =
+          override def uncaughtException(t: Thread, e: Throwable): Unit                                       =
             uncaughtExceptionHandler.orElse(fallthrough)((t, e))
-          val fallthrough: PartialFunction[(Thread, Throwable), Unit] = {
-            case (t: Thread, e: Throwable) =>
-              Option(t.getThreadGroup)
-                .getOrElse(Thread.getDefaultUncaughtExceptionHandler)
-                .uncaughtException(t, e)
+          val fallthrough:                                         PartialFunction[(Thread, Throwable), Unit] = { case (t: Thread, e: Throwable) =>
+            Option(t.getThreadGroup)
+              .getOrElse(Thread.getDefaultUncaughtExceptionHandler)
+              .uncaughtException(t, e)
           }
         })
         thread
@@ -61,10 +60,10 @@ private[http4s] object threads {
     }
 
   def newDaemonPool(
-      name: String,
-      min: Int = 4,
+      name:      String,
+      min:       Int = 4,
       cpuFactor: Double = 3.0,
-      timeout: Boolean = false,
+      timeout:   Boolean = false,
   ): ThreadPoolExecutor = {
     val cpus = Runtime.getRuntime.availableProcessors
     val exec = new ThreadPoolExecutor(
@@ -80,16 +79,16 @@ private[http4s] object threads {
   }
 
   def newDaemonPoolExecutionContext(
-      name: String,
-      min: Int = 4,
+      name:      String,
+      min:       Int = 4,
       cpuFactor: Double = 3.0,
-      timeout: Boolean = false,
+      timeout:   Boolean = false,
   ): ExecutionContext =
     ExecutionContext.fromExecutorService(newDaemonPool(name, min, cpuFactor, timeout))
 
   def newBlockingPool(name: String): ExecutorService = {
-    val CorePoolSize = 0
-    val MaxPoolSize = Int.MaxValue
+    val CorePoolSize  = 0
+    val MaxPoolSize   = Int.MaxValue
     val KeepAliveTime = 1.minute
 
     new ThreadPoolExecutor(

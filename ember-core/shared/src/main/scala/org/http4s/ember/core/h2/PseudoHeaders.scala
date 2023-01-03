@@ -24,10 +24,10 @@ import org.http4s._
 /** HTTP/2 pseudo headers */
 private[h2] object PseudoHeaders {
   // Request pseudo headers
-  val METHOD = ":method"
-  val SCHEME = ":scheme"
-  val PATH = ":path"
-  val AUTHORITY = ":authority"
+  val METHOD       = ":method"
+  val SCHEME       = ":scheme"
+  val PATH         = ":path"
+  val AUTHORITY    = ":authority"
   val requestPsedo = Set(
     METHOD,
     SCHEME,
@@ -42,7 +42,7 @@ private[h2] object PseudoHeaders {
       if (s.isEmpty) "/"
       else s
     }
-    val l = NonEmptyList.of(
+    val l    = NonEmptyList.of(
       (METHOD, req.method.toString, false),
       (SCHEME, req.uri.scheme.map(_.value).getOrElse("https"), false) ::
         (PATH, path, false) ::
@@ -61,25 +61,25 @@ private[h2] object PseudoHeaders {
   def headersToRequestNoBody(hI: NonEmptyList[(String, String)]): Option[Request[fs2.Pure]] = {
     // TODO This can be a 1 pass operation. This is not...
     val headers: List[(String, String)] = hI.toList
-    val pseudos = headers.takeWhile(_._1.startsWith(":"))
-    val method = findWithNoDuplicates(pseudos)(_._1 === METHOD)
+    val pseudos   = headers.takeWhile(_._1.startsWith(":"))
+    val method    = findWithNoDuplicates(pseudos)(_._1 === METHOD)
       .map(_._2)
       .flatMap(Method.fromString(_).toOption)
-    val scheme =
+    val scheme    =
       findWithNoDuplicates(pseudos)(_._1 === SCHEME).map(_._2).map(Uri.Scheme.unsafeFromString(_))
-    val path = findWithNoDuplicates(pseudos)(_._1 === PATH).map(_._2)
+    val path      = findWithNoDuplicates(pseudos)(_._1 === PATH).map(_._2)
     val authority = extractAuthority(pseudos)
 
     val noOtherPseudo = pseudos
       .filterNot(t => requestPsedo.contains(t._1))
       .isEmpty
 
-    val teIsCorrect = headers.find(_._1 === "te").headOption.fold(true)(_._2 === "trailers")
+    val teIsCorrect        = headers.find(_._1 === "te").headOption.fold(true)(_._2 === "trailers")
     val connectionIsAbsent = headers.find(_._1 === "connection").isEmpty
 
     val reqHeaders = headers.dropWhile(_._1.startsWith(":"))
 
-    val noOtherPseudos = !reqHeaders.exists(_._1.startsWith(":"))
+    val noOtherPseudos     = !reqHeaders.exists(_._1.startsWith(":"))
     val noUppercaseHeaders = reqHeaders.map(_._1).forall(s => s === s.toLowerCase)
 
     val h = Headers(
@@ -89,8 +89,8 @@ private[h2] object PseudoHeaders {
     )
     for {
       _ <- Alternative[Option].guard(
-        noOtherPseudo && teIsCorrect && connectionIsAbsent && noOtherPseudos && noUppercaseHeaders
-      )
+             noOtherPseudo && teIsCorrect && connectionIsAbsent && noOtherPseudos && noUppercaseHeaders
+           )
       m <- method
       p <- path
       _ <- Alternative[Option].guard(p.nonEmpty) // Not Allowed to be empty in http/2
@@ -108,12 +108,12 @@ private[h2] object PseudoHeaders {
           Option(
             Uri.Authority(
               userInfo = None,
-              host = Uri.RegName(value.take(index)),
-              port = value.drop(index + 1).toInt.some,
+              host     = Uri.RegName(value.take(index)),
+              port     = value.drop(index + 1).toInt.some,
             )
           )
         } else Option.empty
-      case (_, _) => None
+      case (_, _)                           => None
     }
 
   // Response pseudo header
@@ -137,11 +137,10 @@ private[h2] object PseudoHeaders {
   ): Option[Response[fs2.Pure]] = {
     // TODO Duplicate Check
     val statusO =
-      findWithNoDuplicates(headers.toList)(_._1 === PseudoHeaders.STATUS).map(_._2).flatMap {
-        value =>
-          Status.fromInt(value.toInt).toOption
+      findWithNoDuplicates(headers.toList)(_._1 === PseudoHeaders.STATUS).map(_._2).flatMap { value =>
+        Status.fromInt(value.toInt).toOption
       }
-    val h = Headers(
+    val h       = Headers(
       headers
         .filterNot(t => t._1 == PseudoHeaders.STATUS)
         .map(t => Header.Raw(org.typelevel.ci.CIString(t._1), t._2))
@@ -152,11 +151,11 @@ private[h2] object PseudoHeaders {
 
   def findWithNoDuplicates[A](l: List[A])(bool: A => Boolean): Option[A] =
     l.foldLeft(Either.right[Unit, Option[A]](None)) {
-      case (Left(e), _) => Left(e)
+      case (Left(e), _)           => Left(e)
       case (Right(Some(a)), next) =>
         if (bool(next)) Left(())
         else Right(Some(a))
-      case (Right(None), next) =>
+      case (Right(None), next)    =>
         if (bool(next)) Right(Some(next))
         else Right(None)
     }.toOption

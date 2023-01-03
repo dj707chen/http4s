@@ -33,11 +33,11 @@ trait EntityEncoderTests[F[_], A] extends Laws {
 
   def entityEncoder(implicit
       arbitraryA: Arbitrary[A],
-      shrinkA: Shrink[A],
+      shrinkA:    Shrink[A],
       eqFBoolean: Eq[F[Boolean]],
   ): RuleSet =
     new DefaultRuleSet(
-      name = "EntityEncoder",
+      name   = "EntityEncoder",
       parent = None,
       "accurateContentLength" -> Prop.forAll { (a: A) =>
         laws.accurateContentLengthIfDefined(a)
@@ -48,7 +48,7 @@ trait EntityEncoderTests[F[_], A] extends Laws {
 
   def entityEncoderF(implicit
       arbitraryA: Arbitrary[A],
-      shrinkA: Shrink[A],
+      shrinkA:    Shrink[A],
   ): List[(String, PropF[F])] = {
     implicit val F: MonadThrow[F] = laws.F
     List(
@@ -65,7 +65,7 @@ trait EntityEncoderTests[F[_], A] extends Laws {
 
 object EntityEncoderTests {
   def apply[F[_], A](implicit
-      F0: Concurrent[F],
+      F0:              Concurrent[F],
       entityEncoderFA: EntityEncoder[F, A],
   ): EntityEncoderTests[F, A] =
     new EntityEncoderTests[F, A] {

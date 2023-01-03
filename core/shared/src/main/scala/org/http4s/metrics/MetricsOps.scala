@@ -53,9 +53,9 @@ trait MetricsOps[F[_]] {
     * @param classifier the classifier to apply
     */
   def recordTotalTime(
-      method: Method,
-      status: Status,
-      elapsed: Long,
+      method:     Method,
+      status:     Status,
+      elapsed:    Long,
       classifier: Option[String],
   ): F[Unit]
 
@@ -66,9 +66,9 @@ trait MetricsOps[F[_]] {
     * @param classifier the classifier to apply
     */
   def recordAbnormalTermination(
-      elapsed: Long,
+      elapsed:         Long,
       terminationType: TerminationType,
-      classifier: Option[String],
+      classifier:      Option[String],
   ): F[Unit]
 }
 
@@ -104,7 +104,7 @@ object MetricsOps {
     * @return Request[F] => Option[String]
     */
   def classifierFMethodWithOptionallyExcludedPath[F[_]](
-      exclude: String => Boolean,
+      exclude:       String => Boolean,
       excludedValue: String = "*",
       pathSeparator: String = "_",
   ): Request[F] => Option[String] = { (request: Request[F]) =>
@@ -119,7 +119,7 @@ object MetricsOps {
 
     val result: String =
       minusExcluded match {
-        case Nil => initial
+        case Nil               => initial
         case nonEmpty @ _ :: _ =>
           initial + pathSeparator + Foldable[List]
             .intercalate(nonEmpty, pathSeparator)

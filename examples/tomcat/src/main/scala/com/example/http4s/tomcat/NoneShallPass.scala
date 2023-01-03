@@ -23,9 +23,9 @@ import javax.servlet.http._
 
 object NoneShallPass extends DefaultFilter {
   override def doHttpFilter(
-      request: HttpServletRequest,
+      request:  HttpServletRequest,
       response: HttpServletResponse,
-      chain: FilterChain,
+      chain:    FilterChain,
   ): Unit =
     response.setStatus(403)
 }

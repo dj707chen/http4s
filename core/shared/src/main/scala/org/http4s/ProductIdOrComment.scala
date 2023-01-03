@@ -29,8 +29,7 @@ object ProductIdOrComment {
   }
 }
 
-final case class ProductId(value: String, version: Option[String] = None)
-    extends ProductIdOrComment {
+final case class ProductId(value: String, version: Option[String] = None) extends ProductIdOrComment {
 
   override def render(writer: Writer): writer.type = {
     writer << value
@@ -42,8 +41,8 @@ final case class ProductId(value: String, version: Option[String] = None)
 }
 
 object ProductId {
-  private[http4s] val parser = (Rfc7230.token ~ (P.string("/") *> Rfc7230.token).?).map {
-    case (value: String, version: Option[String]) => ProductId(value, version)
+  private[http4s] val parser = (Rfc7230.token ~ (P.string("/") *> Rfc7230.token).?).map { case (value: String, version: Option[String]) =>
+    ProductId(value, version)
   }
 }
 

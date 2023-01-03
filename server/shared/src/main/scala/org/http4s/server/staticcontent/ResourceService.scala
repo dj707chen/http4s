@@ -41,22 +41,22 @@ import scala.util.control.NoStackTrace
   * @param classLoader optional classloader for extracting the resources
   */
 class ResourceServiceBuilder[F[_]] private (
-    basePath: String,
-    pathPrefix: String,
-    bufferSize: Int,
+    basePath:      String,
+    pathPrefix:    String,
+    bufferSize:    Int,
     cacheStrategy: CacheStrategy[F],
     preferGzipped: Boolean,
-    classLoader: Option[ClassLoader],
+    classLoader:   Option[ClassLoader],
 ) {
   private[this] val logger = getLogger
 
   private def copy(
-      basePath: String = basePath,
-      pathPrefix: String = pathPrefix,
-      bufferSize: Int = bufferSize,
+      basePath:      String = basePath,
+      pathPrefix:    String = pathPrefix,
+      bufferSize:    Int = bufferSize,
       cacheStrategy: CacheStrategy[F] = cacheStrategy,
       preferGzipped: Boolean = preferGzipped,
-      classLoader: Option[ClassLoader] = classLoader,
+      classLoader:   Option[ClassLoader] = classLoader,
   ): ResourceServiceBuilder[F] =
     new ResourceServiceBuilder[F](
       basePath,
@@ -67,7 +67,7 @@ class ResourceServiceBuilder[F[_]] private (
       classLoader,
     )
 
-  def withBasePath(basePath: String): ResourceServiceBuilder[F] = copy(basePath = basePath)
+  def withBasePath(basePath: String):     ResourceServiceBuilder[F] = copy(basePath = basePath)
   def withPathPrefix(pathPrefix: String): ResourceServiceBuilder[F] =
     copy(pathPrefix = pathPrefix)
 
@@ -95,7 +95,7 @@ class ResourceServiceBuilder[F[_]] private (
               .liftF(F.catchNonFatal {
                 segments.foldLeft(rootPath) {
                   case (_, "" | "." | "..") => throw BadTraversal
-                  case (path, segment) =>
+                  case (path, segment)      =>
                     path.resolve(segment)
                 }
               })
@@ -114,7 +114,7 @@ class ResourceServiceBuilder[F[_]] private (
               .recoverWith { case BadTraversal =>
                 OptionT.some(Response(Status.BadRequest))
               }
-          case _ => OptionT.none
+          case _                                    => OptionT.none
         })
 
       case Failure(e) =>
@@ -129,12 +129,12 @@ class ResourceServiceBuilder[F[_]] private (
 object ResourceServiceBuilder {
   def apply[F[_]](basePath: String): ResourceServiceBuilder[F] =
     new ResourceServiceBuilder[F](
-      basePath = basePath,
-      pathPrefix = "",
-      bufferSize = 50 * 1024,
+      basePath      = basePath,
+      pathPrefix    = "",
+      bufferSize    = 50 * 1024,
       cacheStrategy = NoopCacheStrategy[F],
       preferGzipped = false,
-      classLoader = None,
+      classLoader   = None,
     )
 }
 
@@ -150,9 +150,9 @@ object ResourceService {
     * @param preferGzipped whether to serve pre-gzipped files (with extension ".gz") if they exist
     */
   final case class Config[F[_]](
-      basePath: String,
-      pathPrefix: String = "",
-      bufferSize: Int = 50 * 1024,
+      basePath:      String,
+      pathPrefix:    String = "",
+      bufferSize:    Int = 50 * 1024,
       cacheStrategy: CacheStrategy[F] = NoopCacheStrategy[F],
       preferGzipped: Boolean = false,
   )
@@ -172,7 +172,7 @@ object ResourceService {
               .liftF(F.catchNonFatal {
                 segments.foldLeft(rootPath) {
                   case (_, "" | "." | "..") => throw BadTraversal
-                  case (path, segment) =>
+                  case (path, segment)      =>
                     path.resolve(segment)
                 }
               })
@@ -190,7 +190,7 @@ object ResourceService {
               .recoverWith { case BadTraversal =>
                 OptionT.some(Response(Status.BadRequest))
               }
-          case _ => OptionT.none
+          case _                                    => OptionT.none
         })
 
       case Failure(e) =>

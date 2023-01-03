@@ -36,8 +36,8 @@ import scala.util.control.NonFatal
 
 private[http4s] final class IdleTimeoutStage[A](
     timeout: FiniteDuration,
-    exec: TickWheelExecutor,
-    ec: ExecutionContext,
+    exec:    TickWheelExecutor,
+    ec:      ExecutionContext,
 ) extends MidStage[A, A] { stage =>
 
   private val timeoutState = new AtomicReference[State](Disabled)
@@ -65,7 +65,7 @@ private[http4s] final class IdleTimeoutStage[A](
         case old @ IdleTimeoutStage.Enabled(_, cancel) =>
           if (timeoutState.compareAndSet(old, ShutDown)) cancel.cancel()
           else go()
-        case old =>
+        case old                                       =>
           if (!timeoutState.compareAndSet(old, ShutDown)) go()
       }
 
@@ -89,7 +89,7 @@ private[http4s] final class IdleTimeoutStage[A](
 
     @tailrec def go(): Unit =
       timeoutState.get() match {
-        case Disabled =>
+        case Disabled                    =>
           val newCancel = exec.schedule(timeoutTask, timeout)
           if (timeoutState.compareAndSet(Disabled, Enabled(timeoutTask, newCancel))) ()
           else {
@@ -103,7 +103,7 @@ private[http4s] final class IdleTimeoutStage[A](
             newCancel.cancel()
             go()
           }
-        case _ => ()
+        case _                           => ()
       }
 
     go()
@@ -118,7 +118,7 @@ private[http4s] final class IdleTimeoutStage[A](
           newCancel.cancel()
           resetTimeout()
         }
-      case _ => ()
+      case _                                     => ()
     }
 
   @tailrec def cancelTimeout(): Unit =
@@ -126,7 +126,7 @@ private[http4s] final class IdleTimeoutStage[A](
       case old @ IdleTimeoutStage.Enabled(_, cancel) =>
         if (timeoutState.compareAndSet(old, Disabled)) cancel.cancel()
         else cancelTimeout()
-      case _ => ()
+      case _                                         => ()
     }
 
   def tryScheduling(timeoutTask: Runnable): Option[Cancelable] =
@@ -136,7 +136,7 @@ private[http4s] final class IdleTimeoutStage[A](
         case TickWheelExecutor.AlreadyShutdownException =>
           logger.warn(s"Resetting timeout after tickwheelexecutor is shutdown")
           None
-        case NonFatal(e) => throw e
+        case NonFatal(e)                                => throw e
       }
     } else {
       None

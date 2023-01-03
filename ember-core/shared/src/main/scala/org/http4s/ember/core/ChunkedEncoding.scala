@@ -45,13 +45,13 @@ private[ember] object ChunkedEncoding {
     * Please see https://en.wikipedia.org/wiki/Chunked_transfer_encoding for details
     */
   def decode[F[_]](
-      head: Array[Byte],
-      read: F[Option[Chunk[Byte]]],
-      maxHeaderSize: Int,
+      head:               Array[Byte],
+      read:               F[Option[Chunk[Byte]]],
+      maxHeaderSize:      Int,
       maxChunkHeaderSize: Int,
-      trailers: Deferred[F, Headers],
-      rest: Ref[F, Option[Array[Byte]]],
-  )(implicit F: MonadThrow[F]): Stream[F, Byte] = {
+      trailers:           Deferred[F, Headers],
+      rest:               Ref[F, Option[Array[Byte]]],
+  )(implicit F:           MonadThrow[F]): Stream[F, Byte] = {
     // on left reading the header of chunk (acting as buffer)
     // on right reading the chunk itself, and storing remaining bytes of the chunk
     def go(expect: Either[ByteVector, Long], head: Array[Byte]): Pull[F, Byte, Unit] = {
@@ -59,13 +59,13 @@ private[ember] object ChunkedEncoding {
         if (head.nonEmpty) Pull.pure(Some(Chunk.byteVector(ByteVector.apply(head))))
         else Pull.eval(read)
       nextChunk.flatMap {
-        case None =>
+        case None    =>
           Pull.raiseError(EmberException.ReachedEndOfStream())
         case Some(h) =>
           val bv = h.toByteVector
           expect match {
             case Left(header) =>
-              val nh = header ++ bv
+              val nh          = header ++ bv
               val endOfHeader = nh.indexOfSlice(`\r\n`)
               if (endOfHeader == 0)
                 go(
@@ -82,13 +82,13 @@ private[ember] object ChunkedEncoding {
               else {
                 val (hdr, rem) = nh.splitAt(endOfHeader + `\r\n`.size)
                 readChunkedHeader(hdr.dropRight(`\r\n`.size)) match {
-                  case None =>
+                  case None     =>
                     Pull.raiseError[F](
                       EmberException.ChunkedEncodingError(
                         s"Failed to parse chunked header : ${hdr.decodeUtf8}"
                       )
                     )
-                  case Some(0) =>
+                  case Some(0)  =>
                     // Done With Message, Now Parse Trailers
                     Pull.eval(
                       parseTrailers[F](maxHeaderSize)(rem.toArray, read)
@@ -124,21 +124,19 @@ private[ember] object ChunkedEncoding {
 
   private def parseTrailers[F[_]: MonadThrow](
       maxHeaderSize: Int
-  )(buffer: Array[Byte], read: F[Option[Chunk[Byte]]]): F[Trailers] =
+  )(buffer:          Array[Byte], read: F[Option[Chunk[Byte]]]): F[Trailers] =
     if (buffer.startsWith(Shared.`\r\n`.toArray)) {
       Trailers(Headers.empty, buffer.drop(`\r\n`.size.toInt)).pure[F]
     } else if (buffer.length < 2) {
       read.flatMap {
-        case None =>
+        case None        =>
           MonadThrow[F].raiseError(EmberException.ReachedEndOfStream())
         case Some(chunk) =>
           parseTrailers(maxHeaderSize)(buffer ++ chunk.toArray[Byte], read)
       }
     } else {
       Parser.MessageP
-        .recurseFind(buffer, read, maxHeaderSize)(buffer =>
-          Parser.HeaderP.parseHeaders(buffer, 0, maxHeaderSize)
-        )(_.idx)
+        .recurseFind(buffer, read, maxHeaderSize)(buffer => Parser.HeaderP.parseHeaders(buffer, 0, maxHeaderSize))(_.idx)
         .map { case (headerP, rest) => Trailers(headerP.headers, rest) }
     }
 

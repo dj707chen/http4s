@@ -41,8 +41,7 @@ object Origin {
   // It only contains a scheme, a host, and an optional port.
   // Hence we re-used parts of the Uri class here, but we don't use a whole Uri:
   // https://datatracker.ietf.org/doc/html/rfc6454#section-7
-  final case class Host(scheme: Uri.Scheme, host: Uri.Host, port: Option[Int] = None)
-      extends Renderable {
+  final case class Host(scheme: Uri.Scheme, host: Uri.Host, port: Option[Int] = None) extends Renderable {
     def toUri: Uri =
       Uri(scheme = Some(scheme), authority = Some(Uri.Authority(host = host, port = port)))
 
@@ -56,17 +55,17 @@ object Origin {
 
     val unknownScheme =
       alpha ~ Parser.oneOf(List(alpha, digit, char('+'), char('-'), char('.'))).rep0
-    val http = string("http")
-    val https = string("https")
-    val scheme = List(https, http, unknownScheme)
+    val http          = string("http")
+    val https         = string("https")
+    val scheme        = List(https, http, unknownScheme)
       .reduceLeft(_ orElse _)
       .string
       .map(Uri.Scheme.unsafeFromString)
-    val stringHost = until(char(':').orElse(`end`)).map(RegName.apply)
+    val stringHost    = until(char(':').orElse(`end`)).map(RegName.apply)
     val bracketedIpv6 = char('[') *> Uri.Parser.ipv6Address <* char(']')
-    val host = List(bracketedIpv6, Uri.Parser.ipv4Address, stringHost).reduceLeft(_ orElse _)
-    val port = char(':') *> digit.rep.string.map(_.toInt)
-    val nullHost = (string("null") *> `end`).as(Origin.Null)
+    val host          = List(bracketedIpv6, Uri.Parser.ipv4Address, stringHost).reduceLeft(_ orElse _)
+    val port          = char(':') *> digit.rep.string.map(_.toInt)
+    val nullHost      = (string("null") *> `end`).as(Origin.Null)
 
     val singleHost = ((scheme <* string("://")) ~ host ~ port.?).map { case ((sch, host), port) =>
       Origin.Host(sch, host, port)
@@ -92,7 +91,7 @@ object Origin {
                   writer << host
                 }
                 writer
-              case Null => writer << "null"
+              case Null            => writer << "null"
             }
 
         },

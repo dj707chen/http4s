@@ -22,7 +22,7 @@ import scala.scalajs.js
 
 @js.native
 trait IncomingMessage extends js.Object with Readable {
-  def method: String = js.native
-  def url: String = js.native
+  def method:  String                = js.native
+  def url:     String                = js.native
   def headers: js.Dictionary[String] = js.native
 }

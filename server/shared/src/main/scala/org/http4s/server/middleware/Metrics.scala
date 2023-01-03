@@ -39,8 +39,8 @@ import org.http4s.metrics.TerminationType.Error
 object Metrics {
 
   private[this] final case class MetricsRequestContext(
-      method: Method,
-      startTime: Long,
+      method:     Method,
+      startTime:  Long,
       classifier: Option[String],
   )
 
@@ -53,13 +53,13 @@ object Metrics {
     * @return the metrics middleware
     */
   def apply[F[_]](
-      ops: MetricsOps[F],
+      ops:                  MetricsOps[F],
       emptyResponseHandler: Option[Status] = Status.NotFound.some,
       errorResponseHandler: Throwable => Option[Status] = _ => Status.InternalServerError.some,
-      classifierF: Request[F] => Option[String] = { (_: Request[F]) =>
+      classifierF:          Request[F] => Option[String] = { (_: Request[F]) =>
         None
       },
-  )(routes: HttpRoutes[F])(implicit F: Clock[F], C: MonadCancel[F, Throwable]): HttpRoutes[F] =
+  )(routes:                 HttpRoutes[F])(implicit F: Clock[F], C: MonadCancel[F, Throwable]): HttpRoutes[F] =
     effect[F](ops, emptyResponseHandler, errorResponseHandler, classifierF(_).pure[F])(routes)
 
   /** A server middleware capable of recording metrics
@@ -76,23 +76,22 @@ object Metrics {
     * @return the metrics middleware
     */
   def effect[F[_]](
-      ops: MetricsOps[F],
+      ops:                  MetricsOps[F],
       emptyResponseHandler: Option[Status] = Status.NotFound.some,
       errorResponseHandler: Throwable => Option[Status] = _ => Status.InternalServerError.some,
-      classifierF: Request[F] => F[Option[String]],
-  )(routes: HttpRoutes[F])(implicit F: Clock[F], C: MonadCancel[F, Throwable]): HttpRoutes[F] =
-    BracketRequestResponse.bracketRequestResponseCaseRoutes_[F, MetricsRequestContext, Status] {
-      (request: Request[F]) =>
-        classifierF(request).flatMap { classifier =>
-          ops.increaseActiveRequests(classifier) *>
-            F.monotonic
-              .map(startTime =>
-                ContextRequest(
-                  MetricsRequestContext(request.method, startTime.toNanos, classifier),
-                  request,
-                )
+      classifierF:          Request[F] => F[Option[String]],
+  )(routes:                 HttpRoutes[F])(implicit F: Clock[F], C: MonadCancel[F, Throwable]): HttpRoutes[F] =
+    BracketRequestResponse.bracketRequestResponseCaseRoutes_[F, MetricsRequestContext, Status] { (request: Request[F]) =>
+      classifierF(request).flatMap { classifier =>
+        ops.increaseActiveRequests(classifier) *>
+          F.monotonic
+            .map(startTime =>
+              ContextRequest(
+                MetricsRequestContext(request.method, startTime.toNanos, classifier),
+                request,
               )
-        }
+            )
+      }
     } { case (context, maybeStatus, outcome) =>
       // Decrease active requests _first_ in case any of the other effects
       // trigger an error. This differs from the < 0.21.14 semantics, which
@@ -104,19 +103,16 @@ object Metrics {
           .flatMap(totalTime =>
             outcome match {
               case Outcome.Succeeded(_) =>
-                (maybeStatus <+> emptyResponseHandler).traverse_(status =>
-                  ops.recordTotalTime(context.method, status, totalTime, context.classifier)
-                )
-              case Outcome.Errored(e) =>
+                (maybeStatus <+> emptyResponseHandler)
+                  .traverse_(status => ops.recordTotalTime(context.method, status, totalTime, context.classifier))
+              case Outcome.Errored(e)   =>
                 maybeStatus.fold {
                   // If an error occurred, and the status is empty, this means
                   // that an error occurred before the routes could generate a
                   // response.
                   ops.recordHeadersTime(context.method, totalTime, context.classifier) *>
                     ops.recordAbnormalTermination(totalTime, Error(e), context.classifier) *>
-                    errorResponseHandler(e).traverse_(status =>
-                      ops.recordTotalTime(context.method, status, totalTime, context.classifier)
-                    )
+                    errorResponseHandler(e).traverse_(status => ops.recordTotalTime(context.method, status, totalTime, context.classifier))
                 }(status =>
                   // If an error occurred, but the status is non-empty, this
                   // means the error occurred during the stream processing of
@@ -126,7 +122,7 @@ object Metrics {
                   ops.recordAbnormalTermination(totalTime, Abnormal(e), context.classifier) *>
                     ops.recordTotalTime(context.method, status, totalTime, context.classifier)
                 )
-              case Outcome.Canceled() =>
+              case Outcome.Canceled()   =>
                 ops.recordAbnormalTermination(totalTime, Canceled, context.classifier)
             }
           )

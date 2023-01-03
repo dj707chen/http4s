@@ -36,11 +36,11 @@ import org.http4s.websocket.WebSocketFrame
   "0.23.5",
 )
 final case class WebSocketBuilder[F[_]: Applicative](
-    headers: Headers,
+    headers:               Headers,
     onNonWebSocketRequest: F[Response[F]],
-    onHandshakeFailure: F[Response[F]],
-    onClose: F[Unit],
-    filterPingPongs: Boolean,
+    onHandshakeFailure:    F[Response[F]],
+    onClose:               F[Unit],
+    filterPingPongs:       Boolean,
 ) {
 
   private lazy val delegate: WebSocketBuilder2[F] =
@@ -96,7 +96,7 @@ final case class WebSocketBuilder[F[_]: Applicative](
     * @return
     */
   def build(
-      send: Stream[F, WebSocketFrame],
+      send:    Stream[F, WebSocketFrame],
       receive: Pipe[F, WebSocketFrame, Unit],
   ): F[Response[F]] =
     delegate.build(send, receive)
@@ -114,12 +114,10 @@ object WebSocketBuilder {
   )
   def apply[F[_]: Applicative]: WebSocketBuilder[F] =
     new WebSocketBuilder[F](
-      headers = Headers.empty,
-      onNonWebSocketRequest =
-        Response[F](Status.NotImplemented).withEntity("This is a WebSocket route.").pure[F],
-      onHandshakeFailure =
-        Response[F](Status.BadRequest).withEntity("WebSocket handshake failed.").pure[F],
-      onClose = Applicative[F].unit,
-      filterPingPongs = true,
+      headers               = Headers.empty,
+      onNonWebSocketRequest = Response[F](Status.NotImplemented).withEntity("This is a WebSocket route.").pure[F],
+      onHandshakeFailure    = Response[F](Status.BadRequest).withEntity("WebSocket handshake failed.").pure[F],
+      onClose               = Applicative[F].unit,
+      filterPingPongs       = true,
     )
 }

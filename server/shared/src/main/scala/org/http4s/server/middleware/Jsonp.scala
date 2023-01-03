@@ -52,21 +52,21 @@ object Jsonp {
               response.contentType.map(_.mediaType) match {
                 case Some(MediaType.application.json) =>
                   jsonp(response, callback)
-                case _ => response
+                case _                                => response
               }
             }
             .apply(req)
-        case Some(invalidCallback) =>
+        case Some(invalidCallback)         =>
           logger.warn(s"Jsonp requested with invalid callback function name $invalidCallback")
           Response[G](Status.BadRequest).withEntity(s"Not a valid callback name.").pure[F]
-        case None => http(req)
+        case None                          => http(req)
       }
     }
 
   private def jsonp[F[_]](resp: Response[F], callback: String) = {
-    val begin = beginJsonp(callback)
-    val end = EndJsonp
-    val jsonpBody = chunk(begin) ++ resp.body ++ chunk(end)
+    val begin                 = beginJsonp(callback)
+    val end                   = EndJsonp
+    val jsonpBody             = chunk(begin) ++ resp.body ++ chunk(end)
     val newLengthHeaderOption = resp.headers.get[`Content-Length`].flatMap { old =>
       old.modify(_ + begin.size + end.size)
     }

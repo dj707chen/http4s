@@ -39,11 +39,11 @@ object HttpServer {
 
   def stream[F[_]: Async]: Stream[F, ExitCode] =
     for {
-      client <- BlazeClientBuilder[F].stream
-      ctx <- Stream(new Module[F](client))
+      client   <- BlazeClientBuilder[F].stream
+      ctx      <- Stream(new Module[F](client))
       exitCode <- BlazeServerBuilder[F]
-        .bindHttp(8080)
-        .withHttpApp(httpApp(ctx))
-        .serve
+                    .bindHttp(8080)
+                    .withHttpApp(httpApp(ctx))
+                    .serve
     } yield exitCode
 }

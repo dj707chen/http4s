@@ -69,68 +69,67 @@ private[ember] object H2Server {
 
    */
 
-  private val upgradeResponse: Response[fs2.Pure] = Response(
-    status = Status.SwitchingProtocols,
+  private val upgradeResponse:               Response[fs2.Pure] = Response(
+    status      = Status.SwitchingProtocols,
     httpVersion = HttpVersion.`HTTP/1.1`,
-    headers = Headers(
+    headers     = Headers(
       "connection" -> "Upgrade",
       "upgrade" -> "h2c",
     ),
   )
   // Apply this, if it ever becomes Some, then rather than the next request, become an h2 connection
-  def h2cUpgradeHttpRoute[F[_]: Concurrent]: HttpRoutes[F] =
-    cats.data.Kleisli[({ type L[A] = cats.data.OptionT[F, A] })#L, Request[F], Response[F]] {
-      (req: Request[F]) =>
-        val connectionCheck = req.headers
-          .get[org.http4s.headers.Connection]
-          .exists(connection =>
-            connection.values.contains_(ci"upgrade") && connection.values
-              .contains_(ci"http2-settings")
-          )
+  def h2cUpgradeHttpRoute[F[_]: Concurrent]: HttpRoutes[F]      =
+    cats.data.Kleisli[({ type L[A] = cats.data.OptionT[F, A] })#L, Request[F], Response[F]] { (req: Request[F]) =>
+      val connectionCheck = req.headers
+        .get[org.http4s.headers.Connection]
+        .exists(connection =>
+          connection.values.contains_(ci"upgrade") && connection.values
+            .contains_(ci"http2-settings")
+        )
 
-        // checks are cascading so we execute the least amount of work
-        // if there is no upgrade, which is the likely case.
-        val upgradeCheck = connectionCheck && {
-          req.headers
-            .get(ci"upgrade")
-            .exists(upgrade => upgrade.map(r => r.value).exists(_ === "h2c"))
-        }
+      // checks are cascading so we execute the least amount of work
+      // if there is no upgrade, which is the likely case.
+      val upgradeCheck = connectionCheck && {
+        req.headers
+          .get(ci"upgrade")
+          .exists(upgrade => upgrade.map(r => r.value).exists(_ === "h2c"))
+      }
 
-        val settings: Option[H2Frame.Settings.ConnectionSettings] = if (upgradeCheck) {
-          req.headers
-            .get(ci"http2-settings")
-            .collectFirstSome(settings =>
-              settings.map(_.value).collectFirstSome { value =>
-                for {
-                  bv <- ByteVector.fromBase64(value, Bases.Alphabets.Base64Url) // Base64 Url
-                  settings <- H2Frame.Settings
-                    .fromPayload(bv, 0, false)
-                    .toOption // This isn't an entire frame
-                  // It is Just the Payload section of the frame
-                } yield H2Frame.Settings
-                  .updateSettings(settings, H2Frame.Settings.ConnectionSettings.default)
-              }
-            )
-        } else None
-        val upgrade = connectionCheck && upgradeCheck
-        (settings, upgrade) match {
-          case (Some(settings), true) =>
-            cats.data.OptionT.liftF(req.body.compile.to(ByteVector): F[ByteVector]).flatMap { bv =>
-              val newReq: Request[fs2.Pure] = Request[fs2.Pure](
-                req.method,
-                req.uri,
-                HttpVersion.`HTTP/2`,
-                req.headers,
-                Stream.chunk(Chunk.byteVector(bv)),
-                req.attributes,
-              )
-              cats.data.OptionT.some(
-                upgradeResponse.covary[F].withAttribute(H2Keys.H2cUpgrade, (settings, newReq))
-              )
+      val settings: Option[H2Frame.Settings.ConnectionSettings] = if (upgradeCheck) {
+        req.headers
+          .get(ci"http2-settings")
+          .collectFirstSome(settings =>
+            settings.map(_.value).collectFirstSome { value =>
+              for {
+                bv       <- ByteVector.fromBase64(value, Bases.Alphabets.Base64Url) // Base64 Url
+                settings <- H2Frame.Settings
+                              .fromPayload(bv, 0, false)
+                              .toOption // This isn't an entire frame
+                // It is Just the Payload section of the frame
+              } yield H2Frame.Settings
+                .updateSettings(settings, H2Frame.Settings.ConnectionSettings.default)
             }
+          )
+      } else None
+      val upgrade = connectionCheck && upgradeCheck
+      (settings, upgrade) match {
+        case (Some(settings), true) =>
+          cats.data.OptionT.liftF(req.body.compile.to(ByteVector): F[ByteVector]).flatMap { bv =>
+            val newReq: Request[fs2.Pure] = Request[fs2.Pure](
+              req.method,
+              req.uri,
+              HttpVersion.`HTTP/2`,
+              req.headers,
+              Stream.chunk(Chunk.byteVector(bv)),
+              req.attributes,
+            )
+            cats.data.OptionT.some(
+              upgradeResponse.covary[F].withAttribute(H2Keys.H2cUpgrade, (settings, newReq))
+            )
+          }
 
-          case (_, _) => cats.data.OptionT.none
-        }
+        case (_, _) => cats.data.OptionT.none
+      }
     }
 
   def h2cUpgradeMiddleware[F[_]: Concurrent](app: HttpApp[F]): HttpApp[F] =
@@ -148,7 +147,7 @@ private[ember] object H2Server {
         val received = s.toByteVector
         if (received == Preface.clientBV) Applicative[F].pure(Either.unit)
         else Applicative[F].pure(Either.left(received))
-      case None =>
+      case None    =>
         new IOException("Input Closed Before Receiving Data").raiseError
     }
 
@@ -157,7 +156,7 @@ private[ember] object H2Server {
   // on an SSL connection.
   def requireConnectionPreface[F[_]: MonadThrow](socket: Socket[F]): F[Unit] =
     checkConnectionPreface(socket).flatMap {
-      case Left(_) => new IllegalArgumentException("Invalid Connection Preface").raiseError
+      case Left(_)     => new IllegalArgumentException("Invalid Connection Preface").raiseError
       case Right(unit) => unit.pure[F]
     }
 
@@ -165,90 +164,90 @@ private[ember] object H2Server {
   // AFTER the connection preface.
   // allowing delegation
   def fromSocket[F[_]: Async](
-      socket: Socket[F],
-      httpApp: HttpApp[F],
-      localSettings: H2Frame.Settings.ConnectionSettings,
-      logger: Logger[F],
+      socket:                Socket[F],
+      httpApp:               HttpApp[F],
+      localSettings:         H2Frame.Settings.ConnectionSettings,
+      logger:                Logger[F],
       // Only Used for http1 upgrade where remote settings are provided prior to escalation
       initialRemoteSettings: H2Frame.Settings.ConnectionSettings = defaultSettings,
-      initialRequest: Option[Request[fs2.Pure]] = None,
+      initialRequest:        Option[Request[fs2.Pure]] = None,
   ): Resource[F, Unit] = {
     import cats.effect.kernel.instances.spawn._
     for {
-      address <- Resource.eval(socket.remoteAddress)
+      address                 <- Resource.eval(socket.remoteAddress)
       (remotehost, remoteport) = (address.host, address.port)
-      ref <- Resource.eval(Concurrent[F].ref(Map[Int, H2Stream[F]]()))
-      initialWriteBlock <- Resource.eval(Deferred[F, Either[Throwable, Unit]])
-      stateRef <- Resource.eval(
-        Concurrent[F].ref(
-          H2Connection.State(
-            initialRemoteSettings,
-            defaultSettings.initialWindowSize.windowSize,
-            initialWriteBlock,
-            localSettings.initialWindowSize.windowSize,
-            0,
-            0,
-            false,
-            None,
-            None,
-          )
-        )
-      )
-      queue <- Resource.eval(cats.effect.std.Queue.unbounded[F, Chunk[H2Frame]]) // TODO revisit
-      hpack <- Resource.eval(Hpack.create[F])
-      settingsAck <- Resource.eval(
-        Deferred[F, Either[Throwable, H2Frame.Settings.ConnectionSettings]]
-      )
-      streamCreationLock <- Resource.eval(cats.effect.std.Semaphore[F](1))
+      ref                     <- Resource.eval(Concurrent[F].ref(Map[Int, H2Stream[F]]()))
+      initialWriteBlock       <- Resource.eval(Deferred[F, Either[Throwable, Unit]])
+      stateRef                <- Resource.eval(
+                                   Concurrent[F].ref(
+                                     H2Connection.State(
+                                       initialRemoteSettings,
+                                       defaultSettings.initialWindowSize.windowSize,
+                                       initialWriteBlock,
+                                       localSettings.initialWindowSize.windowSize,
+                                       0,
+                                       0,
+                                       false,
+                                       None,
+                                       None,
+                                     )
+                                   )
+                                 )
+      queue                   <- Resource.eval(cats.effect.std.Queue.unbounded[F, Chunk[H2Frame]]) // TODO revisit
+      hpack                   <- Resource.eval(Hpack.create[F])
+      settingsAck             <- Resource.eval(
+                                   Deferred[F, Either[Throwable, H2Frame.Settings.ConnectionSettings]]
+                                 )
+      streamCreationLock      <- Resource.eval(cats.effect.std.Semaphore[F](1))
       // data <- Resource.eval(cats.effect.std.Queue.unbounded[F, Frame.Data])
-      created <- Resource.eval(cats.effect.std.Queue.unbounded[F, Int])
-      closed <- Resource.eval(cats.effect.std.Queue.unbounded[F, Int])
+      created                 <- Resource.eval(cats.effect.std.Queue.unbounded[F, Int])
+      closed                  <- Resource.eval(cats.effect.std.Queue.unbounded[F, Int])
 
       h2 = new H2Connection(
-        remotehost,
-        remoteport,
-        H2Connection.ConnectionType.Server,
-        localSettings,
-        ref,
-        stateRef,
-        queue,
-        created,
-        closed,
-        hpack,
-        streamCreationLock.permit,
-        settingsAck,
-        ByteVector.empty,
-        socket,
-        logger,
-      )
+             remotehost,
+             remoteport,
+             H2Connection.ConnectionType.Server,
+             localSettings,
+             ref,
+             stateRef,
+             queue,
+             created,
+             closed,
+             hpack,
+             streamCreationLock.permit,
+             settingsAck,
+             ByteVector.empty,
+             socket,
+             logger,
+           )
       _ <- h2.writeLoop.compile.drain.background
       _ <- Resource.eval(
-        queue.offer(Chunk.singleton(H2Frame.Settings.ConnectionSettings.toSettings(localSettings)))
-      )
+             queue.offer(Chunk.singleton(H2Frame.Settings.ConnectionSettings.toSettings(localSettings)))
+           )
       _ <- h2.readLoop.compile.drain.background
 
       _ <- Resource.eval(h2.settingsAck.get.rethrow)
       // h2c Initial Request Communication on h2c Upgrade
       _ <- Resource.eval(
-        initialRequest.traverse_(req =>
-          h2.initiateRemoteStreamById(1)
-            .flatMap(h2Stream =>
-              h2Stream.state
-                .modify { s =>
-                  val x = s.copy(state = H2Stream.StreamState.HalfClosedRemote)
-                  (x, x)
-                }
-                .flatMap(s =>
-                  s.request.complete(Either.right(req)) >>
-                    s.readBuffer.offer(
-                      Either
-                        .right(req.body.compile.to(fs2.Collector.supportsByteVector(ByteVector)))
-                    ) >>
-                    s.writeBlock.complete(Either.right(()))
-                ) >> created.offer(1)
-            )
-        )
-      )
+             initialRequest.traverse_(req =>
+               h2.initiateRemoteStreamById(1)
+                 .flatMap(h2Stream =>
+                   h2Stream.state
+                     .modify { s =>
+                       val x = s.copy(state = H2Stream.StreamState.HalfClosedRemote)
+                       (x, x)
+                     }
+                     .flatMap(s =>
+                       s.request.complete(Either.right(req)) >>
+                         s.readBuffer.offer(
+                           Either
+                             .right(req.body.compile.to(fs2.Collector.supportsByteVector(ByteVector)))
+                         ) >>
+                         s.writeBlock.complete(Either.right(()))
+                     ) >> created.offer(1)
+                 )
+             )
+           )
       _ <-
         Stream
           .fromQueueUnterminated(closed)
@@ -269,63 +268,61 @@ private[ember] object H2Server {
           .fromQueueUnterminated(created)
           .map { i =>
             val x: F[Unit] = for {
-              stream <- ref.get.map(_.get(i)).map(_.get) // FOLD
-              req <- stream.getRequest.map(_.covary[F].withBodyStream(stream.readBody))
-              resp <- httpApp(req)
-              _ <- stream.sendHeaders(PseudoHeaders.responseToHeaders(resp), false)
+              stream      <- ref.get.map(_.get(i)).map(_.get) // FOLD
+              req         <- stream.getRequest.map(_.covary[F].withBodyStream(stream.readBody))
+              resp        <- httpApp(req)
+              _           <- stream.sendHeaders(PseudoHeaders.responseToHeaders(resp), false)
               // Push Promises
-              pp = resp.attributes.lookup(H2Keys.PushPromises)
+              pp           = resp.attributes.lookup(H2Keys.PushPromises)
               pushEnabled <- stateRef.get.map(_.remoteSettings.enablePush.isEnabled)
-              streams <- (Alternative[Option].guard(pushEnabled) >> pp).fold(
-                Applicative[F].pure(List.empty[(Request[fs2.Pure], H2Stream[F])])
-              ) { l =>
-                l.traverse { req =>
-                  streamCreationLock.permit.use[(Request[Pure], H2Stream[F])](_ =>
-                    h2.initiateLocalStream.flatMap { stream =>
-                      stream
-                        .sendPushPromise(i, PseudoHeaders.requestToHeaders(req))
-                        .map(_ => (req, stream))
-                    }
-                  )
-                }
-              }
+              streams     <- (Alternative[Option].guard(pushEnabled) >> pp).fold(
+                               Applicative[F].pure(List.empty[(Request[fs2.Pure], H2Stream[F])])
+                             ) { l =>
+                               l.traverse { req =>
+                                 streamCreationLock.permit.use[(Request[Pure], H2Stream[F])](_ =>
+                                   h2.initiateLocalStream.flatMap { stream =>
+                                     stream
+                                       .sendPushPromise(i, PseudoHeaders.requestToHeaders(req))
+                                       .map(_ => (req, stream))
+                                   }
+                                 )
+                               }
+                             }
               // _ <- Console.make[F].println("Writing Streams Commpleted")
-              responses <- streams.parTraverse { case (req, stream) =>
-                for {
-                  resp <- httpApp(req.covary[F])
-                  // _ <- Console.make[F].println("Push Promise Response Completed")
-                  _ <- stream.sendHeaders(
-                    PseudoHeaders.responseToHeaders(resp),
-                    false,
-                  ) // PP Response
-                } yield (resp.body, stream)
-              }
+              responses   <- streams.parTraverse { case (req, stream) =>
+                               for {
+                                 resp <- httpApp(req.covary[F])
+                                 // _ <- Console.make[F].println("Push Promise Response Completed")
+                                 _    <- stream.sendHeaders(
+                                           PseudoHeaders.responseToHeaders(resp),
+                                           false,
+                                         ) // PP Response
+                               } yield (resp.body, stream)
+                             }
 
-              _ <- responses.parTraverse { case (_, stream) =>
-                resp.body.chunks
-                  .evalMap(c => stream.sendData(c.toByteVector, false))
-                  .compile
-                  .drain >> // PP Resp Body
-                  stream.sendData(ByteVector.empty, true)
-              }
-              trailers = resp.attributes.lookup(Message.Keys.TrailerHeaders[F])
-              _ <- resp.body.chunks.noneTerminate.zipWithNext
-                .evalMap {
-                  case (Some(c), Some(Some(_))) => stream.sendData(c.toByteVector, false)
-                  case (Some(c), Some(None) | None) =>
-                    if (trailers.isDefined) stream.sendData(c.toByteVector, false)
-                    else stream.sendData(c.toByteVector, true)
-                  case (None, _) =>
-                    if (trailers.isDefined) Applicative[F].unit
-                    else stream.sendData(ByteVector.empty, true)
-                }
-                .compile
-                .drain // Initial Resp Body
+              _           <- responses.parTraverse { case (_, stream) =>
+                               resp.body.chunks
+                                 .evalMap(c => stream.sendData(c.toByteVector, false))
+                                 .compile
+                                 .drain >> // PP Resp Body
+                                 stream.sendData(ByteVector.empty, true)
+                             }
+              trailers     = resp.attributes.lookup(Message.Keys.TrailerHeaders[F])
+              _           <- resp.body.chunks.noneTerminate.zipWithNext
+                               .evalMap {
+                                 case (Some(c), Some(Some(_)))     => stream.sendData(c.toByteVector, false)
+                                 case (Some(c), Some(None) | None) =>
+                                   if (trailers.isDefined) stream.sendData(c.toByteVector, false)
+                                   else stream.sendData(c.toByteVector, true)
+                                 case (None, _)                    =>
+                                   if (trailers.isDefined) Applicative[F].unit
+                                   else stream.sendData(ByteVector.empty, true)
+                               }
+                               .compile
+                               .drain // Initial Resp Body
               optTrailers <- trailers.sequence
-              optNel = optTrailers.flatMap(h =>
-                h.headers.map(a => (a.name.toString.toLowerCase(), a.value, false)).toNel
-              )
-              _ <- optNel.traverse(nel => stream.sendHeaders(nel, true))
+              optNel       = optTrailers.flatMap(h => h.headers.map(a => (a.name.toString.toLowerCase(), a.value, false)).toNel)
+              _           <- optNel.traverse(nel => stream.sendHeaders(nel, true))
             } yield ()
             Stream.eval(x.attempt)
 
@@ -337,10 +334,10 @@ private[ember] object H2Server {
           .background
 
       _ <- Resource.eval(
-        stateRef.update(s => s.copy(writeWindow = s.remoteSettings.initialWindowSize.windowSize))
-      )
+             stateRef.update(s => s.copy(writeWindow = s.remoteSettings.initialWindowSize.windowSize))
+           )
 
-      s = {
+      s  = {
         def go: Pull[F, INothing, Unit] =
           Pull.eval(Temporal[F].sleep(1.seconds)) >>
             Pull

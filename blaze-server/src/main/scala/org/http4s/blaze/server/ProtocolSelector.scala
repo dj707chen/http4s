@@ -39,21 +39,21 @@ import scala.concurrent.duration.Duration
 /** Facilitates the use of ALPN when using blaze http2 support */
 private[http4s] object ProtocolSelector {
   def apply[F[_]](
-      engine: SSLEngine,
-      httpApp: HttpApp[F],
-      maxRequestLineLen: Int,
-      maxHeadersLen: Int,
-      chunkBufferMaxSize: Int,
-      requestAttributes: () => Vault,
-      executionContext: ExecutionContext,
-      serviceErrorHandler: ServiceErrorHandler[F],
-      responseHeaderTimeout: Duration,
-      idleTimeout: Duration,
-      scheduler: TickWheelExecutor,
-      dispatcher: Dispatcher[F],
-      webSocketKey: Key[WebSocketContext[F]],
+      engine:                 SSLEngine,
+      httpApp:                HttpApp[F],
+      maxRequestLineLen:      Int,
+      maxHeadersLen:          Int,
+      chunkBufferMaxSize:     Int,
+      requestAttributes:      () => Vault,
+      executionContext:       ExecutionContext,
+      serviceErrorHandler:    ServiceErrorHandler[F],
+      responseHeaderTimeout:  Duration,
+      idleTimeout:            Duration,
+      scheduler:              TickWheelExecutor,
+      dispatcher:             Dispatcher[F],
+      webSocketKey:           Key[WebSocketContext[F]],
       maxWebSocketBufferSize: Option[Int],
-  )(implicit F: Async[F]): ALPNServerSelector = {
+  )(implicit F:               Async[F]): ALPNServerSelector = {
     def http2Stage(): TailStage[ByteBuffer] = {
       val newNode = { (streamId: Int) =>
         LeafBuilder(
@@ -75,13 +75,13 @@ private[http4s] object ProtocolSelector {
       val localSettings =
         Http2Settings.default.copy(
           maxConcurrentStreams = 100, // TODO: configurable?
-          maxHeaderListSize = maxHeadersLen,
+          maxHeaderListSize    = maxHeadersLen,
         )
 
       new ServerPriorKnowledgeHandshaker(
         localSettings = localSettings,
-        flowStrategy = new DefaultFlowStrategy(localSettings),
-        nodeBuilder = newNode,
+        flowStrategy  = new DefaultFlowStrategy(localSettings),
+        nodeBuilder   = newNode,
       )
     }
 
@@ -106,14 +106,14 @@ private[http4s] object ProtocolSelector {
       protos
         .find {
           case "h2" | "h2-14" | "h2-15" => true
-          case _ => false
+          case _                        => false
         }
         .getOrElse("undefined")
 
     def select(s: String): LeafBuilder[ByteBuffer] =
       LeafBuilder(s match {
         case "h2" | "h2-14" | "h2-15" => http2Stage()
-        case _ => http1Stage()
+        case _                        => http1Stage()
       })
 
     new ALPNServerSelector(engine, preference, select)

@@ -118,7 +118,7 @@ private[http4s] object WebSocketHandshake {
   private def decodeLen(key: String): Int = Base64.getDecoder.decode(key).length
 
   private def genAcceptKey(str: String): String = (for {
-    data <- SyncIO.fromEither(ByteVector.encodeAscii(str))
+    data   <- SyncIO.fromEither(ByteVector.encodeAscii(str))
     digest <- Hash[SyncIO].digest(HashAlgorithm.SHA1, data ++ magicString)
   } yield digest.toBase64).unsafeRunSync()
 

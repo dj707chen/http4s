@@ -36,8 +36,8 @@ private[http4s] trait ForwardedRenderers {
         nodeName match {
           case Node.Name.Ipv4(ipv4addr) => writer << ipv4addr.toUriString
           case Node.Name.Ipv6(ipv6addr) => writer << ipv6addr.toUriString
-          case Node.Name.Unknown => writer << "unknown"
-          case Node.Obfuscated(str) => writer << str
+          case Node.Name.Unknown        => writer << "unknown"
+          case Node.Obfuscated(str)     => writer << str
         }
     }
 
@@ -45,7 +45,7 @@ private[http4s] trait ForwardedRenderers {
     override def render(writer: Writer, nodePort: Node.Port): writer.type =
       nodePort match {
         case Node.Port.Numeric(num) => writer << num
-        case Node.Obfuscated(str) => writer << str
+        case Node.Obfuscated(str)   => writer << str
       }
   }
 
@@ -65,7 +65,7 @@ private[http4s] trait ForwardedRenderers {
         case Uri.RegName(name) =>
           // TODO: A workaround for #1651, remove when the former issue gets fixed.
           writer << Uri.encode(name.toString, StandardCharsets.ISO_8859_1, toSkip = RegNameChars)
-        case other =>
+        case other             =>
           writer << other
       }
       host.port.fold[writer.type](writer)(writer << ':' << _)

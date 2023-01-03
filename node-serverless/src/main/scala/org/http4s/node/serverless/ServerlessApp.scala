@@ -32,7 +32,7 @@ import scala.scalajs.js.JSConverters._
 object ServerlessApp {
 
   def unsafeExportApps(apps: IO[Map[String, IO[HttpApp[IO]]]], exports: String*)(implicit
-      runtime: IORuntime
+      runtime:               IORuntime
   ): js.Dictionary[js.Function2[IncomingMessage, ServerResponse, Unit]] = {
 
     val deferredHandlers =
@@ -53,7 +53,7 @@ object ServerlessApp {
   }
 
   def unsafeExportApp(
-      app: IO[HttpApp[IO]]
+      app:            IO[HttpApp[IO]]
   )(implicit runtime: IORuntime): js.Function2[IncomingMessage, ServerResponse, Unit] = {
     val handler = Deferred.unsafe[IO, (IncomingMessage, ServerResponse) => IO[Unit]]
     app.map(apply[IO]).flatMap(handler.complete).unsafeRunAndForget()
@@ -61,33 +61,33 @@ object ServerlessApp {
   }
 
   def unsafeExportApp(app: HttpApp[IO])(implicit
-      runtime: IORuntime
+      runtime:             IORuntime
   ): js.Function2[IncomingMessage, ServerResponse, Unit] =
     apply[IO](app).apply(_, _).unsafeRunAndForget()
 
   def apply[F[_]](
-      app: HttpApp[F]
+      app:      HttpApp[F]
   )(implicit F: Async[F]): (IncomingMessage, ServerResponse) => F[Unit] = { (req, res) =>
     for {
-      method <- F.fromEither(Method.fromString(req.method))
-      uri <- F.fromEither(Uri.fromString(req.url))
-      headers = Headers(req.headers.toList)
-      body = Stream.resource(io.suspendReadableAndRead()(req)).flatMap(_._2)
-      request = Request(method, uri, headers = headers, body = body)
+      method   <- F.fromEither(Method.fromString(req.method))
+      uri      <- F.fromEither(Uri.fromString(req.url))
+      headers   = Headers(req.headers.toList)
+      body      = Stream.resource(io.suspendReadableAndRead()(req)).flatMap(_._2)
+      request   = Request(method, uri, headers = headers, body = body)
       response <- app.run(request)
-      _ <- F.delay {
-        val headers = response.headers.headers
-          .map { case Header.Raw(name, value) =>
-            name.toString -> value
-          }
-          .toMap
-          .toJSDictionary
-        res.writeHead(response.status.code, response.status.reason, headers)
-      }
-      _ <- response.body
-        .through(io.writeWritable[F](F.pure(res)))
-        .compile
-        .drain
+      _        <- F.delay {
+                    val headers = response.headers.headers
+                      .map { case Header.Raw(name, value) =>
+                        name.toString -> value
+                      }
+                      .toMap
+                      .toJSDictionary
+                    res.writeHead(response.status.code, response.status.reason, headers)
+                  }
+      _        <- response.body
+                    .through(io.writeWritable[F](F.pure(res)))
+                    .compile
+                    .drain
     } yield ()
   }
 

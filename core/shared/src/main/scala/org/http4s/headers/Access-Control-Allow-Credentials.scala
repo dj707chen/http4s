@@ -20,7 +20,7 @@ package headers
 import cats.parse.Parser
 import org.typelevel.ci._
 
-object `Access-Control-Allow-Credentials` {
+object `Access-Control-Allow-Credentials`             {
   def parse(s: String): ParseResult[`Access-Control-Allow-Credentials`] =
     ParseResult.fromParser(parser, "Invalid Access-Control-Allow-Credentials header")(s)
 
