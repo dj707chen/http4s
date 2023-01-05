@@ -86,7 +86,7 @@ package object server {
     val IdleTimeout:     Duration = 60.seconds
 
     /** The time to wait for a graceful shutdown */
-    val ShutdownTimeout: Duration = 30.seconds
+    val ShutdownGracePeriod: Duration = 30.seconds
 
     /** Default max size of all headers. */
     val MaxHeadersSize: Int = 40 * 1024

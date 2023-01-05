@@ -55,47 +55,55 @@ private[server] object ServerHelpers extends ServerHelpersPlatform {
     Response(Status.InternalServerError).putHeaders(org.http4s.headers.`Content-Length`.zero)
 
   def server[F[_]](
-      host:                        Option[Host],
-      port:                        Port,
-      additionalSocketOptions:     List[SocketOption],
-      sg:                          SocketGroup[F],
-      httpApp:                     HttpApp[F],
-      tlsInfoOpt:                  Option[(TLSContext[F], TLSParameters)],
-      ready:                       Deferred[F, Either[Throwable, SocketAddress[IpAddress]]],
-      shutdown:                    Shutdown[F],
+      host:                    Option[Host],
+      port:                    Port,
+      additionalSocketOptions: List[SocketOption],
+      sg:                      SocketGroup[F],
+      httpApp:                 HttpApp[F],
+      tlsInfoOpt:              Option[(TLSContext[F], TLSParameters)],
+      ready:                   Deferred[F, Either[Throwable, SocketAddress[IpAddress]]],
+      shutdown:                Shutdown[F],
       // Defaults
-      errorHandler:                Throwable => F[Response[F]],
-      onWriteFailure:              (Option[Request[F]], Response[F], Throwable) => F[Unit],
-      maxConnections:              Int,
-      receiveBufferSize:           Int,
-      maxHeaderSize:               Int,
-      requestHeaderReceiveTimeout: Duration,
-      idleTimeout:                 Duration,
-      logger:                      Logger[F],
-      webSocketKey:                Key[WebSocketContext[F]],
-      enableHttp2:                 Boolean,
-  )(implicit F:                    Async[F]): Stream[F, Nothing] = {
+      errorHandler:            Throwable => F[Response[F]],
+      onWriteFailure:          (Option[Request[F]], Response[F], Throwable) => F[Unit],
+      maxConnections:          Int,
+      receiveBufferSize:       Int,
+      maxHeaderSize:           Int,
+      reqHeaderReceiveTimeout: Duration,
+      idleTimeout:             Duration,
+      logger:                  Logger[F],
+      webSocketKey:            Key[WebSocketContext[F]],
+      enableHttp2:             Boolean,
+  )(implicit F:                Async[F]): Stream[F, Nothing] = {
     val server: Stream[F, Socket[F]] =
       Stream
-        .resource(sg.serverResource(host, Some(port), additionalSocketOptions))
+        .resource(
+          // Creates a TCP server bound to specified address/port and returns a stream of client sockets
+          // -- one per client that connects to the bound address/port.
+          sg.serverResource(host, Some(port), additionalSocketOptions)
+        )
         .attempt
-        .evalTap(e => ready.complete(e.map(_._1)))
+        // The the creation of the first socket makes ready complete
+        .evalTap { eth: Either[Throwable, (SocketAddress[IpAddress], Stream[F, Socket[F]])] =>
+          ready.complete(eth.map(_._1))
+        }
         .rethrow
         .flatMap(_._2)
+
     serverInternal(
       server,
-      httpApp:                     HttpApp[F],
-      tlsInfoOpt:                  Option[(TLSContext[F], TLSParameters)],
-      shutdown:                    Shutdown[F],
+      httpApp: HttpApp[F],
+      tlsInfoOpt: Option[(TLSContext[F], TLSParameters)],
+      shutdown: Shutdown[F],
       // Defaults
-      errorHandler:                Throwable => F[Response[F]],
-      onWriteFailure:              (Option[Request[F]], Response[F], Throwable) => F[Unit],
-      maxConnections:              Int,
-      receiveBufferSize:           Int,
-      maxHeaderSize:               Int,
-      requestHeaderReceiveTimeout: Duration,
-      idleTimeout:                 Duration,
-      logger:                      Logger[F],
+      errorHandler: Throwable => F[Response[F]],
+      onWriteFailure: (Option[Request[F]], Response[F], Throwable) => F[Unit],
+      maxConnections: Int,
+      receiveBufferSize: Int,
+      maxHeaderSize: Int,
+      reqHeaderReceiveTimeout: Duration,
+      idleTimeout: Duration,
+      logger: Logger[F],
       true,
       webSocketKey,
       enableHttp2,
@@ -103,25 +111,25 @@ private[server] object ServerHelpers extends ServerHelpersPlatform {
   }
 
   def unixSocketServer[F[_]: Async](
-      unixSockets:                 UnixSockets[F],
-      unixSocketAddress:           UnixSocketAddress,
-      deleteIfExists:              Boolean,
-      deleteOnClose:               Boolean,
-      httpApp:                     HttpApp[F],
-      tlsInfoOpt:                  Option[(TLSContext[F], TLSParameters)],
-      ready:                       Deferred[F, Either[Throwable, SocketAddress[IpAddress]]],
-      shutdown:                    Shutdown[F],
+      unixSockets:             UnixSockets[F],
+      unixSocketAddress:       UnixSocketAddress,
+      deleteIfExists:          Boolean,
+      deleteOnClose:           Boolean,
+      httpApp:                 HttpApp[F],
+      tlsInfoOpt:              Option[(TLSContext[F], TLSParameters)],
+      ready:                   Deferred[F, Either[Throwable, SocketAddress[IpAddress]]],
+      shutdown:                Shutdown[F],
       // Defaults
-      errorHandler:                Throwable => F[Response[F]],
-      onWriteFailure:              (Option[Request[F]], Response[F], Throwable) => F[Unit],
-      maxConnections:              Int,
-      receiveBufferSize:           Int,
-      maxHeaderSize:               Int,
-      requestHeaderReceiveTimeout: Duration,
-      idleTimeout:                 Duration,
-      logger:                      Logger[F],
-      webSocketKey:                Key[WebSocketContext[F]],
-      enableHttp2:                 Boolean,
+      errorHandler:            Throwable => F[Response[F]],
+      onWriteFailure:          (Option[Request[F]], Response[F], Throwable) => F[Unit],
+      maxConnections:          Int,
+      receiveBufferSize:       Int,
+      maxHeaderSize:           Int,
+      reqHeaderReceiveTimeout: Duration,
+      idleTimeout:             Duration,
+      logger:                  Logger[F],
+      webSocketKey:            Key[WebSocketContext[F]],
+      enableHttp2:             Boolean,
   ): Stream[F, Nothing] = {
     val server =
       // Our interface has an issue
@@ -137,18 +145,18 @@ private[server] object ServerHelpers extends ServerHelpersPlatform {
 
     serverInternal(
       server,
-      httpApp:                     HttpApp[F],
-      tlsInfoOpt:                  Option[(TLSContext[F], TLSParameters)],
-      shutdown:                    Shutdown[F],
+      httpApp: HttpApp[F],
+      tlsInfoOpt: Option[(TLSContext[F], TLSParameters)],
+      shutdown: Shutdown[F],
       // Defaults
-      errorHandler:                Throwable => F[Response[F]],
-      onWriteFailure:              (Option[Request[F]], Response[F], Throwable) => F[Unit],
-      maxConnections:              Int,
-      receiveBufferSize:           Int,
-      maxHeaderSize:               Int,
-      requestHeaderReceiveTimeout: Duration,
-      idleTimeout:                 Duration,
-      logger:                      Logger[F],
+      errorHandler: Throwable => F[Response[F]],
+      onWriteFailure: (Option[Request[F]], Response[F], Throwable) => F[Unit],
+      maxConnections: Int,
+      receiveBufferSize: Int,
+      maxHeaderSize: Int,
+      reqHeaderReceiveTimeout: Duration,
+      idleTimeout: Duration,
+      logger: Logger[F],
       false,
       webSocketKey,
       enableHttp2,
@@ -156,29 +164,29 @@ private[server] object ServerHelpers extends ServerHelpersPlatform {
   }
 
   def serverInternal[F[_]: Async](
-      server:                      Stream[F, Socket[F]],
-      httpApp:                     HttpApp[F],
-      tlsInfoOpt:                  Option[(TLSContext[F], TLSParameters)],
-      shutdown:                    Shutdown[F],
+      server:                  Stream[F, Socket[F]],
+      httpApp:                 HttpApp[F],
+      tlsInfoOpt:              Option[(TLSContext[F], TLSParameters)],
+      shutdown:                Shutdown[F],
       // Defaults
-      errorHandler:                Throwable => F[Response[F]],
-      onWriteFailure:              (Option[Request[F]], Response[F], Throwable) => F[Unit],
-      maxConnections:              Int,
-      receiveBufferSize:           Int,
-      maxHeaderSize:               Int,
-      requestHeaderReceiveTimeout: Duration,
-      idleTimeout:                 Duration,
-      logger:                      Logger[F],
-      createRequestVault:          Boolean,
-      webSocketKey:                Key[WebSocketContext[F]],
-      enableHttp2:                 Boolean,
+      errorHandler:            Throwable => F[Response[F]],
+      onWriteFailure:          (Option[Request[F]], Response[F], Throwable) => F[Unit],
+      maxConnections:          Int,
+      receiveBufferSize:       Int,
+      maxHeaderSize:           Int,
+      reqHeaderReceiveTimeout: Duration,
+      idleTimeout:             Duration,
+      logger:                  Logger[F],
+      createRequestVault:      Boolean,
+      webSocketKey:            Key[WebSocketContext[F]],
+      enableHttp2:             Boolean,
   ): Stream[F, Nothing] = {
     val streams: Stream[F, Stream[F, Nothing]] = server
-      .interruptWhen(shutdown.signal.attempt)
-      .map { connect =>
+      .interruptWhen(shutdown.getShutdownStartSignal.attempt)
+      .map { cSocket =>
         val handler: Stream[F, fs2.INothing] = shutdown.trackConnection >>
           Stream
-            .resource(upgradeSocket(connect, tlsInfoOpt, logger, enableHttp2))
+            .resource(upgradeSocket(cSocket, tlsInfoOpt, logger, enableHttp2))
             .flatMap {
               case (socket, Some("h2")) =>
                 // ALPN H2 Strategy
@@ -204,7 +212,7 @@ private[server] object ServerHelpers extends ServerHelpersPlatform {
                   idleTimeout,
                   receiveBufferSize,
                   maxHeaderSize,
-                  requestHeaderReceiveTimeout,
+                  reqHeaderReceiveTimeout,
                   httpApp,
                   errorHandler,
                   onWriteFailure,
@@ -226,7 +234,7 @@ private[server] object ServerHelpers extends ServerHelpersPlatform {
                           idleTimeout,
                           receiveBufferSize,
                           maxHeaderSize,
-                          requestHeaderReceiveTimeout,
+                          reqHeaderReceiveTimeout,
                           httpApp,
                           errorHandler,
                           onWriteFailure,
@@ -255,7 +263,7 @@ private[server] object ServerHelpers extends ServerHelpersPlatform {
                       idleTimeout,
                       receiveBufferSize,
                       maxHeaderSize,
-                      requestHeaderReceiveTimeout,
+                      reqHeaderReceiveTimeout,
                       httpApp,
                       errorHandler,
                       onWriteFailure,
@@ -294,7 +302,9 @@ private[server] object ServerHelpers extends ServerHelpersPlatform {
       logger:      Logger[F],
       enableHttp2: Boolean,
   ): Resource[F, (Socket[F], Option[String])] =
-    tlsInfoOpt.fold((socketInit, Option.empty[String]).pure[Resource[F, *]]) { case (context, params) =>
+    tlsInfoOpt.fold(
+      (socketInit, Option.empty[String]).pure[Resource[F, *]]
+    ) { case (context, params) =>
       val newParams = if (enableHttp2) {
         // TODO for JS perhaps TLSParameters => TLSParameters is a platform specific way
         // As this is the only JVM specific code
@@ -313,23 +323,23 @@ private[server] object ServerHelpers extends ServerHelpersPlatform {
     }
 
   private[internal] def runApp[F[_]](
-      head:                        Array[Byte],
-      read:                        Read[F],
-      maxHeaderSize:               Int,
-      requestHeaderReceiveTimeout: Duration,
-      httpApp:                     HttpApp[F],
-      errorHandler:                Throwable => F[Response[F]],
-      socket:                      Socket[F],
-      createRequestVault:          Boolean,
-  )(implicit F:                    Temporal[F], D: Defer[F]): F[(Request[F], Response[F], Drain[F])] = {
+      head:                    Array[Byte],
+      read:                    Read[F],
+      maxHeaderSize:           Int,
+      reqHeaderReceiveTimeout: Duration,
+      httpApp:                 HttpApp[F],
+      errorHandler:            Throwable => F[Response[F]],
+      socket:                  Socket[F],
+      createRequestVault:      Boolean,
+  )(implicit F:                Temporal[F], D: Defer[F]): F[(Request[F], Response[F], Drain[F])] = {
 
     val parse                  = Parser.Request.parser(maxHeaderSize)(head, read)
     val parseWithHeaderTimeout = timeoutToMaybe(
       parse,
-      requestHeaderReceiveTimeout,
+      reqHeaderReceiveTimeout,
       D.defer(
         F.raiseError[(Request[F], F[Option[Array[Byte]]])](
-          EmberException.RequestHeadersTimeout(requestHeaderReceiveTimeout)
+          EmberException.RequestHeadersTimeout(reqHeaderReceiveTimeout)
         )
       ),
     )
@@ -346,10 +356,10 @@ private[server] object ServerHelpers extends ServerHelpersPlatform {
   }
 
   private[internal] def send[F[_]: Temporal](socket: Socket[F])(
-      request:        Option[Request[F]],
-      resp:           Response[F],
-      idleTimeout:    Duration,
-      onWriteFailure: (Option[Request[F]], Response[F], Throwable) => F[Unit],
+      request:                                       Option[Request[F]],
+      resp:                                          Response[F],
+      idleTimeout:                                   Duration,
+      onWriteFailure:                                (Option[Request[F]], Response[F], Throwable) => F[Unit],
   ): F[Unit] =
     Encoder
       .respToBytes[F](resp)
@@ -373,23 +383,23 @@ private[server] object ServerHelpers extends ServerHelpersPlatform {
   }
 
   private[internal] def runConnection[F[_]: Async](
-      socket:                      Socket[F],
-      logger:                      Logger[F],
-      idleTimeout:                 Duration,
-      receiveBufferSize:           Int,
-      maxHeaderSize:               Int,
-      requestHeaderReceiveTimeout: Duration,
-      httpApp:                     HttpApp[F],
-      errorHandler:                Throwable => F[org.http4s.Response[F]],
-      onWriteFailure:              (Option[Request[F]], Response[F], Throwable) => F[Unit],
-      createRequestVault:          Boolean,
-      webSocketKey:                Key[WebSocketContext[F]],
-      initialBuffer:               ByteVector,
-      enableHttp2:                 Boolean,
+      socket:                  Socket[F],
+      logger:                  Logger[F],
+      idleTimeout:             Duration,
+      receiveBufferSize:       Int,
+      maxHeaderSize:           Int,
+      reqHeaderReceiveTimeout: Duration,
+      httpApp:                 HttpApp[F],
+      errorHandler:            Throwable => F[org.http4s.Response[F]],
+      onWriteFailure:          (Option[Request[F]], Response[F], Throwable) => F[Unit],
+      createRequestVault:      Boolean,
+      webSocketKey:            Key[WebSocketContext[F]],
+      initialBuffer:           ByteVector,
+      enableHttp2:             Boolean,
   ): Stream[F, Nothing] = {
     type State = (Array[Byte], Boolean)
-    val _        = logger
-    val finalApp = if (enableHttp2) H2Server.h2cUpgradeMiddleware(httpApp) else httpApp
+    val _             = logger
+    val finalApp      = if (enableHttp2) H2Server.h2cUpgradeMiddleware(httpApp) else httpApp
     val read: Read[F] = timeoutMaybe(socket.read(receiveBufferSize), idleTimeout)
       .adaptError {
         // TODO MERGE: Replace with TimeoutException on series/0.23+.
@@ -418,7 +428,7 @@ private[server] object ServerHelpers extends ServerHelpersPlatform {
             initBuffer,
             read,
             maxHeaderSize,
-            requestHeaderReceiveTimeout,
+            reqHeaderReceiveTimeout,
             finalApp,
             errorHandler,
             socket,
@@ -518,7 +528,7 @@ private[server] object ServerHelpers extends ServerHelpersPlatform {
         socket.session
           .map(parseSSLSession(_))
           .map(Vault.empty.insert(ServerRequestKeys.SecureSession, _))
-      case _ =>
+      case _                    =>
         Vault.empty.pure[F]
     }
 }

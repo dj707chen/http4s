@@ -348,7 +348,7 @@ object JettyBuilder {
       ),
       idleTimeout              = defaults.IdleTimeout,
       asyncTimeout             = defaults.ResponseTimeout,
-      shutdownTimeout          = defaults.ShutdownTimeout,
+      shutdownTimeout          = defaults.ShutdownGracePeriod,
       servletIo                = ServletContainer.DefaultServletIo,
       sslConfig                = NoSsl,
       mounts                   = Vector.empty,
