@@ -123,7 +123,7 @@ object Metrics {
   )(implicit F: Clock[F], C: Concurrent[F]): Resource[F, Response[F]] =
     (for {
       classifier <- Resource.eval(classifierF(req))
-      _ <- Resource.make(ops.increaseActiveRequests(classifier))(_ =>
+      _ <- Resource.make(ops.increaseActiveRequests(classifier, customLabelValues))(_ =>
         ops.decreaseActiveRequests(classifier, customLabelValues)
       )
       _ <- Resource.onFinalize(
