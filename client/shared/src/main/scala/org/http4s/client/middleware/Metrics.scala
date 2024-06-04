@@ -20,14 +20,15 @@ import cats.effect.Clock
 import cats.effect.Concurrent
 import cats.effect.Ref
 import cats.effect.Resource
-import cats.syntax.all._
+import cats.syntax.all.*
 import org.http4s.Request
 import org.http4s.Response
 import org.http4s.Status
 import org.http4s.client.Client
-import org.http4s.metrics.MetricsOps
+import org.http4s.metrics.{CustomMetricsOps, MetricsOps}
 import org.http4s.metrics.TerminationType.Error
 import org.http4s.metrics.TerminationType.Timeout
+import org.http4s.util.{SizedSeq, SizedSeq0}
 
 import scala.concurrent.TimeoutException
 
@@ -59,14 +60,14 @@ object Metrics {
   )(client: Client[F])(implicit F: Clock[F], C: Concurrent[F]): Client[F] =
     effect(ops, classifierF.andThen(_.pure[F]))(client)
 
-  def withCustomLabelValues[F[_]](
-      ops: MetricsOps[F],
-      customLabelValues: List[String] = List.empty,
+  def withCustomLabels[F[_], SL <: SizedSeq[String]](
+      ops: CustomMetricsOps[F, SL],
+      customLabelValues: SL,
       classifierF: Request[F] => Option[String] = { (_: Request[F]) =>
         None
       },
   )(client: Client[F])(implicit F: Clock[F], C: Concurrent[F]): Client[F] =
-    effectWithCustomLabelValues(ops, customLabelValues, classifierF.andThen(_.pure[F]))(client)
+    effectWithCustomLabels(ops, customLabelValues, classifierF.andThen(_.pure[F]))(client)
 
   /** Wraps a [[Client]] with a middleware capable of recording metrics
     *
@@ -82,21 +83,24 @@ object Metrics {
     */
   def effect[F[_]](ops: MetricsOps[F], classifierF: Request[F] => F[Option[String]])(
       client: Client[F]
-  )(implicit F: Clock[F], C: Concurrent[F]): Client[F] =
-    Client(withMetrics(client, ops, classifierF, List.empty))
+  )(implicit F: Clock[F], C: Concurrent[F]): Client[F] = {
+    val cops = CustomMetricsOps.fromMetricsOps(ops)
+    val emptyCustomLabelValues = SizedSeq0[String]()
+    Client(withMetrics(client, cops, emptyCustomLabelValues, classifierF))
+  }
 
-  def effectWithCustomLabelValues[F[_]](
-      ops: MetricsOps[F],
-      customLabelValues: List[String],
+  def effectWithCustomLabels[F[_], SL <: SizedSeq[String]](
+      ops: CustomMetricsOps[F, SL],
+      customLabelValues: SL,
       classifierF: Request[F] => F[Option[String]],
   )(client: Client[F])(implicit F: Clock[F], C: Concurrent[F]): Client[F] =
-    Client(withMetrics(client, ops, classifierF, customLabelValues))
+    Client(withMetrics(client, ops, customLabelValues, classifierF))
 
-  private def withMetrics[F[_]](
+  private def withMetrics[F[_], SL <: SizedSeq[String]](
       client: Client[F],
-      ops: MetricsOps[F],
+      ops: CustomMetricsOps[F, SL],
+      customLabelValues: SL,
       classifierF: Request[F] => F[Option[String]],
-      customLabelValues: List[String],
   )(req: Request[F])(implicit F: Clock[F], C: Concurrent[F]): Resource[F, Response[F]] =
     for {
       statusRef <- Resource.eval(C.ref[Option[Status]](None))
@@ -104,19 +108,19 @@ object Metrics {
       resp <- executeRequestAndRecordMetrics(
         client,
         ops,
-        classifierF,
         customLabelValues,
+        classifierF,
         req,
         statusRef,
         start.toNanos,
       )
     } yield resp
 
-  private def executeRequestAndRecordMetrics[F[_]](
+  private def executeRequestAndRecordMetrics[F[_], SL <: SizedSeq[String]](
       client: Client[F],
-      ops: MetricsOps[F],
+      ops: CustomMetricsOps[F, SL],
+      customLabelValues: SL,
       classifierF: Request[F] => F[Option[String]],
-      customLabelValues: List[String],
       req: Request[F],
       statusRef: Ref[F, Option[Status]],
       start: Long,
@@ -150,27 +154,22 @@ object Metrics {
       )
     } yield resp).handleErrorWith { (e: Throwable) =>
       Resource.eval(
-        classifierF(req).flatMap(registerError(start, ops, _, customLabelValues)(e)) *>
+        classifierF(req).flatMap(registerError(start, ops, customLabelValues, _)(e)) *>
           C.raiseError[Response[F]](e)
       )
     }
 
-  private def registerError[F[_]](
+  private def registerError[F[_], SL <: SizedSeq[String]](
       start: Long,
-      ops: MetricsOps[F],
+      ops: CustomMetricsOps[F, SL],
+      customLabelValues: SL,
       classifier: Option[String],
-      customLabelValues: List[String],
   )(e: Throwable)(implicit F: Clock[F], C: Concurrent[F]): F[Unit] =
     F.monotonic
       .flatMap { now =>
         if (e.isInstanceOf[TimeoutException])
           ops.recordAbnormalTermination(now.toNanos - start, Timeout, classifier, customLabelValues)
         else
-          ops.recordAbnormalTermination(
-            now.toNanos - start,
-            Error(e),
-            classifier,
-            customLabelValues,
-          )
+          ops.recordAbnormalTermination(now.toNanos - start, Error(e), classifier, customLabelValues)
       }
 }
