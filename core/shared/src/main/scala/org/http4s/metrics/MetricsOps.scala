@@ -21,7 +21,6 @@ import cats.~>
 import org.http4s.Method
 import org.http4s.Request
 import org.http4s.Status
-import org.typelevel.scalaccompat.annotation.nowarn
 
 /** Describes an algebra capable of writing metrics to a metrics registry
   */
@@ -33,23 +32,11 @@ trait MetricsOps[F[_]] {
     */
   def increaseActiveRequests(classifier: Option[String]): F[Unit]
 
-  @nowarn
-  def increaseActiveRequests(
-      classifier: Option[String],
-      customLabelValues: List[String],
-  ): F[Unit] = increaseActiveRequests(classifier)
-
   /** Decreases the count of active requests
     *
     * @param classifier the classifier to apply
     */
   def decreaseActiveRequests(classifier: Option[String]): F[Unit]
-
-  @nowarn
-  def decreaseActiveRequests(
-      classifier: Option[String],
-      customLabelValues: List[String],
-  ): F[Unit] = decreaseActiveRequests(classifier)
 
   /** Records the time to receive the response headers
     *
@@ -58,14 +45,6 @@ trait MetricsOps[F[_]] {
     * @param classifier the classifier to apply
     */
   def recordHeadersTime(method: Method, elapsed: Long, classifier: Option[String]): F[Unit]
-
-  @nowarn
-  def recordHeadersTime(
-      method: Method,
-      elapsed: Long,
-      classifier: Option[String],
-      customLabelValues: List[String],
-  ): F[Unit] = recordHeadersTime(method, elapsed, classifier)
 
   /** Records the time to fully consume the response, including the body
     *
@@ -81,15 +60,6 @@ trait MetricsOps[F[_]] {
       classifier: Option[String],
   ): F[Unit]
 
-  @nowarn
-  def recordTotalTime(
-      method: Method,
-      status: Status,
-      elapsed: Long,
-      classifier: Option[String],
-      customLabelValues: List[String],
-  ): F[Unit] = recordTotalTime(method, status, elapsed, classifier)
-
   /** Record abnormal terminations, like errors, timeouts or just other abnormal terminations.
     *
     * @param elapsed the time to record
@@ -101,14 +71,6 @@ trait MetricsOps[F[_]] {
       terminationType: TerminationType,
       classifier: Option[String],
   ): F[Unit]
-
-  @nowarn
-  def recordAbnormalTermination(
-      elapsed: Long,
-      terminationType: TerminationType,
-      classifier: Option[String],
-      customLabelValues: List[String],
-  ): F[Unit] = recordAbnormalTermination(elapsed, terminationType, classifier)
 
   /** Transform the effect of MetricOps using the supplied natural transformation
     *
@@ -122,62 +84,25 @@ trait MetricsOps[F[_]] {
       override def increaseActiveRequests(classifier: Option[String]): G[Unit] = fk(
         ops.increaseActiveRequests(classifier)
       )
-      override def increaseActiveRequests(
-          classifier: Option[String],
-          customLabelValues: List[String],
-      ): G[Unit] = fk(
-        ops.increaseActiveRequests(classifier, customLabelValues)
-      )
-
       override def decreaseActiveRequests(classifier: Option[String]): G[Unit] = fk(
         ops.decreaseActiveRequests(classifier)
       )
-      override def decreaseActiveRequests(
-          classifier: Option[String],
-          customLabelValues: List[String],
-      ): G[Unit] = fk(
-        ops.decreaseActiveRequests(classifier, customLabelValues)
-      )
-
       override def recordHeadersTime(
           method: Method,
           elapsed: Long,
           classifier: Option[String],
       ): G[Unit] = fk(ops.recordHeadersTime(method, elapsed, classifier))
-      override def recordHeadersTime(
-          method: Method,
-          elapsed: Long,
-          classifier: Option[String],
-          customLabelValues: List[String],
-      ): G[Unit] = fk(ops.recordHeadersTime(method, elapsed, classifier, customLabelValues))
-
       override def recordTotalTime(
           method: Method,
           status: Status,
           elapsed: Long,
           classifier: Option[String],
       ): G[Unit] = fk(ops.recordTotalTime(method, status, elapsed, classifier))
-      override def recordTotalTime(
-          method: Method,
-          status: Status,
-          elapsed: Long,
-          classifier: Option[String],
-          customLabelValues: List[String],
-      ): G[Unit] = fk(ops.recordTotalTime(method, status, elapsed, classifier, customLabelValues))
-
       override def recordAbnormalTermination(
           elapsed: Long,
           terminationType: TerminationType,
           classifier: Option[String],
       ): G[Unit] = fk(ops.recordAbnormalTermination(elapsed, terminationType, classifier))
-      override def recordAbnormalTermination(
-          elapsed: Long,
-          terminationType: TerminationType,
-          classifier: Option[String],
-          customLabelValues: List[String],
-      ): G[Unit] = fk(
-        ops.recordAbnormalTermination(elapsed, terminationType, classifier, customLabelValues)
-      )
     }
   }
 }
